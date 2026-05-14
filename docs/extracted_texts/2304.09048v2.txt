@@ -1,0 +1,653 @@
+arXiv:2304.09048v2 [cs.CL] 18 Jan 2024
+
+CodeKGC: Code Language Model for Generative Knowledge Graph Construction
+ZHEN BI and JING CHEN, Zhejiang University, China and Zhejiang University - Ant Group Joint
+Laboratory of Knowledge Graph, China
+YINUO JIANG, Zhejiang University, China and Zhejiang University - Ant Group Joint Laboratory of
+Knowledge Graph, China
+FEIYU XIONG and WEI GUO, Alibaba Group, China HUAJUN CHEN and NINGYU ZHANG, Zhejiang University, China and Zhejiang University - Ant
+Group Joint Laboratory of Knowledge Graph, China
+Current generative knowledge graph construction approaches usually fail to capture structural knowledge by simply flattening natural language into serialized texts or a specification language. However, large generative language model trained on structured data such as code has demonstrated impressive capability in understanding natural language for structural prediction and reasoning tasks. Intuitively, we address the task of generative knowledge graph construction with code language model: given a code-format natural language input, the target is to generate triples which can be represented as code completion tasks. Specifically, we develop schema-aware prompts that effectively utilize the semantic structure within the knowledge graph. As code inherently possesses structure, such as class and function definitions, it serves as a useful model for prior semantic structural knowledge. Furthermore, we employ a rationale-enhanced generation method to boost the performance. Rationales provide intermediate steps, thereby improving knowledge extraction abilities. Experimental results indicate that the proposed approach can obtain better performance on benchmark datasets compared with baselines1.
+CCS Concepts: · Computing methodologies  Semantic networks; Information extraction; Natural language generation.
+Additional Key Words and Phrases: knowledge graph construction, code, language model
+ACM Reference Format: Zhen Bi, Jing Chen, Yinuo Jiang, Feiyu Xiong, Wei Guo, Huajun Chen, and Ningyu Zhang. 2024. CodeKGC: Code Language Model for Generative Knowledge Graph Construction. 1, 1 (January 2024), 17 pages. https: //doi.org/10.1145/nnnnnnn.nnnnnnn
+Both authors contributed equally to this research. Corresponding Author. 1Code and datasets are available in https://github.com/zjunlp/DeepKE/tree/main/example/llm
+Authors' addresses: Zhen Bi, bizhen_zju@zju.edu.cn; Jing Chen, jingc0116@gmail.com, Zhejiang University, Hangzhou, Zhejiang, China and Zhejiang University - Ant Group Joint Laboratory of Knowledge Graph, Hangzhou, Zhejiang, China; Yinuo Jiang, Zhejiang University, Hangzhou, Zhejiang, China and Zhejiang University - Ant Group Joint Laboratory of Knowledge Graph, Hangzhou, Zhejiang, China, 3200100732@zju.edu.cn; Feiyu Xiong, feiyu.xfy@zju.edu.cn; Wei Guo, huaisu@taobao.com, Alibaba Group, Hangzhou, Zhejiang, China; Huajun Chen, huajunsir@zju.edu.cn; Ningyu Zhang, zhangningyu@zju.edu.cn, Zhejiang University, Hangzhou, Zhejiang, China and Zhejiang University - Ant Group Joint Laboratory of Knowledge Graph, Hangzhou, Zhejiang, China.
+Permission to make digital or hard copies of all or part of this work for personal or classroom use is granted without fee provided that copies are not made or distributed for profit or commercial advantage and that copies bear this notice and the full citation on the first page. Copyrights for components of this work owned by others than ACM must be honored. Abstracting with credit is permitted. To copy otherwise, or republish, to post on servers or to redistribute to lists, requires prior specific permission and/or a fee. Request permissions from permissions@acm.org. © 2024 Association for Computing Machinery. XXXX-XXXX/2024/1-ART $15.00 https://doi.org/10.1145/nnnnnnn.nnnnnnn
+, Vol. 1, No. 1, Article . Publication date: January 2024.
+
+2
+
+Zhen Bi, Jing Chen, Yinuo Jiang, Feiyu Xiong, Wei Guo, Huajun Chen, and Ningyu Zhang
+
+1 INTRODUCTION
+Knowledge Graphs (KGs) typically consist of a collection of nodes (entities) and edges (relationships) that interconnect these entities. High-quality KGs predominantly depend on human-curated structured or semi-structured data [33]. Consequently, Knowledge Graph Construction (KGC) has been proposed as a method for populating a KG with new knowledge components, such as entities and relations. Existing techniques such as [30, 38], have achieved considerable success by employing pipelines that systematically integrate named entity recognition [12], entity linking [31], and relation extraction [37]. Nonetheless, these approaches introduce certain limitations, including the propagation of errors and overlapping issues, which can adversely affect the quality and accuracy for the knowledge graph construction.
+To address the accumulation of errors and overlapping issues, it is often recommended to design end-to-end approaches. Framing knowledge graph construction as end-to-end natural language generation is an increasingly promising technique that has led to empirical success [14]. This approach involves converting relational structures into serialized texts and using expressive blackbox neural networks, such as pre-trained language models (LMs) [11, 21], to predict flattened texts that encode the relational structure. Generative language models have demonstrated their effectiveness in various knowledge graph construction tasks such as entity extraction [32], entity typing [35], relation extraction [10], triple extraction [34], and event extraction [15].
+Despite the empirical success, it is impractical to expect neural networks can easily handle intricate intra-structure dependencies, especially for scenarios where facts are complexly overlapped. Language models struggle to generate these unnatural outputs because the syntax and structure of this type of text is different from the free-form text in the training data. Furthermore, generating structured sentences that push neighboring nodes (overlapping facts) farther apart is difficult since semantically relevant words often occur within close proximity to each other. Take Figure 1 as an instance, the relations between two entities can stretch across many words, and flattening such structured information into a string may result in poor generation performance. Recent progress in large-language models of code (Code-LLMs) [2] has demonstrated the potential to employ CodeLLMs for complex reasoning [3], structured commonsense reasoning [18] and structure prediction [26] tasks. Our main insight is that language models of code may model structure better than those of natural language. Intuitively, we formulate knowledge graph construction as code generation tasks, which can augment pre-trained language models through explicit modeling of the structure.
+Therefore, we propose a schema-aware Code prompt and rationale-enhanced Knowledge Graph Construction method dubbed CodeKGC. Inspired by the great structural and reasoning abilities of Code-LLMs, we convert the natural language to the code formats instead of representing them as fat word strings. We design structural code prompts that encode schema information to maintain intrinsic semantic structures. By utilizing base class definitions, we can effectively model predefined entity and relation schema in the KGs. We also propose a rationale-enhanced generation method for generating entities and relations within the model, which helps to improve the ability of knowledge extraction. During the generation procedure, a rational-enhanced module is leveraged to elicit the power of language models. To demonstrate the effectiveness of our approach, we apply CodeKGC to three datasets: ADE, CONLL04 and SciERC. We evaluate the performance of our proposed model in both zero-shot and few-shot settings. Experimental results on benchmark datasets show that the proposed approach can obtain better performance compared with baselines. These results demonstrate the effectiveness of the proposed method, and its potential to solve complex language modeling problems.
+
+, Vol. 1, No. 1, Article . Publication date: January 2024.
+
+CodeKGC: Code Language Model for Generative
+
+Knowledge Graph Construction
+
+3
+
+Fig. 1. Code language model for generative knowledge graph construction. The structure of code can help to understand complex structural information in natural language and we design structural code prompts as input into the language models.
+1.1 Contribution The contributions of our study can be summarized as follows:
+· First, we propose CodeKGC, a novel method which re-structures natural language into code formats for generative knowledge graph construction. Our proposed approach is the first to re-structure code data for the knowledge graph construction task.
+· Second, we design effective code prompting approach to encode the schema in the KGs through the effective modeling of code definitions. Particularly, we also propose a novel rationale-enhanced generation method to improve the ability of knowledge extraction. Our designed code-formatted approach enables the language model to efficiently extract the requisite entities and relations from the text.
+· Finally, we conduct extensive experiments to evaluate the performance of the proposed model. We evaluate our proposed method on three datasets and demonstrate that CodeKGC outperforms all baseline models in various evaluation settings, particularly in addressing complex structure extraction problems such as overlapping issues.
+1.2 Outline of the Article The remainder of this article is structured as follows. In Section 2, we introduce related works on knowledge graph construction and provide a detailed description of the code large language model and re-structured learning. In Section 3, we first give an overview of our designed CodeKGC, then explain the schema-aware code prompt design and rational-enhanced generation. In Section 4, we present the results of experiments on three knowledge graph construction datasets, which demonstrate the effectiveness of our proposed method. Additionally, we provide an ablation study to analyze our proposed model. In Section 5, we discuss the potential reasons for the potential of code language models in structural and reasoning tasks. In Section 6, we conclude the article with discussions on future works.
+, Vol. 1, No. 1, Article . Publication date: January 2024.
+
+4
+
+Zhen Bi, Jing Chen, Yinuo Jiang, Feiyu Xiong, Wei Guo, Huajun Chen, and Ningyu Zhang
+
+2 RELATED WORK
+2.1 Knowledge Graph Construction
+The knowledge graph construction task mainly focus on extracting structural information from unstructured texts. Specifically, extracting relational triples from the text plays a vital role in constructing large-scale knowledge graphs. Wei et al. [30] revisit the relational triple extraction task and propose a novel cascade binary tagging framework (CasRel) derived from a principled problem formulation. Ren et al. [22] propose a bidirectional extraction framework-based method that extracts triples based on the entity pairs extracted from two complementary directions. For zero-shot relation triplet extraction, Chia et al. [4] proposes to synthesize relation examples by prompting language models to generate structured texts. Lu et al. [16] propose a unified text-tostructure generation framework, namely UIE, which can universally model different IE tasks. Wei et al. [30] reexamines the task of relational triple extraction and introduces a novel cascading binary tagging framework (CasRel) originating from a well-founded problem formulation. Ren et al. [22] proposes a method based on a bidirectional extraction framework that extracts triples by leveraging entity pairs obtained from two complementary directions. For zero-shot relation triplet extraction, Chia et al. [4] suggests synthesizing relation examples by prompting pre-trained language models. Lu et al. [16] introduces a unified text-to-structure generation framework called UIE, capable of universally modeling various IE tasks. Nevertheless, most mainstream methods take the serialized sequence as the input and ignore the natural structure format of language and semantic knowledge. To the best of our knowledge, our proposed approach is the first to re-structure code data for the knowledge graph construction task.
+2.2 Code Large Language Model
+Code language models [6, 8, 27], have showcased their extraordinary prowess in generating code and can now tackle basic programming tasks. Chen et al. [2] represents a GPT language model optimized using publicly accessible GitHub code, with research focusing on its ability to write Python code. Li et al. [13] introduces a system devised for code generation that can generate innovative solutions to challenges demanding more sophisticated reasoning. Recently, the combination of language models and code, facilitated by the emergence of code language models, has proven to be effective in tackling specific tasks [20]. Madaan et al. [18] defines structured commonsense reasoning tasks as code generation tasks, demonstrating that pre-trained code-based LMs exhibit superior structured commonsense reasoning capabilities compared to natural language LMs. Wang et al. [26] harnesses the text-to-structure translation proficiency to address structured prediction tasks within the NLP domain. Gao et al. [7] introduces a novel technique known as PAL, which employs the large language model to interpret natural language problems and create programs as intermediate reasoning steps. However, the solution phase is delegated to a programmatic runtime, such as a Python interpreter. Chen et al. [3] proposes program of thoughts (PoT) which disentangles computation from reasoning. However, for the task of knowledge graph construction, how to utilize code language to model structural information has not been studied.
+2.3 Re-structured Learning
+In the re-structured learning paradigm [36], the importance of data is emphasized, with model pretraining and fine-tuning for downstream tasks considered as processes of data storage and retrieval. Wang et al. [25] presents a method to enhance the structural comprehension abilities of language models by pre-training them on task-agnostic corpora to generate structures from text. Paolini et al. [19] proposes a novel framework for addressing various structured prediction language tasks, such as joint entity and relation extraction, nested named entity recognition, and more. Wang et al.
+
+, Vol. 1, No. 1, Article . Publication date: January 2024.
+
+CodeKGC: Code Language Model for Generative
+
+Knowledge Graph Construction
+
+5
+
+[24] illustrates that a straightforward pre-training task of predicting the correspondence between relational information and input text is an effective approach to generate task-specific output. The transformation of natural language into structured language has also proven to be efficient for universal information extraction [16]. Our work is distinct from previous re-structured learning approaches in that we leverage the naturally structured and semantically-rich code language to enhance the learning of structural prompts.
+
+3 CODEKGC: CODE LANGUAGE MODEL FOR GENERATIVE KNOWLEDGE GRAPH CONSTRUCTION
+We introduce a novel method, named CodeKGC, which re-structures natural language into code language for generative knowledge graph construction. As shown in Figure 2, CodeKGC consists of two main components: schema-aware prompt construction (Section 3.1), the rationale-enhanced generation (Section 3.2).
+
+3.1 Schema-aware Prompt Construction
+We frame the knowledge graph construction task as the code generation problem. Each training instance for such tasks is in the form (T , G), where T is a text input, and G is the knowledge graph to be generated. It should be noted that G are triples which consists of entities and their connected relations. Since LMs trained on free-form natural language text are likely to fail to capture the topology of the relational structure, as shown in Figure 1, the key idea of our method is to transform a set of output triples (graph G) into a semantically equivalent program language written in Python (graph G ). We use the pre-defined script, which conforms to the grammatical structure of Python, to transform the original sample (T , G) into code format (T, G ). The re-structured language will be fed into the code language model by our proposed CodeKGC. When doing the inference, we eventually convert it back into the graph G.
+Specifically, we convert the sentence pair into a series of pre-defined classes, and construct a task prompt containing a Docstrings which describes the task. An example of a task prompt can be found in the bottom right of Figure 2. We define a totally new class Extract to do the extraction process from the Docstrings. The incomplete task prompt we build here is used to guild the output of the code language model. With the re-structured code formats which retain the syntax and structural features, the code language model tends to generate more accurate relations and entities.
+The schema in the KG describes the structure of the data, including the entities, relations, properties and constraints that make up the graph. We can integrate the schema information by the inheritance of Python class definitions. As shown in Figure 2, we define base classes Entity and Relation that describe the general definitions for relations and entities for knowledge graph construction. For example, to represent the entities that belong to the type "person", the Person class should inherit from the base Entity class. We further define Triple class to represent the triples contained in the textual input. Triple class consists of the head-tail entity pairs and their corresponding relationship. Each triple will be represented as the instance of their corresponding entity and relation type classes. For example, if there exists a triplet (, ,  ), we represent it with our designed code formats, Triple(LOC("London"), Rel("located in"), LOC("London")). It should be noted that the input augments for task prompt Extract include a list of Triple instances. By this way, we can naturally model complex structural information in language, such as nested entities or relationships. Even for the constraints between entity types, we can define specific instantiated triple classes to model this information.
+, Vol. 1, No. 1, Article . Publication date: January 2024.
+
+6
+
+Zhen Bi, Jing Chen, Yinuo Jiang, Feiyu Xiong, Wei Guo, Huajun Chen, and Ningyu Zhang
+
+Schema Prompt
+class Rel: def __init__(self, name: str): self.name = name
+class Entity: def __init__(self, name: str): self.name = name
+......
+
+Base Definition
+
+class Work_for(Rel):
+
+def __init__(self, name: str): self.name = name
+
+class person(Entity): def __init__(self, name: str): super.__init__(name=name)
+
+......
+
+Schema
+
+class Triple:
+
+Information
+
+def __init__(self, head, relation, tail): self.head = head
+
+self.relation = relation self.tail = tail class Extract:
+
+def __init__(self, triples): self.triples = triples
+
+In-context Prompts
+""" "U.S. decision-makers should understand that the signals they send today will have major ramifications for the Israeli approach to the Arrow program," says Marvin Feuerwerger in a 1991 study for the Washington Institute for Near East Policy. """
+Rationales (optional)
+# The candidate relations in this sentences # Rel(`Work for') # The candidate entities in this sentences # organization('Washington Institute for Near East Policy')
+extract = Extract([ Triple(person(`Marvin Feuerwerger'), Rel(`Work for`), organization('Washington Institute for Near East Policy')),
+])
+
+Task Prompt
+""" Very strong south winds accompanied the storm system , with 50-to 70-mph wind gusts reported near Grande Isle and St. Albans , Vt. , blowing down a large radio tower and causing several power outages. """
+
+Mode Output
+
+# The candidate relations Rel(...)
+# The candidate entities Person(...)
+
+Rationale Generation
+
+extract = Extract([Triple( ..., ..., ...), Triple( ..., ..., ...), Triple(...)])
+
+Fig. 2. Overview of the proposed CodeKGC with code languages. The original natural language is converted into code formats and then fed into the code language model which is guided by a specified task prompt. We use schema-aware prompt to preserve the relations, properties, and constraints in the knowledge graph. Inspired by [29], CodeKGC also utilizes an optional rationale-enhanced module as an intermediate reasoning step in the in-context learning samples.
+
+""" U.S. decision-makers should understand that the signals they send today will have major ramifications for the Israeli approach to the Arrow program, " says Marvin Feuerwerger in a 1991 study for the Washington Institute for Near East Policy. """
+Rationale as intermediate steps (optional)
+Step 1 relation identification from text
+# The candidate relations in this sentences # Rel('Work for')
+Step 2 entity extraction with relations
+# The candidate entities in this sentences # person('Marvin Feuerwerger') # organization('Washington Institute for Near East Policy')
+Step 3 final result generation
+extract = Extract([Triple(person('Marvin Feuerwerger'), Rel(`Work for`), organization('Washington Institute for Near East Policy'))])
+Fig. 3. Code generation with rationales. We try to decompose the task of knowledge graph constructions into multiple intermediate steps. By leveraging logical reasoning chains like chain-of-thought [29], CodeKGC specializes in solving complex structural patterns.
+
+3.2 Rationale-enhanced Generation To perform the task on an unseen example, we give the code LM a few exemplars of completed ground-truth relational triples that are composed of task prompts. We select  samples from the dataset that include all  relation types and concatenate them with the task prompts for -shot learning. Note that the general ability to discover new content, such as class definitions of new entities and relations, can help to generate new instances to boost the KG construction performance.
+, Vol. 1, No. 1, Article . Publication date: January 2024.
+
+CodeKGC: Code Language Model for Generative
+
+Knowledge Graph Construction
+
+7
+
+Inspired by chain of thoughts [29], we propose an optional rationale-enhanced generation method to improve the underlying reasoning abilities. For normal prompting, given the textual code input T , prompt P, and the and probabilistic model  , we aim to maximize the likelihood of the G as:
+
+| G |
+
+ (G |T, P) =  (, |T, P, < )
+
+(1)
+
+
+
+where  is the -th token of G , and |G | denotes the length of G which will be generated. For few-shot prompting, P is comprised of  exemplars of (T, G ) pairs. We have designed a specific rationale to enhance the reasoning capabilities of language models. Therefore, we add rationales R
+
+(reasoning
+
+steps)
+
+into
+
+prompt
+
+where
+
+P
+
+=
+
+{(T ,
+
+
+R ,
+
+G
+
+
+)
+
+}=1
+
+,
+
+thus
+
+Equation
+
+1
+
+can
+
+be
+
+reformed
+
+to:
+
+ (G |T, P) =  (G |T, P, R) (R |P, T )
+
+(2)
+
+where  (R |P, T ) and  (G |T, P, R) are defined as:
+
+|R|
+
+ (R |P, T ) =  ( |P, T, < )
+
+(3)
+
+
+
+| G |
+
+ (G |T, P, R) =  (, |T, P, R, < )
+
+(4)
+
+
+
+where  is one step of total |R| reasoning steps. Specifically, we decompose complex knowledge graph reasoning tasks into multiple steps, as shown in the Figure 3. For the construction of
+
+knowledge graphs, the key point is to identify relations and extract their corresponding entities.
+
+Therefore, our designed reasoning chain includes three steps: relationship identification, entity
+
+extraction, and the final knowledge graph construction. Relying on our designed rationale, the
+
+model can more accurately complete the task of knowledge graph construction by utilizing the
+
+reasoning chain.
+
+4 EXPERIMENT
+Extensive experiments are conducted to evaluate the performance of the CodeKGC by answering the following research questions:
+· RQ1: How does our CodeKGC perform when competing with baselines of knowledge graph construction?
+· RQ2: How do key modules in our approach contribute to the overall performance? · RQ3: How effective is the proposed CodeKGC model in addressing overlapped or complex
+patterns? · RQ4: How do smaller code language models affect the performance of CodeKGC?
+
+4.1 Settings
+4.1.1 Datasets. We evaluate the proposed CodeKGC on three popular benchmark datasets, ADE [9], CoNLL04 [23] and SciERC [17].
+· ADE [9] is a collection of texts that focuses on the identification and extraction of adverse drug events. It has 1 relation (adverse effect) and 2 entity types (disease, drug). We split the original dataset into train, valid and test set, and then select some samples from the train dataset as prompt samples under the few-shot setting. Limited by the time constraints of the API call, we extract 300 samples randomly chosen from the test dataset for evaluation.
+
+, Vol. 1, No. 1, Article . Publication date: January 2024.
+
+8
+
+Zhen Bi, Jing Chen, Yinuo Jiang, Feiyu Xiong, Wei Guo, Huajun Chen, and Ningyu Zhang
+
+Table 1. Dataset statistics for our smaller pre-training models.
+
+Data Source Sentences Triples Relations Descriptions
+
+T-REx [5] 838,821 4,378,318 10,496 TEKGEN [1] 6,310,061 10,609,697 1,013 KELM [1] 15,616,551 35,117,608 59,904
+
+Large-scale corpus having alignments between Wikidata triples and DBpedia abstracts Large-scale corpus constructed by distant super-vision, which was previously used for training data-to-text generation models Synthetic corpus containing the entire Wikidata with text sentences
+
+Overall
+
+22,765,433 50,105,623 71,413
+
+Corpus in code format
+
+· The CoNLL04 [23] dataset is a widely used benchmark for evaluating information extraction and relation extraction tasks. There are 4 relation (such as work for, live in) and 3 entity types (person, organization, live in). We randomly select a few samples as demonstrations from the train dataset in the few-shot setting.
+· SciERC [17] represents a dataset designed for a multi-task framework, focusing on the identification and classification of entities, relations, and coreference clusters found in scientific papers. It consists of 7 relations (such as hyponym-of, used-for) and 6 entity types (such as method and task). We also randomly select several samples from the train dataset and use the whole test dataset for evaluation.
+4.1.2 Baselines for Comparison. For RQ1, RQ2 and RQ3, we use the large code language models (GPT-3.5 series) text-davinci-002 and text-davinci-003 as the backbone, both of which are trained on code and textual corpus. Due to the limited use 2 of code-davinci-002 , we only conduct ablation experiments to compare CodeKGC with different models. For fair comparison, we use vanilla prompt and the supervised model UIE [16] as our main baselines. We evaluate our proposed CodeKGC in both zero-shot and few-shot settings. Vanilla prompt here means the traditional prompt, which is textual and non-code structured. The explanations for code models we use as backbones are shown below,
+· code-davinci-002 (also known as Codex) is a model that has been trained on both text and code corpus, and is especially good at translating natural language to code.
+· text-davinci-002 is a supervised instruction-tuned model based on Codex. However, it may lose some of its code understanding abilities due to its instruction-tuning strategy.
+· text-davinci-003 is the most capable GPT-3 model, which is capable of handling complex instructions and generating longer-form content. The training corpus of text-davinci-003 also contains a large amount of code data.
+For RQ4, we pre-train a smaller code language model initialized by T5 [21] and CodeT5 [27] and then evaluate the performance of our approach. The small pre-trained model we pre-train here has only 770 million parameters, which is much less than the GPT 3.5 series models (over 10 billion parameters). We re-structure the corpus of T-REx [5], TEKGEN [1] and KELM [1] into code format (Python) and build a totally new dataset for pre-training. Detailed statistics can be found in Table 1.
+4.1.3 Evaluation Protocols. We calculate the relation strict micro F1 score for the knowledge graph construction task. It is important to note that a triple is considered correct only if the head and tail entities and the relation in the triplet completely match. Although our model can predict the
+2On March 23rd, OpenAI discontinued support for the Codex (code-davinci-002) API.
+, Vol. 1, No. 1, Article . Publication date: January 2024.
+
+CodeKGC: Code Language Model for Generative
+
+Knowledge Graph Construction
+
+9
+
+Table 2. Performance of CodeKGC in zero-shot and few-shot settings (relation strict micro F1). The bold numbers denote the best results and the underlined ones are the second-best performance. We also report score improvement results () over the same backbone model. For the zero-shot setting, we replace 1-shot relations with their synonyms. For the few-shot setting, we choose 3-shot relation setting as demonstrations.
+
+Zero-Shot Few-Shot
+
+Comparable SOTA
+
+ADE
+
+Dataset CONLL04 SciERC
+
+UIE [16] Vanilla Prompt (text-davinci-002) Vanilla Prompt (text-davinci-003) CodeKGC (text-davinci-002) CodeKGC (text-davinci-003)
+
+24.3 41.2 41.7 42.5 (1.3) 43.7 (2.0)
+
+16.1 18.4 30.5 35.8 (17.4) 41.6 (11.1)
+
+10.3 12.2 18.1 15.0 (2.8) 19.5 (1.4)
+
+UIE [16] Vanilla Prompt (text-davinci-002) Vanilla Prompt (text-davinci-003) CodeKGC (text-davinci-002) CodeKGC (text-davinci-003)
+
+50.3 45.7 58.8 61.5 (15.8) 64.2 (5.4)
+
+39.0 28.2 43.2 42.7 (14.5) 49.6 (6.4)
+
+19.2 14.1 18.8 18.5 (4.4) 24.7 (5.9)
+
+corresponding types of entities, these types are not included when calculating the F1 score. For all experimental setups, we run three times and use the average results in the end to ensure fairness.
+4.1.4 Parameters Settings. For RQ1, RQ2 and RQ3, we utilize the API interface provided by OpenAI and set the temperature to 0.5 and max_tokens to either 256 or 512. Meanwhile, we stop the code generation whenever any of the special patterns such as """, class or #. To solve RQ4, we pre-train the small code language model by utilizing Pytorch 1.13 with deepspeed3 package and conduct experiments on 4 NVIDIA Tesla V100 GPUs for three days. In the fine-tuning stage of small language models, all optimization is performed by using the AdamW optimizer.
+4.2 Results and Analysis
+4.2.1 Main Results. Table 2 shows the performance of CodeKGC in zero-shot and few-shot settings. In the zero-shot setting, we select one sample for each relation and replace the relations with their synonyms. The experimental results demonstrate that our proposed CodeKGC outperforms traditional supervised method UIE and conventional text prompts on all three datasets. We note that our approach exhibits substantial score improvements especially in CONLL04. We also note that the performance of CodeKGC on the ADE dataset is limited. This is because the ADE dataset is a medical corpus with a large number of acronyms, which makes extraction more difficult. Therefore, in the zero-shot setting, the performance of CodeKGC is similar to that of Vanilla Prompt.
+In the few-shot setting, we choose 3-shot relation setting as demonstrations. We find our proposed approach obtains excellent performance compared to UIE. Compared to Vanillar Prompt, CodeKGC proves more effective when employing text-davinci-003. Specifically, CodeKGC achieves 5.4, 6.4 and 5.9 score improvement on ADE, CONLL04 and SciERC datasets, which might be due to the fact that text-davinci-003 utilizes higher-quality code data in the pre-training stage. Although text-davinci-003 itself performs better than text-davinci-002, CodeKGC with text-davinci-002 remains competitive to Vanilla Prompt with text-davinci-003. CodeKGC even with text-davinci-002 performs better than Vanilla Prompt with text-davinci-003 on the ADE dataset. It demonstrates the
+3https://www.deepspeed.ai
+, Vol. 1, No. 1, Article . Publication date: January 2024.
+
+10
+
+Zhen Bi, Jing Chen, Yinuo Jiang, Feiyu Xiong, Wei Guo, Huajun Chen, and Ningyu Zhang
+
+CodeKGC
+90 text-davinci-003
+70
+
+Vanillar Prompt
+90 70
+
+50
+
+50
+
+30
+
+30
+
+10
+
+10
+
+1
+
+5
+
+10
+
+15
+
+1
+
+5
+
+10
+
+15
+
+90
+
+90
+
+text-davinci-002
+
+70
+
+70
+
+50
+
+50
+
+30
+
+30
+
+10 1
+
+5
+
+10
+
+90 code-davinci-002
+70
+
+10
+
+15
+
+1
+
+90
+
+70
+
+5
+
+10
+
+15
+
+50
+
+50
+
+30
+
+30
+
+10
+
+10
+
+1
+
+5
+
+10
+
+15
+
+1
+
+5
+
+10
+
+15
+
+Number of in-context examples (k-shot)
+
+Fig. 4. Few-shot performance comparison in ADE dataset between code-based prompt (CodeKGC) and text-based prompt (Vanilla Prompt) on different models (relation strict micro F1).
+
+effectiveness of our designed code-formatted prompts in enabling the language model to efficiently extract the requisite entities and relations for knowledge graph construction from the text.
+To further investigate the impact of the number of in-context samples, we evaluate the performance of CodeKGC and Vanilla Prompt on the ADE dataset using different settings of {1, 5, 10, 15}. In addition to text-davinci-002 and text-davinci-003, we also select another code model (Codex) as the backbone to further investigate the impact of the Code large model. From Figure 4, we notice that CodeKGC obtains better few-shot performance than Vanilla Prompt. We observe that, as the number of in-context samples increases, our CodeKGC consistently outperforms the baseline in all models (text-davinci-002, text-davinci-003 and code-davinci-002), indicating that the language of code indeed has the better ability to model structure and address the RQ1.
+Another significant finding in Figure 4 is that when the same CodeKGC is applied with textdavinci-002 and code-davinci-002 as the backbone, the performance of code-davinci-002 is better than that of text-davinci-002. It might be because code-davinci-002 has stronger performance on code-related tasks such as code generation and code completion tasks. Therefore, code-davinci-002 shows more advantages in information extraction tasks.
+4.2.2 Results of Prompt Variations of CodeKGC. To address the Q2, we conduct experiments to investigate the impacts of key module variations of our proposed CodeKGC.
+Impacts of schema-aware prompt. To study the impacts of schema-aware prompt, we choose the dataset CoNLL04, which consist of multiple relations and entities. In Figure 5, we compare
+, Vol. 1, No. 1, Article . Publication date: January 2024.
+
+CodeKGC: Code Language Model for Generative
+
+Knowledge Graph Construction
+
+11
+
+60
+
+55
+
+50
+
+45
+
+43.2
+
+40.0 41.1
+40
+
+35
+
+30
+
+25
+text-davinci-002
+
+CodeKGC
+
+w/o Schema
+
+49.6
+
+w/o Rationale
+
+46.5
+
+44.8
+
+text-davinci-003
+
+Fig. 5. Impacts of prompt variation in the CoNLL04 dataset. w/o is without schema-aware prompt and rationales. Our designed schema-aware prompt and rationale-enhanced generation obviously enhance the performance of our proposed approach.
+
+text-davinci-002
+
+51.8
+
+48.1
+
+code-davinci-002
+
+53.6
+
+59.7
+
+65
+
+0
+
+65
+
+Left: Vanillar Prompt
+
+Right: CodeKGC
+
+Fig. 6. Few-shot prediction of CodeKGC and Vanilla Prompt in hard examples (relation strict micro F1). CodeKGC with code-davinci-002 correctly predicts the overlapping triples, while Vanilla Prompt fails.
+
+the result when CodeKGC is prompt with and without schema-aware prompt. We find that our proposed schema-aware method can effectively encode the structural feature. By integrating the schema information in the knowledge graph, CodeKGC can efficiently leverage the powerful encoding abilities of code language models.
+Impacts of rationale-enhanced generation. The results from Figure 5 on the CoNLL04 dataset show that rationale contributes to improving the performance of CodeKGC on text-davinci-002 and text-davinci-003. Incorporating rationales in knowledge graph construction tasks is beneficial because rationales assist in guiding the model's focus on specific aspects of the input text during generation, leading to more effective learning and improved understanding of complex relationships in the graph. It should be noted that we also find limitations with the rationale during the experiment. When the sample size is too small, lengthy prompts can have a negative impact on the model.
+4.2.3 Results of Handling Hard Examples. To investigate overlapping issues, we focus on extracting multiple intersecting or overlapping triples from the same text. We sample the overlapping triples, termed as 'hard samples', from the ADE dataset and then evaluate the performance of CodeKGC and Vanilla Prompt using text-davinci-002 and code-davinci-002 as backbones. In Figure 6, we compare the results in few-shot setting, which are evalauted in the hard samples. We observe that CodeKGC with code-davinci-002 achieves better results compared to Vanilla Prompt with text-davinci-002. It shows that CodeKGC can enhance the performance of generating overlapping triples. However, we also notice that the performance of Vanillar Prompt (text-davinci-002) is significantly better than that of CodeKGC(text-davinci-002). Although text-davinci-002 is also a
+, Vol. 1, No. 1, Article . Publication date: January 2024.
+
+12
+
+Zhen Bi, Jing Chen, Yinuo Jiang, Feiyu Xiong, Wei Guo, Huajun Chen, and Ningyu Zhang
+
+Prenatal cytomegalovirus (CMV) infection associated with severe brain damage was detected in an infant whose mother had been treated with prednisolone and azathioprine for systemic lupus erythematosus (SLE) .
+CodeKGC
+Prenatal cytomegalovirus (CMV) infection associated with severe brain damage was detected in an infant whose mother had been treated with prednisolone and azathioprine for systemic lupus erythematosus (SLE) .
+Vanillar Prompt
+Prenatal cytomegalovirus (CMV) infection associated with severe brain damage was detected in an infant whose mother ha d been treate d w ith pre dnisolone an d azathioprine for systemic lupus erythematosus (SLE)
+CodeKGC
+Prenatal cytomegalovirus (CMV) infection associated with severe brain damage was detected in an infant whose mother ha d been treate d w ith pre dnisolone an d azathioprine for systemic lupus erythematosus (SLE)
+Vanillar Prompt
+Fig. 7. Cases of CodeKGC and Vanilla Prompt in hard examples. CodeKGC with code-davinci-002 correctly predicts the overlapping and long-range triples, while Vanilla prompt fails.
+hybrid code model, CodeKGC heavily relies on a more powerful code pre-trained model as its foundation when solving complex structures. It is also a limitation of our current approach.
+As depicted in Figure 7, we select some cases from the prediction result and find that CodeKGC is powerful in handling the cases of long-distance dependencies and overlapping issues. When both two overlapped triples (the entity brain damage and CMV ) are nested, our approach can accurately extract the relations and entities, which demonstrates superiority in addresses Q3. It is also worth noting that vanilla natural language generation models with flattened strings tend to push neighboring nodes farther apart, while code language preserves structural information, thereby improving the performance in handling overlapping cases.
+4.2.4 Analysis of Smaller Code Language Models. To address Q4, we do not directly choose to use existing large pre-trained code models with a huge number of parameters (such as GPT-3.5 serious models). Instead, we pre-train a model with fewer parameters on our own. Specifically, we build a totally new pre-training dataset by re-structuring structural knowledge into code corpus and the triples in the source knowledge base (Table 1) are converted into code format. Then we use T5 [21] and CodeT5 [27] as backbone and pre-train the new smaller code language model on our build code dataset. Finally, we use four pre-trained models (pre-trained T5 and CodeT5, not pre-trained T5 and CodeT5) to fine-tune our CodeKGC on the ADE dataset and compare their performance.
+From Figure 8, when both CodeT5 and T5 are not further pre-trained, CodeT5 performs significantly better which is because CodeT5 inherently understands structured code knowledge. However, we notice that pre-training with re-structured T5 performs better than re-structured CodeT5, indicating that it is crucial for knowledge graph construction models to understand textual semantics. Furthermore, we also test the performance of the SOTA model UIE [16] and CodeKGC performs slightly worse compared to UIE. We argue that for knowledge graph construction as code
+, Vol. 1, No. 1, Article . Publication date: January 2024.
+
+CodeKGC: Code Language Model for Generative
+
+Knowledge Graph Construction
+
+13
+
+100
+
+90
+
+80
+
+75.6
+
+UIE: 81.1
+
+T5 CodeT5
+
+70
+
+68.6
+
+60
+
+58.8
+
+52.2
+
+50
+
+40
+
+30
+Restructured Code Pre-trained
+
+Not Pre-trained
+
+Fig. 8. CodeKGC performance in ADE dataset with small code LMs and (relation strict micro F1).
+
+generation, the model should have the ability of semantic understanding and code generation. We can't have our cake and eat it too due to the limited parameter space. Such powerful ability may be emerged by large language models [28].
+5 DISCUSSION Data Format for Structure Prediction. The data format is essential for the knowledge graph
+construction task, which is fundamentally the structure prediction problem. Many existing methods either process natural language in a flattened way or exploit structural information through constrained decoding techniques. However, such explicit modeling of structural information does not effectively address the knowledge graph construction problem. We have noticed that, in addition to natural language, code language inherently carries structural information. Although some work (like UIE [16] and DeepStruct [25]) has attempted to handle structural information by designing specific structural languages, code language is more prevalent and universal in practice. Lastly, we also observe that with the success of LLMs like ChatGPT, a wealth of instruction tuning data is available. Instruction tuning has proven that interactive natural language is a more effective data format and can enable large language models to better understand structural information.
+Code Language vs. Natural Language . Code language and natural language are two distinct forms of language. Code language (programming language) serves as a means of communication between humans and machines, characterized by strict grammar and syntax rules. Natural languages, on the other hand, are primarily human-readable languages, used to express a wide range of ideas, emotions, and intentions. Both types of language can convey semantics, but the semi-structured nature of code languages allows them not only to include elements of natural language but also to serve as a bridge for better modeling of structured information. Furthermore, as programmable and executable languages, code languages inherently possess greater logical coherence, providing a natural advantage for certain reasoning tasks. Therefore, the research for code languages holds academic significance and scientific value.
+6 CONCLUSION AND FUTURE WORK In this paper, we have presented a novel method CodeKGC that leverages the code language model for generative knowledge graph construction. By converting natural language into code formats, our approach effectively encodes the schema structure of entities and relationships in the knowledge graph. We also propose rationale-enhanced generation method, which contributes to
+, Vol. 1, No. 1, Article . Publication date: January 2024.
+
+14
+
+Zhen Bi, Jing Chen, Yinuo Jiang, Feiyu Xiong, Wei Guo, Huajun Chen, and Ningyu Zhang
+
+the decoupling of knowledge within the language model. Extensive experiment results reveal that the proposed model can obtain better performance for the knowledge graph construction task.
+In future work, we plan to further explore the capabilities of our CodeKGC method in several directions: 1) Integration of more advanced Code-LLMs: As the field of language models for code continues to evolve, we will incorporate newer and more powerful Code-LLMs into our framework, which might lead to further improvements in knowledge graph construction performance. 2) Application to additional knowledge graph tasks: Our approach can be extended to more knowledge graph-related tasks, such as knowledge graph completion or complex reasoning tasks. Exploring the applicability and effectiveness of our method will help to further validate its versatility. 3) Optimization of code prompt generation: The current code prompts we design a can be further refined to better capture the nuances of the underlying entity and relation structures. Leveraging techniques from prompt engineering or automatic prompt generation can also help to improve the quality and effectiveness of the code prompts. 4) Impact of code data to LLMs: we will continue to investigate a more critical question, exploring what form of code data truly endows LLMs with powerful structural prediction and reasoning capabilities.
+
+AUTHOR CONTRIBUTION
+Zhen Bi: Conceptualization, Methodology, Software, Writing­original draft. Jing Chen: Conceptualization, Methodology, Software, Writing­review & editing. Yinuo Jiang: Methodology, Software. Feiyu Xiong: Conceptualization, Writing­review & editing. Wei Guo: Conceptualization, Investigation. Huajun Chen: Supervision, Project administration. Ningyu Zhang: Supervision, Project administration, Funding acquisition;
+
+ACKNOWLEDGMENTS
+We would like to express gratitude to the anonymous reviewers for their kind comments. This work was supported by the National Natural Science Foundation of China (No. 62206246), the Fundamental Research Funds for the Central Universities (226-2023-00138), Zhejiang Provincial Natural Science Foundation of China (No. LGG22F030011), Ningbo Natural Science Foundation (2021J190), CAAI-Huawei MindSpore Open Fund, Yongjiang Talent Introduction Programme (2021A156-G), CCF-Baidu Open Fund, and Information Technology Center and State Key Lab of CAD&CG, Zhejiang University.
+
+REFERENCES
+[1] Oshin Agarwal, Heming Ge, Siamak Shakeri, and Rami Al-Rfou. 2021. Knowledge Graph Based Synthetic Corpus Generation for Knowledge-Enhanced Language Model Pre-training. In Proceedings of the 2021 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, NAACL-HLT 2021, Online, June 6-11, 2021, Kristina Toutanova, Anna Rumshisky, Luke Zettlemoyer, Dilek Hakkani-Tür, Iz Beltagy, Steven Bethard, Ryan Cotterell, Tanmoy Chakraborty, and Yichao Zhou (Eds.). Association for Computational Linguistics, 3554­3565. https://doi.org/10.18653/v1/2021.naacl-main.278
+[2] Mark Chen, Jerry Tworek, Heewoo Jun, Qiming Yuan, Henrique Ponde de Oliveira Pinto, Jared Kaplan, Harrison Edwards, Yuri Burda, Nicholas Joseph, Greg Brockman, Alex Ray, Raul Puri, Gretchen Krueger, Michael Petrov, Heidy Khlaaf, Girish Sastry, Pamela Mishkin, Brooke Chan, Scott Gray, Nick Ryder, Mikhail Pavlov, Alethea Power, Lukasz Kaiser, Mohammad Bavarian, Clemens Winter, Philippe Tillet, Felipe Petroski Such, Dave Cummings, Matthias Plappert, Fotios Chantzis, Elizabeth Barnes, Ariel Herbert-Voss, William Hebgen Guss, Alex Nichol, Alex Paino, Nikolas Tezak, Jie Tang, Igor Babuschkin, Suchir Balaji, Shantanu Jain, William Saunders, Christopher Hesse, Andrew N. Carr, Jan Leike, Joshua Achiam, Vedant Misra, Evan Morikawa, Alec Radford, Matthew Knight, Miles Brundage, Mira Murati, Katie Mayer, Peter Welinder, Bob McGrew, Dario Amodei, Sam McCandlish, Ilya Sutskever, and Wojciech Zaremba. 2021. Evaluating Large Language Models Trained on Code. CoRR abs/2107.03374 (2021). arXiv:2107.03374 https://arxiv.org/abs/2107.03374
+
+, Vol. 1, No. 1, Article . Publication date: January 2024.
+
+CodeKGC: Code Language Model for Generative
+
+Knowledge Graph Construction
+
+15
+
+[3] Wenhu Chen, Xueguang Ma, Xinyi Wang, and William W. Cohen. 2022. Program of Thoughts Prompting: Disentangling Computation from Reasoning for Numerical Reasoning Tasks. CoRR abs/2211.12588 (2022). https://doi.org/10.48550/ arXiv.2211.12588 arXiv:2211.12588
+[4] Yew Ken Chia, Lidong Bing, Soujanya Poria, and Luo Si. 2022. RelationPrompt: Leveraging Prompts to Generate Synthetic Data for Zero-Shot Relation Triplet Extraction. In Findings of the Association for Computational Linguistics: ACL 2022, Dublin, Ireland, May 22-27, 2022, Smaranda Muresan, Preslav Nakov, and Aline Villavicencio (Eds.). Association for Computational Linguistics, 45­57. https://doi.org/10.18653/v1/2022.findings-acl.5
+[5] Hady ElSahar, Pavlos Vougiouklis, Arslen Remaci, Christophe Gravier, Jonathon S. Hare, Frédérique Laforest, and Elena Simperl. 2018. T-REx: A Large Scale Alignment of Natural Language with Knowledge Base Triples. In Proceedings of the Eleventh International Conference on Language Resources and Evaluation, LREC 2018, Miyazaki, Japan, May 7-12, 2018, Nicoletta Calzolari, Khalid Choukri, Christopher Cieri, Thierry Declerck, Sara Goggi, Kôiti Hasida, Hitoshi Isahara, Bente Maegaard, Joseph Mariani, Hélène Mazo, Asunción Moreno, Jan Odijk, Stelios Piperidis, and Takenobu Tokunaga (Eds.). European Language Resources Association (ELRA). http://www.lrec-conf.org/proceedings/lrec2018/ summaries/632.html
+[6] Zhangyin Feng, Daya Guo, Duyu Tang, Nan Duan, Xiaocheng Feng, Ming Gong, Linjun Shou, Bing Qin, Ting Liu, Daxin Jiang, and Ming Zhou. 2020. CodeBERT: A Pre-Trained Model for Programming and Natural Languages. In Findings of the Association for Computational Linguistics: EMNLP 2020, Online Event, 16-20 November 2020 (Findings of ACL, Vol. EMNLP 2020), Trevor Cohn, Yulan He, and Yang Liu (Eds.). Association for Computational Linguistics, 1536­1547. https://doi.org/10.18653/v1/2020.findings-emnlp.139
+[7] Luyu Gao, Aman Madaan, Shuyan Zhou, Uri Alon, Pengfei Liu, Yiming Yang, Jamie Callan, and Graham Neubig. 2022. PAL: Program-aided Language Models. CoRR abs/2211.10435 (2022). https://doi.org/10.48550/arXiv.2211.10435 arXiv:2211.10435
+[8] Daya Guo, Shuai Lu, Nan Duan, Yanlin Wang, Ming Zhou, and Jian Yin. 2022. UniXcoder: Unified Cross-Modal Pre-training for Code Representation. In Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), ACL 2022, Dublin, Ireland, May 22-27, 2022, Smaranda Muresan, Preslav Nakov, and Aline Villavicencio (Eds.). Association for Computational Linguistics, 7212­7225. https://doi.org/10.18653/v1/2022.acllong.499
+[9] Harsha Gurulingappa, Abdul Mateen Rajput, Angus Roberts, Juliane Fluck, Martin Hofmann-Apitius, and Luca Toldo. 2012. Development of a benchmark corpus to support the automatic extraction of drug-related adverse effects from medical case reports. J. Biomed. Informatics 45, 5 (2012), 885­892. https://doi.org/10.1016/j.jbi.2012.04.008
+[10] Martin Josifoski, Nicola De Cao, Maxime Peyrard, Fabio Petroni, and Robert West. 2022. GenIE: Generative Information Extraction. In Proceedings of the 2022 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, NAACL 2022, Seattle, WA, United States, July 10-15, 2022, Marine Carpuat, Marie-Catherine de Marneffe, and Iván Vladimir Meza Ruíz (Eds.). Association for Computational Linguistics, 4626­ 4643. https://doi.org/10.18653/v1/2022.naacl-main.342
+[11] Mike Lewis, Yinhan Liu, Naman Goyal, Marjan Ghazvininejad, Abdelrahman Mohamed, Omer Levy, Veselin Stoyanov, and Luke Zettlemoyer. 2020. BART: Denoising Sequence-to-Sequence Pre-training for Natural Language Generation, Translation, and Comprehension. In Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics, ACL 2020, Online, July 5-10, 2020, Dan Jurafsky, Joyce Chai, Natalie Schluter, and Joel R. Tetreault (Eds.). Association for Computational Linguistics, 7871­7880. https://doi.org/10.18653/v1/2020.acl-main.703
+[12] Jing Li, Aixin Sun, Jianglei Han, and Chenliang Li. 2022. A Survey on Deep Learning for Named Entity Recognition. IEEE Trans. Knowl. Data Eng. 34, 1 (2022), 50­70. https://doi.org/10.1109/TKDE.2020.2981314
+[13] Yujia Li, David H. Choi, Junyoung Chung, Nate Kushman, Julian Schrittwieser, Rémi Leblond, Tom Eccles, James Keeling, Felix Gimeno, Agustin Dal Lago, Thomas Hubert, Peter Choy, Cyprien de Masson d'Autume, Igor Babuschkin, Xinyun Chen, Po-Sen Huang, Johannes Welbl, Sven Gowal, Alexey Cherepanov, James Molloy, Daniel J. Mankowitz, Esme Sutherland Robson, Pushmeet Kohli, Nando de Freitas, Koray Kavukcuoglu, and Oriol Vinyals. 2022. CompetitionLevel Code Generation with AlphaCode. CoRR abs/2203.07814 (2022). https://doi.org/10.48550/arXiv.2203.07814 arXiv:2203.07814
+[14] Tianyu Liu, Yuchen Jiang, Nicholas Monath, Ryan Cotterell, and Mrinmaya Sachan. 2022. Autoregressive Structured Prediction with Language Models. CoRR abs/2210.14698 (2022). https://doi.org/10.48550/arXiv.2210.14698 arXiv:2210.14698
+[15] Yaojie Lu, Hongyu Lin, Jin Xu, Xianpei Han, Jialong Tang, Annan Li, Le Sun, Meng Liao, and Shaoyi Chen. 2021. Text2Event: Controllable Sequence-to-Structure Generation for End-to-end Event Extraction. In Proceedings of the 59th Annual Meeting of the Association for Computational Linguistics and the 11th International Joint Conference on Natural Language Processing, ACL/IJCNLP 2021, (Volume 1: Long Papers), Virtual Event, August 1-6, 2021, Chengqing Zong, Fei Xia, Wenjie Li, and Roberto Navigli (Eds.). Association for Computational Linguistics, 2795­2806. https: //doi.org/10.18653/v1/2021.acl-long.217
+
+, Vol. 1, No. 1, Article . Publication date: January 2024.
+
+16
+
+Zhen Bi, Jing Chen, Yinuo Jiang, Feiyu Xiong, Wei Guo, Huajun Chen, and Ningyu Zhang
+
+[16] Yaojie Lu, Qing Liu, Dai Dai, Xinyan Xiao, Hongyu Lin, Xianpei Han, Le Sun, and Hua Wu. 2022. Unified Structure Generation for Universal Information Extraction. In Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), ACL 2022, Dublin, Ireland, May 22-27, 2022, Smaranda Muresan, Preslav Nakov, and Aline Villavicencio (Eds.). Association for Computational Linguistics, 5755­5772. https://doi.org/ 10.18653/v1/2022.acl-long.395
+[17] Yi Luan, Luheng He, Mari Ostendorf, and Hannaneh Hajishirzi. 2018. Multi-Task Identification of Entities, Relations, and Coreference for Scientific Knowledge Graph Construction. In Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing, Brussels, Belgium, October 31 - November 4, 2018, Ellen Riloff, David Chiang, Julia Hockenmaier, and Jun'ichi Tsujii (Eds.). Association for Computational Linguistics, 3219­3232. https://doi.org/10. 18653/v1/d18-1360
+[18] Aman Madaan, Shuyan Zhou, Uri Alon, Yiming Yang, and Graham Neubig. 2022. Language Models of Code are Few-Shot Commonsense Learners. CoRR abs/2210.07128 (2022). https://doi.org/10.48550/arXiv.2210.07128 arXiv:2210.07128
+[19] Giovanni Paolini, Ben Athiwaratkun, Jason Krone, Jie Ma, Alessandro Achille, Rishita Anubhai, Cícero Nogueira dos Santos, Bing Xiang, and Stefano Soatto. 2021. Structured Prediction as Translation between Augmented Natural Languages. In 9th International Conference on Learning Representations, ICLR 2021, Virtual Event, Austria, May 3-7, 2021. OpenReview.net. https://openreview.net/forum?id=US-TP-xnXI
+[20] Shuofei Qiao, Yixin Ou, Ningyu Zhang, Xiang Chen, Yunzhi Yao, Shumin Deng, Chuanqi Tan, Fei Huang, and Huajun Chen. 2022. Reasoning with Language Model Prompting: A Survey. CoRR abs/2212.09597 (2022). https: //doi.org/10.48550/arXiv.2212.09597 arXiv:2212.09597
+[21] Colin Raffel, Noam Shazeer, Adam Roberts, Katherine Lee, Sharan Narang, Michael Matena, Yanqi Zhou, Wei Li, and Peter J. Liu. 2020. Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer. J. Mach. Learn. Res. 21 (2020), 140:1­140:67. http://jmlr.org/papers/v21/20-074.html
+[22] Feiliang Ren, Longhui Zhang, Xiaofeng Zhao, Shujuan Yin, Shilei Liu, and Bochao Li. 2022. A Simple but Effective Bidirectional Framework for Relational Triple Extraction. In WSDM '22: The Fifteenth ACM International Conference on Web Search and Data Mining, Virtual Event / Tempe, AZ, USA, February 21 - 25, 2022, K. Selcuk Candan, Huan Liu, Leman Akoglu, Xin Luna Dong, and Jiliang Tang (Eds.). ACM, 824­832. https://doi.org/10.1145/3488560.3498409
+[23] Dan Roth and Wen-tau Yih. 2004. A Linear Programming Formulation for Global Inference in Natural Language Tasks. In Proceedings of the Eighth Conference on Computational Natural Language Learning, CoNLL 2004, Held in cooperation with HLT-NAACL 2004, Boston, Massachusetts, USA, May 6-7, 2004, Hwee Tou Ng and Ellen Riloff (Eds.). ACL, 1­8. https://aclanthology.org/W04-2401/
+[24] Chenguang Wang, Xiao Liu, Zui Chen, Haoyun Hong, Jie Tang, and Dawn Song. 2021. Zero-Shot Information Extraction as a Unified Text-to-Triple Translation. In Proceedings of the 2021 Conference on Empirical Methods in Natural Language Processing, EMNLP 2021, Virtual Event / Punta Cana, Dominican Republic, 7-11 November, 2021, Marie-Francine Moens, Xuanjing Huang, Lucia Specia, and Scott Wen-tau Yih (Eds.). Association for Computational Linguistics, 1225­1238. https://doi.org/10.18653/v1/2021.emnlp-main.94
+[25] Chenguang Wang, Xiao Liu, Zui Chen, Haoyun Hong, Jie Tang, and Dawn Song. 2022. DeepStruct: Pretraining of Language Models for Structure Prediction. In Findings of the Association for Computational Linguistics: ACL 2022, Dublin, Ireland, May 22-27, 2022, Smaranda Muresan, Preslav Nakov, and Aline Villavicencio (Eds.). Association for Computational Linguistics, 803­823. https://doi.org/10.18653/v1/2022.findings-acl.67
+[26] Xingyao Wang, Sha Li, and Heng Ji. 2022. Code4Struct: Code Generation for Few-Shot Structured Prediction from Natural Language. CoRR abs/2210.12810 (2022). https://doi.org/10.48550/arXiv.2210.12810 arXiv:2210.12810
+[27] Yue Wang, Weishi Wang, Shafiq R. Joty, and Steven C. H. Hoi. 2021. CodeT5: Identifier-aware Unified Pre-trained Encoder-Decoder Models for Code Understanding and Generation. In Proceedings of the 2021 Conference on Empirical Methods in Natural Language Processing, EMNLP 2021, Virtual Event / Punta Cana, Dominican Republic, 7-11 November, 2021, Marie-Francine Moens, Xuanjing Huang, Lucia Specia, and Scott Wen-tau Yih (Eds.). Association for Computational Linguistics, 8696­8708. https://doi.org/10.18653/v1/2021.emnlp-main.685
+[28] Jason Wei, Yi Tay, Rishi Bommasani, Colin Raffel, Barret Zoph, Sebastian Borgeaud, Dani Yogatama, Maarten Bosma, Denny Zhou, Donald Metzler, Ed H. Chi, Tatsunori Hashimoto, Oriol Vinyals, Percy Liang, Jeff Dean, and William Fedus. 2022. Emergent Abilities of Large Language Models. CoRR abs/2206.07682 (2022). https://doi.org/10.48550/ arXiv.2206.07682 arXiv:2206.07682
+[29] Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten Bosma, Ed H. Chi, Quoc Le, and Denny Zhou. 2022. Chain of Thought Prompting Elicits Reasoning in Large Language Models. CoRR abs/2201.11903 (2022). arXiv:2201.11903 https://arxiv.org/abs/2201.11903
+[30] Zhepei Wei, Jianlin Su, Yue Wang, Yuan Tian, and Yi Chang. 2020. A Novel Cascade Binary Tagging Framework for Relational Triple Extraction. In Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics, ACL 2020, Online, July 5-10, 2020, Dan Jurafsky, Joyce Chai, Natalie Schluter, and Joel R. Tetreault (Eds.). Association for Computational Linguistics, 1476­1488. https://doi.org/10.18653/v1/2020.acl-main.136
+
+, Vol. 1, No. 1, Article . Publication date: January 2024.
+
+CodeKGC: Code Language Model for Generative
+
+Knowledge Graph Construction
+
+17
+
+[31] Ledell Wu, Fabio Petroni, Martin Josifoski, Sebastian Riedel, and Luke Zettlemoyer. 2020. Scalable Zero-shot Entity Linking with Dense Entity Retrieval. In Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing, EMNLP 2020, Online, November 16-20, 2020, Bonnie Webber, Trevor Cohn, Yulan He, and Yang Liu (Eds.). Association for Computational Linguistics, 6397­6407. https://doi.org/10.18653/v1/2020.emnlp-main.519
+[32] Hang Yan, Tao Gui, Junqi Dai, Qipeng Guo, Zheng Zhang, and Xipeng Qiu. 2021. A Unified Generative Framework for Various NER Subtasks. In Proceedings of the 59th Annual Meeting of the Association for Computational Linguistics and the 11th International Joint Conference on Natural Language Processing, ACL/IJCNLP 2021, (Volume 1: Long Papers), Virtual Event, August 1-6, 2021, Chengqing Zong, Fei Xia, Wenjie Li, and Roberto Navigli (Eds.). Association for Computational Linguistics, 5808­5822. https://doi.org/10.18653/v1/2021.acl-long.451
+[33] Hongbin Ye, Ningyu Zhang, Hui Chen, and Huajun Chen. 2022. Generative Knowledge Graph Construction: A Review. In Proceedings of the 2022 Conference on Empirical Methods in Natural Language Processing, EMNLP 2022, Abu Dhabi, United Arab Emirates, December 7-11, 2022, Yoav Goldberg, Zornitsa Kozareva, and Yue Zhang (Eds.). Association for Computational Linguistics, 1­17. https://aclanthology.org/2022.emnlp-main.1
+[34] Hongbin Ye, Ningyu Zhang, Shumin Deng, Mosha Chen, Chuanqi Tan, Fei Huang, and Huajun Chen. 2021. Contrastive Triple Extraction with Generative Transformer. In Thirty-Fifth AAAI Conference on Artificial Intelligence, AAAI 2021, Thirty-Third Conference on Innovative Applications of Artificial Intelligence, IAAI 2021, The Eleventh Symposium on Educational Advances in Artificial Intelligence, EAAI 2021, Virtual Event, February 2-9, 2021. AAAI Press, 14257­14265. https://ojs.aaai.org/index.php/AAAI/article/view/17677
+[35] Siyu Yuan, Deqing Yang, Jiaqing Liang, Zhixu Li, Jinxi Liu, Jingyue Huang, and Yanghua Xiao. 2022. Generative Entity Typing with Curriculum Learning. CoRR abs/2210.02914 (2022). https://doi.org/10.48550/arXiv.2210.02914 arXiv:2210.02914
+[36] Weizhe Yuan and Pengfei Liu. 2022. reStructured Pre-training. CoRR abs/2206.11147 (2022). https://doi.org/10.48550/ arXiv.2206.11147 arXiv:2206.11147
+[37] Ningyu Zhang, Shumin Deng, Zhanlin Sun, Guanying Wang, Xi Chen, Wei Zhang, and Huajun Chen. 2019. Long-tail Relation Extraction via Knowledge Graph Embeddings and Graph Convolution Networks. In Proceedings of the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, NAACL-HLT 2019, Minneapolis, MN, USA, June 2-7, 2019, Volume 1 (Long and Short Papers), Jill Burstein, Christy Doran, and Thamar Solorio (Eds.). Association for Computational Linguistics, 3016­3025. https://doi.org/10.18653/v1/n19-1306
+[38] Zexuan Zhong and Danqi Chen. 2021. A Frustratingly Easy Approach for Entity and Relation Extraction. In Proceedings of the 2021 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, NAACL-HLT 2021, Online, June 6-11, 2021, Kristina Toutanova, Anna Rumshisky, Luke Zettlemoyer, Dilek Hakkani-Tür, Iz Beltagy, Steven Bethard, Ryan Cotterell, Tanmoy Chakraborty, and Yichao Zhou (Eds.). Association for Computational Linguistics, 50­61. https://doi.org/10.18653/v1/2021.naacl-main.5
+
+, Vol. 1, No. 1, Article . Publication date: January 2024.
+
+
