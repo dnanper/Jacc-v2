@@ -1,0 +1,24 @@
+from enum import StrEnum
+
+
+class RelationshipType(StrEnum):
+    """All relationship types in the knowledge graph."""
+
+    CONTAINS = "CONTAINS"
+    CALLS = "CALLS"
+    INHERITS = "INHERITS"
+    OVERRIDES = "OVERRIDES"
+    IMPORTS = "IMPORTS"
+    USES = "USES"
+    DEFINES = "DEFINES"
+    DECORATES = "DECORATES"
+    IMPLEMENTS = "IMPLEMENTS"
+    EXTENDS = "EXTENDS"
+    HAS_METHOD = "HAS_METHOD"
+    HAS_PROPERTY = "HAS_PROPERTY"
+    ACCESSES = "ACCESSES"
+    MEMBER_OF = "MEMBER_OF"
+    STEP_IN_PROCESS = "STEP_IN_PROCESS"
+    DESCRIBES = "DESCRIBES"
+    DOCUMENTED_BY = "DOCUMENTED_BY"
+    COMMUNITY_INTERACTS = "COMMUNITY_INTERACTS"
