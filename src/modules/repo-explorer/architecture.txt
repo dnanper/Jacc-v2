@@ -1,0 +1,84 @@
+src/modules/codebase_explorer/
+  __init__.py
+  config.py
+  api.py
+
+  repository/
+    __init__.py
+    repo_manager.py
+    git.py
+
+  discovery/
+    __init__.py
+    filesystem_walker.py
+    content_filter.py
+    language_detection.py
+
+  graph/
+    __init__.py
+
+    model/
+      __init__.py
+      labels.py
+      relationships.py
+      properties.py
+      types.py
+      ids.py
+
+    core/
+      __init__.py
+      knowledge_graph.py
+      validation.py
+      snapshots.py
+      events.py
+
+    schema/
+      __init__.py
+      code_schema.py
+      docs_schema.py
+      embedding_schema.py
+      migrations.py
+
+    storage/
+      __init__.py
+      store.py
+      json_store.py
+      kuzu_pool.py
+      kuzu_store.py
+      csv_exporter.py
+      bulk_loader.py
+
+  parsing/
+    __init__.py
+    parser_protocol.py
+    parser_registry.py
+    parser_loader.py
+    ast_cache.py
+    ast_helpers.py
+    tree_sitter_queries.py
+    parse_result.py
+    parsing_processor.py
+
+  ingestion/
+    __init__.py
+    state.py
+    pipeline.py
+    symbol_table.py
+    processors/
+      __init__.py
+      structure_processor.py
+      import_processor.py
+      call_processor.py
+      heritage_processor.py
+
+  query/
+    __init__.py
+    queries.py
+    query_service.py
+    traversal.py
+    ranking.py
+
+  context/
+    __init__.py
+    context_pack.py
+    context_builder.py
