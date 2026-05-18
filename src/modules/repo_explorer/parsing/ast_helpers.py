@@ -293,7 +293,20 @@ def extract_function_name(node) -> tuple[str, str]:
     ):
         return (name, "Method")
 
+    if node.type == "function_definition" and _has_enclosing_class(node):
+        return (name, "Method")
+
     return (name, "Function")
+
+
+def _has_enclosing_class(node) -> bool:
+    """Return True if a function-like node is nested inside a class-like node."""
+    current = node.parent
+    while current is not None:
+        if current.type in CLASS_LIKE_NODE_TYPES:
+            return True
+        current = current.parent
+    return False
 
 
 def _node_text(node) -> str:

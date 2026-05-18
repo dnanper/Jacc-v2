@@ -4,7 +4,9 @@ import argparse
 from collections import Counter
 from pathlib import Path
 
-from modules.repo_explorer.discovery.filesystem_walker import walk_repository_paths
+from modules.repo_explorer.discovery.filesystem_walker import (
+    walk_repository_paths,
+)
 from modules.repo_explorer.graph.core.knowledge_graph import KnowledgeGraph
 from modules.repo_explorer.ingestion.structure_processor import process_structure
 

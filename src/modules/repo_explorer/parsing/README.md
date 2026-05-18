@@ -25,3 +25,9 @@ source code
 -> parsing_processor chạy query trên AST
 -> lấy captures
 -> tạo graph nodes / raw records
+
+### D
+
+name: tên 1 node (ví dụ tên hàm, tên class, ...)
+modifie: từ khóa bổ nghĩa cho 1 khai báo
+(ví dụ: public, static, async, ...)
