@@ -1,6 +1,6 @@
 from typing import Iterator
 
-from graph.model.types import GraphNode, GraphRelationship
+from ..model.types import GraphNode, GraphRelationship
 
 
 class KnowledgeGraph:
