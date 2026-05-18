@@ -1,57 +1,12 @@
 from __future__ import annotations
 
 import argparse
-import os
 from collections import Counter
 from pathlib import Path
-from typing import Iterable
 
+from modules.repo_explorer.discovery.filesystem_walker import walk_repository_paths
 from modules.repo_explorer.graph.core.knowledge_graph import KnowledgeGraph
 from modules.repo_explorer.ingestion.structure_processor import process_structure
-
-DEFAULT_EXCLUDED_DIRS = frozenset(
-    {
-        ".git",
-        ".hg",
-        ".svn",
-        ".omx",
-        ".mypy_cache",
-        ".pytest_cache",
-        "__pycache__",
-        ".venv",
-        "venv",
-        "node_modules",
-        "data",
-    }
-)
-
-
-def scan_repository_paths(
-    repo_path: str | Path,
-    exclude_dirs: Iterable[str] = DEFAULT_EXCLUDED_DIRS,
-) -> list[str]:
-    """Return relative file paths for a repository, sorted for stable output."""
-    repo = Path(repo_path).resolve()
-    excluded = set(exclude_dirs)
-    paths: list[str] = []
-
-    for dirpath, dirnames, filenames in os.walk(repo, topdown=True):
-        dirnames[:] = [
-            dirname
-            for dirname in dirnames
-            if dirname not in excluded and not dirname.startswith(".")
-        ]
-
-        current_dir = Path(dirpath)
-        for filename in filenames:
-            full_path = current_dir / filename
-            try:
-                rel_path = full_path.relative_to(repo).as_posix()
-            except ValueError:
-                continue
-            paths.append(rel_path)
-
-    return sorted(paths)
 
 
 def run_structure_pipeline(repo_path: str | Path) -> tuple[KnowledgeGraph, list[str]]:
@@ -63,7 +18,8 @@ def run_structure_pipeline(repo_path: str | Path) -> tuple[KnowledgeGraph, list[
     if not repo.is_dir():
         raise NotADirectoryError(f"Repository path is not a directory: {repo}")
 
-    paths = scan_repository_paths(repo)
+    scanned_files = walk_repository_paths(repo)
+    paths = sorted(file.path for file in scanned_files)
     print(f"Scanned  {len(paths)} file paths in repository '{repo.name}'")
     graph = KnowledgeGraph()
     process_structure(graph, paths, str(repo))

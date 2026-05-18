@@ -22,11 +22,13 @@ class StructurePipelineTest(unittest.TestCase):
             src_dir.mkdir()
             (src_dir / "app.py").write_text("print('hello')\n", encoding="utf-8")
             (repo / "README.md").write_text("# Demo\n", encoding="utf-8")
+            (repo / ".gitignore").write_text("ignored.txt\n", encoding="utf-8")
+            (repo / "ignored.txt").write_text("skip me\n", encoding="utf-8")
 
             graph, scanned_paths = run_structure_pipeline(repo)
 
-        self.assertEqual(scanned_paths, ["README.md", "src/app.py"])
-        self.assertEqual(graph.node_count, 3)
+        self.assertEqual(scanned_paths, [".gitignore", "README.md", "src/app.py"])
+        self.assertEqual(graph.node_count, 4)
         self.assertEqual(graph.relationship_count, 1)
 
         rel = graph.relationships[0]

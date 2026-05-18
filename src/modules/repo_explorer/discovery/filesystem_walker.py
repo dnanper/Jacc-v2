@@ -13,8 +13,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import pathspec
-from discovery.content_filter import is_binary_path
 
+from .content_filter import is_binary_path
 from ..config import MAX_FILE_SIZE
 
 logger = logging.getLogger(__name__)
@@ -43,7 +43,7 @@ def _load_gitignore(repo_path: Path) -> pathspec.PathSpec:
     ]
     if gitignore.exists():
         patterns.extend(gitignore.read_text(errors="ignore").splitlines())
-    return pathspec.PathSpec.from_lines("gitwildmatch", patterns)
+    return pathspec.PathSpec.from_lines("gitignore", patterns)
 
 
 def walk_repository_paths(
@@ -82,6 +82,7 @@ def walk_repository_paths(
 
         for fname in filenames:
             rel_path = os.path.join(rel_dir, fname) if rel_dir else fname
+            rel_path = rel_path.replace(os.sep, "/")
             if spec.match_file(rel_path):
                 continue
             full_path = os.path.join(dirpath, fname)
