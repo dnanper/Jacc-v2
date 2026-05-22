@@ -517,10 +517,10 @@ def _extract_imports(imports_list, root, ts_lang, queries, file_path, lang):
 
     extractor = NAMED_BINDING_EXTRACTORS.get(lang)
 
-    import_nodes = {}
+    import_node_keys = set()
     for node, capture_name in captures:
         if capture_name == "import":
-            import_nodes[id(node)] = node
+            import_node_keys.add(_node_key(node))
 
     for node, capture_name in captures:
         if capture_name == "import.source":
@@ -529,7 +529,7 @@ def _extract_imports(imports_list, root, ts_lang, queries, file_path, lang):
             bindings = None
             if extractor:
                 import_node = node.parent
-                while import_node and id(import_node) not in import_nodes:
+                while import_node and _node_key(import_node) not in import_node_keys:
                     import_node = import_node.parent
                 if import_node:
                     try:
@@ -546,6 +546,11 @@ def _extract_imports(imports_list, root, ts_lang, queries, file_path, lang):
                     named_bindings=bindings if bindings else None,
                 )
             )
+
+
+def _node_key(node) -> tuple[str, int, int]:
+    """Stable key for tree-sitter nodes across wrapper instances."""
+    return (node.type, node.start_byte, node.end_byte)
 
 
 def _extract_calls(calls_list, root, ts_lang, queries, file_path, file_node_id):

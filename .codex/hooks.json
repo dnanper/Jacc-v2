@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "hooks": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "python .claude/hooks/csg-hook.py session",
+        "timeoutSec": 5
+      }
+    ],
+    "PreToolUse": [
+      {
+        "type": "command",
+        "command": "python .claude/hooks/csg-hook.py pre",
+        "timeoutSec": 5
+      }
+    ],
+    "PostToolUse": [
+      {
+        "type": "command",
+        "command": "python .claude/hooks/csg-hook.py post",
+        "timeoutSec": 5
+      }
+    ]
+  }
+}

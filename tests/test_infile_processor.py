@@ -25,6 +25,13 @@ def helper():
     return Service().build()
 '''
 
+IMPORT_CODE = '''\
+from models.user import User, Repository as Repo
+
+def build():
+    return Repo()
+'''
+
 
 class InfileProcessorTest(unittest.TestCase):
     def test_python_class_function_is_registered_as_method_with_owner_relation(self):
@@ -62,6 +69,27 @@ class InfileProcessorTest(unittest.TestCase):
                 and call.source_id == "Function:sample.py:helper"
                 for call in result.calls
             )
+        )
+
+    def test_python_imports_keep_named_bindings_from_import_statement(self):
+        graph = KnowledgeGraph()
+        symbol_table = SymbolTable()
+
+        result = process_infile_information(
+            graph,
+            [{"path": "app/main.py", "content": IMPORT_CODE}],
+            symbol_table,
+            ASTCache(),
+        )
+
+        self.assertEqual(len(result.imports), 1)
+        self.assertEqual(result.imports[0].raw_import_path, "models.user")
+        self.assertEqual(
+            result.imports[0].named_bindings,
+            [
+                {"local": "User", "exported": "User"},
+                {"local": "Repo", "exported": "Repository"},
+            ],
         )
 
 
