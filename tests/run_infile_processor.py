@@ -14,6 +14,7 @@ if str(MODULES) not in sys.path:
 from repo_explorer.graph.core.knowledge_graph import KnowledgeGraph
 from repo_explorer.graph.model.types import RelationshipType
 from repo_explorer.ingestion.extraction.import_resolvers.utils import SuffixIndex
+from repo_explorer.ingestion.call_processor import process_calls
 from repo_explorer.ingestion.import_processor import process_imports
 from repo_explorer.ingestion.infile_processor import process_infile_information
 from repo_explorer.ingestion.resolution_context import ResolutionContext
@@ -162,6 +163,18 @@ def print_resolution_context(ctx) -> None:
         )
 
 
+def print_call_records(parse_result) -> None:
+    print("\n7. call records after call_processor type enrichment")
+    for call in parse_result.calls:
+        print(
+            "  - "
+            f"file={call.file_path} source={call.source_id} "
+            f"name={call.called_name} form={call.call_form} "
+            f"receiver={call.receiver_name} "
+            f"receiver_type={call.receiver_type_name} args={call.arg_count}"
+        )
+
+
 def main() -> int:
     with tempfile.TemporaryDirectory(prefix="ckg-import-pipeline-") as tmp:
         repo_path = Path(tmp)
@@ -236,6 +249,33 @@ def main() -> int:
         )
         print_graph_snapshot("graph after import_processor", graph)
         print_resolution_context(ctx)
+
+        print("\n6. call processor")
+        call_progress: list[tuple[int, int]] = []
+        before_call_edges = sum(
+            1
+            for rel in graph.iter_relationships()
+            if rel.type == RelationshipType.CALLS
+        )
+        process_calls(
+            graph=graph,
+            calls=parse_result.calls,
+            ctx=ctx,
+            type_envs=parse_result.type_envs,
+            on_progress=lambda current, total: call_progress.append(
+                (current, total)
+            ),
+        )
+        for current, total in call_progress:
+            print(f"  progress: {current}/{total}")
+        after_call_edges = sum(
+            1
+            for rel in graph.iter_relationships()
+            if rel.type == RelationshipType.CALLS
+        )
+        print("  CALLS edges added: " f"{after_call_edges - before_call_edges}")
+        print_graph_snapshot("graph after call_processor", graph)
+        print_call_records(parse_result)
 
     return 0
 
