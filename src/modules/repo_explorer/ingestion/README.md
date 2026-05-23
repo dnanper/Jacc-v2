@@ -1,9 +1,9 @@
 # ingestion layout
 
-Top-level files in this package are phase entrypoints used by the ingestion
-pipeline, for example `structure_processor.py`, `infile_processor.py`,
-`import_processor.py`, `call_processor.py`, `community_processor.py`,
-`process_processor.py`, `lbug_loader.py`, and `index_loader.py`.
+Top-level files in this package are the ingestion orchestration surface and
+phase entrypoints. `pipeline.py` composes the available phases into one linear
+flow, `state.py` defines the shared config/state/progress objects, and the
+`*_processor.py` / `*_loader.py` files implement individual phases.
 
 Internal helpers that do not represent standalone pipeline phases live in
 `support/`:
