@@ -17,6 +17,7 @@ from repo_explorer.ingestion.call_processor import process_calls
 from repo_explorer.ingestion.cross_file_propagation import (
     run_cross_file_propagation_phase,
 )
+from repo_explorer.ingestion.community_processor import run_community_detection_phase
 from repo_explorer.ingestion.extraction.import_resolvers.utils import SuffixIndex
 from repo_explorer.ingestion.heritage_processor import process_heritage
 from repo_explorer.ingestion.import_processor import process_imports
@@ -55,6 +56,8 @@ from models.base import BaseRepository, CacheMixin
 
 
 class User:
+    __tablename__ = "users"
+
     pass
 
 
@@ -131,6 +134,12 @@ def print_graph_snapshot(title: str, graph: KnowledgeGraph) -> None:
             details.append(f"lines={props.start_line}-{props.end_line}")
         if props.signature:
             details.append(f"signature={props.signature}")
+        if props.fan_in is not None:
+            details.append(f"fan_in={props.fan_in}")
+        if props.fan_out is not None:
+            details.append(f"fan_out={props.fan_out}")
+        if props.schema_entities:
+            details.append(f"schema_entities={props.schema_entities}")
         if props.description:
             details.append(f"description={props.description}")
         print("    - " + " | ".join(details))
@@ -292,6 +301,32 @@ def print_mro_result(result) -> None:
                 f"resolved_to={ambiguity.resolved_to} "
                 f"reason={ambiguity.reason}"
             )
+
+
+def print_community_phase_result(phase_result: dict) -> None:
+    result = phase_result["result"]
+    print(f"  stats: {result.stats}")
+    print(
+        "  added: "
+        f"communities={phase_result['community_nodes_added']} "
+        f"memberships={phase_result['member_edges_added']} "
+        f"interactions={phase_result['interaction_edges_added']}"
+    )
+    print(
+        "  post-process: "
+        f"fan_in_nodes={len(phase_result['fan_in'])} "
+        f"schema_entities={phase_result['schema_entity_count']}"
+    )
+    print("  communities:")
+    for community in phase_result["communities"]:
+        print(
+            "    - "
+            f"id={community.id} label={community.label} "
+            f"symbols={community.symbol_count} cohesion={community.cohesion:.2f}"
+        )
+    print("  memberships:")
+    for membership in phase_result["memberships"]:
+        print(f"    - {membership.node_id} -> {membership.community_id}")
 
 
 def main() -> int:
@@ -478,6 +513,24 @@ def main() -> int:
         print_mro_result(mro_result)
         print(f"  OVERRIDES edges added by MRO: {after_mro_edges - before_mro_edges}")
         print_graph_snapshot("graph after mro_processor", graph)
+
+        print("\n12. community processor")
+        community_progress: list[tuple[str, int]] = []
+        try:
+            community_result = run_community_detection_phase(
+                knowledge_graph=graph,
+                on_progress=lambda message, percent: community_progress.append(
+                    (message, percent)
+                ),
+            )
+        except RuntimeError as exc:
+            print(f"  skipped: {exc}")
+            print("  install command: uv add igraph leidenalg")
+        else:
+            for message, percent in community_progress:
+                print(f"  progress: {percent}% {message}")
+            print_community_phase_result(community_result)
+            print_graph_snapshot("graph after community_processor", graph)
 
     return 0
 
