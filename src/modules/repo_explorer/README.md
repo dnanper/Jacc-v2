@@ -17,3 +17,7 @@
 5. Call processor: Dùng thông tin từ resolution context và infile_processor to create CALL EDGE
 
 5.5. Cross_file_propagation: enrich thông tin xuyên file, seed thêm receiver type / return type, detect import cycle, rồi re-run call resolution có chọn lọc.
+
+6. Heritage Processor: Tạo cạnh EXTEND/IMPLEMENT
+
+7. MRO Processor: Khi 1 method từ 1 Class kế thừa Override -> Tạo cạnh OVERRIDE

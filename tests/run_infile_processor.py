@@ -21,6 +21,7 @@ from repo_explorer.ingestion.extraction.import_resolvers.utils import SuffixInde
 from repo_explorer.ingestion.heritage_processor import process_heritage
 from repo_explorer.ingestion.import_processor import process_imports
 from repo_explorer.ingestion.infile_processor import process_infile_information
+from repo_explorer.ingestion.mro_processor import compute_mro
 from repo_explorer.ingestion.resolution_context import ResolutionContext
 from repo_explorer.ingestion.structure_processor import process_structure
 from repo_explorer.ingestion.symbol_table import SymbolTable
@@ -43,9 +44,14 @@ class Service:
 class BaseRepository:
     def ping(self):
         return True
+
+
+class CacheMixin:
+    def ping(self):
+        return "cached"
 ''',
     "models/user.py": '''\
-from models.base import BaseRepository
+from models.base import BaseRepository, CacheMixin
 
 
 class User:
@@ -57,7 +63,7 @@ class AuditLog:
         return None
 
 
-class Repository(BaseRepository):
+class Repository(BaseRepository, CacheMixin):
     def load(self) -> User:
         return User()
 
@@ -184,6 +190,7 @@ def print_symbol_table(symbol_table: SymbolTable, graph: KnowledgeGraph) -> None
             "Service",
             "build",
             "BaseRepository",
+            "CacheMixin",
             "ping",
             "User",
             "AuditLog",
@@ -223,6 +230,7 @@ def print_resolution_context(ctx) -> None:
         "repo",
         "AuditLog",
         "BaseRepository",
+        "CacheMixin",
         "Repository",
         "Service",
         "load",
@@ -263,6 +271,27 @@ def print_call_records(
             f"receiver_type={call.receiver_type_name} args={call.arg_count} "
             f"raw_resolve={resolved_summary}"
         )
+
+
+def print_mro_result(result) -> None:
+    print(
+        "  result: "
+        f"override_edges={result.override_edges} "
+        f"ambiguity_count={result.ambiguity_count}"
+    )
+    for entry in result.entries:
+        print(
+            "    - "
+            f"class={entry.class_name} mro_order={entry.mro_order} "
+            f"ambiguities={len(entry.ambiguities)}"
+        )
+        for ambiguity in entry.ambiguities:
+            print(
+                "      * "
+                f"method={ambiguity.method_name} "
+                f"resolved_to={ambiguity.resolved_to} "
+                f"reason={ambiguity.reason}"
+            )
 
 
 def main() -> int:
@@ -432,6 +461,23 @@ def main() -> int:
             f"{after_heritage_edges - before_heritage_edges}"
         )
         print_graph_snapshot("graph after heritage_processor", graph)
+
+        print("\n11. mro processor")
+        before_mro_edges = sum(
+            1
+            for rel in graph.iter_relationships()
+            if rel.type == RelationshipType.OVERRIDES
+        )
+        print(f"  OVERRIDES edges before MRO: {before_mro_edges}")
+        mro_result = compute_mro(graph)
+        after_mro_edges = sum(
+            1
+            for rel in graph.iter_relationships()
+            if rel.type == RelationshipType.OVERRIDES
+        )
+        print_mro_result(mro_result)
+        print(f"  OVERRIDES edges added by MRO: {after_mro_edges - before_mro_edges}")
+        print_graph_snapshot("graph after mro_processor", graph)
 
     return 0
 
