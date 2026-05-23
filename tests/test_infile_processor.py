@@ -25,6 +25,16 @@ def helper():
     return Service().build()
 '''
 
+DUPLICATE_METHOD_CODE = '''\
+class AuditLog:
+    def save(self):
+        return None
+
+class Repository:
+    def save(self, user):
+        return user
+'''
+
 IMPORT_CODE = '''\
 from models.user import User, Repository as Repo
 
@@ -54,13 +64,14 @@ class InfileProcessorTest(unittest.TestCase):
         assert helper is not None
 
         self.assertEqual(build.type, "Method")
+        self.assertEqual(build.node_id, "Method:sample.py:Service.build")
         self.assertEqual(build.owner_id, "Class:sample.py:Service")
         self.assertEqual(helper.type, "Function")
         self.assertIsNone(helper.owner_id)
 
         self.assertIsNotNone(
             graph.get_relationship(
-                "Class:sample.py:Service_has_method_Method:sample.py:build"
+                "Class:sample.py:Service_has_method_Method:sample.py:Service.build"
             )
         )
         self.assertTrue(
@@ -68,6 +79,42 @@ class InfileProcessorTest(unittest.TestCase):
                 call.called_name == "build"
                 and call.source_id == "Function:sample.py:helper"
                 for call in result.calls
+            )
+        )
+
+    def test_methods_with_same_name_in_different_classes_get_distinct_node_ids(self):
+        graph = KnowledgeGraph()
+        symbol_table = SymbolTable()
+
+        process_infile_information(
+            graph,
+            [{"path": "models/user.py", "content": DUPLICATE_METHOD_CODE}],
+            symbol_table,
+            ASTCache(),
+        )
+
+        save_defs = symbol_table.lookup_exact_all("models/user.py", "save")
+        self.assertEqual(
+            sorted(defn.node_id for defn in save_defs),
+            [
+                "Method:models/user.py:AuditLog.save",
+                "Method:models/user.py:Repository.save",
+            ],
+        )
+        self.assertIsNotNone(
+            graph.get_node("Method:models/user.py:AuditLog.save")
+        )
+        self.assertIsNotNone(
+            graph.get_node("Method:models/user.py:Repository.save")
+        )
+        self.assertIsNotNone(
+            graph.get_relationship(
+                "Class:models/user.py:AuditLog_has_method_Method:models/user.py:AuditLog.save"
+            )
+        )
+        self.assertIsNotNone(
+            graph.get_relationship(
+                "Class:models/user.py:Repository_has_method_Method:models/user.py:Repository.save"
             )
         )
 

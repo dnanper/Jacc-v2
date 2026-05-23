@@ -398,7 +398,11 @@ def _extract_definitions(
                 i += 1
                 continue
 
-            node_id = generate_id(label, f"{file_path}:{name}")
+            owner_id = None
+            if label in ("Method", "Constructor", "Property"):
+                owner_id = find_enclosing_class_id(defn_node, file_path)
+
+            node_id = _definition_node_id(label, file_path, name, owner_id)
             exported = is_exported(defn_node, name, lang)
 
             start_line = defn_node.start_point[0]
@@ -436,10 +440,6 @@ def _extract_definitions(
                     type=RelationshipType.CONTAINS,
                 )
             )
-
-            owner_id = None
-            if label in ("Method", "Constructor", "Property"):
-                owner_id = find_enclosing_class_id(defn_node, file_path)
 
             if owner_id:
                 rel_type = (
@@ -551,6 +551,19 @@ def _extract_imports(imports_list, root, ts_lang, queries, file_path, lang):
 def _node_key(node) -> tuple[str, int, int]:
     """Stable key for tree-sitter nodes across wrapper instances."""
     return (node.type, node.start_byte, node.end_byte)
+
+
+def _definition_node_id(
+    label: str,
+    file_path: str,
+    name: str,
+    owner_id: str | None = None,
+) -> str:
+    """Build stable definition IDs, qualifying members by owner type."""
+    if owner_id and label in ("Method", "Constructor", "Property"):
+        owner_name = owner_id.rsplit(":", 1)[-1]
+        return generate_id(label, f"{file_path}:{owner_name}.{name}")
+    return generate_id(label, f"{file_path}:{name}")
 
 
 def _extract_calls(calls_list, root, ts_lang, queries, file_path, file_node_id):
@@ -815,7 +828,10 @@ def _find_enclosing_function_id(node, file_path: str) -> str | None:
             if name_node is not None:
                 # name = _node_text(name_node)
                 func_name, label = extract_function_name(current)
-                return generate_id(label, f"{file_path}:{func_name}")
+                owner_id = None
+                if label in ("Method", "Constructor", "Property"):
+                    owner_id = find_enclosing_class_id(current, file_path)
+                return _definition_node_id(label, file_path, func_name, owner_id)
         current = current.parent
     return None
 

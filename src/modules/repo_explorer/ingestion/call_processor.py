@@ -141,6 +141,9 @@ def _resolve_call_target(
                 f"{resolved.tier}+owner",
             )
 
+    if call_form == "member":
+        return None
+
     return _ResolveResult(
         filtered[0].node_id,
         max(TIER_CONFIDENCE.get(resolved.tier, 0.5) * 0.8, 0.3),

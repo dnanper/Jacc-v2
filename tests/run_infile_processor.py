@@ -13,8 +13,11 @@ if str(MODULES) not in sys.path:
 
 from repo_explorer.graph.core.knowledge_graph import KnowledgeGraph
 from repo_explorer.graph.model.types import RelationshipType
-from repo_explorer.ingestion.extraction.import_resolvers.utils import SuffixIndex
 from repo_explorer.ingestion.call_processor import process_calls
+from repo_explorer.ingestion.cross_file_propagation import (
+    run_cross_file_propagation_phase,
+)
+from repo_explorer.ingestion.extraction.import_resolvers.utils import SuffixIndex
 from repo_explorer.ingestion.import_processor import process_imports
 from repo_explorer.ingestion.infile_processor import process_infile_information
 from repo_explorer.ingestion.resolution_context import ResolutionContext
@@ -25,20 +28,24 @@ from repo_explorer.parsing.ast_cache import ASTCache
 
 FILES = {
     "app/main.py": '''\
-from models.user import User, Repository as Repo
+from models.user import Repository as repo, User
 
 
 class Service:
     """Coordinates user loading for the application service layer."""
 
     def build(self):
-        repo = Repo()
         user: User = repo.load()
         return repo.save(user)
 ''',
     "models/user.py": '''\
 class User:
     pass
+
+
+class AuditLog:
+    def save(self):
+        return None
 
 
 class Repository:
@@ -78,6 +85,20 @@ def node_name(graph: KnowledgeGraph, node_id: str) -> str:
     return f"{node.label}({props.name})"
 
 
+def owner_name(graph: KnowledgeGraph, owner_id: str | None) -> str:
+    if not owner_id:
+        return "<none>"
+    return node_name(graph, owner_id)
+
+
+def symbol_line(symbol) -> str:
+    return (
+        f"name={symbol.name} type={symbol.type} file={symbol.file_path} "
+        f"node={symbol.node_id} owner={symbol.owner_id} "
+        f"params={symbol.parameter_count} return={symbol.return_type}"
+    )
+
+
 def print_graph_snapshot(title: str, graph: KnowledgeGraph) -> None:
     print(f"\n{title}")
     print(f"  {graph_counts(graph)}")
@@ -103,7 +124,10 @@ def print_graph_snapshot(title: str, graph: KnowledgeGraph) -> None:
     for rel in sorted(graph.iter_relationships(), key=lambda r: (str(r.type), r.id)):
         source = node_name(graph, rel.source_id)
         target = node_name(graph, rel.target_id)
-        print(f"    - {source} -[{rel.type}]-> {target} ({rel.reason or 'no-reason'})")
+        print(
+            f"    - id={rel.id} | {source} -[{rel.type}]-> {target} "
+            f"| confidence={rel.confidence} | reason={rel.reason or 'no-reason'}"
+        )
 
 
 def print_parse_result(parse_result) -> None:
@@ -129,6 +153,32 @@ def print_parse_result(parse_result) -> None:
     print(f"  heritage ({len(parse_result.heritage)}): {parse_result.heritage}")
     print(f"  assignments ({len(parse_result.assignments)}): {parse_result.assignments}")
     print(f"  type_envs: {sorted(parse_result.type_envs.keys())}")
+    for file_path, type_env in sorted(parse_result.type_envs.items()):
+        print(f"    - {file_path} explicit={type_env.bindings}")
+        print(f"      constructors={type_env.constructor_types}")
+        print(f"      seeded={type_env.seeded}")
+        print(f"      return_types={type_env.return_types}")
+
+
+def print_symbol_table(symbol_table: SymbolTable, graph: KnowledgeGraph) -> None:
+    print("\n3b. symbol table after infile_processor")
+    print(f"  stats: {symbol_table.get_stats()}")
+    for file_path in ("app/main.py", "models/user.py"):
+        print(f"  file={file_path}")
+        for name in (
+            "Service",
+            "build",
+            "User",
+            "AuditLog",
+            "Repository",
+            "load",
+            "save",
+        ):
+            defs = symbol_table.lookup_exact_all(file_path, name)
+            for symbol in defs:
+                print(f"    - {symbol_line(symbol)}")
+                if symbol.owner_id:
+                    print(f"      owner_node={owner_name(graph, symbol.owner_id)}")
 
 
 def print_resolution_context(ctx) -> None:
@@ -151,7 +201,15 @@ def print_resolution_context(ctx) -> None:
                 f"{binding.source_path}:{binding.exported_name}"
             )
 
-    for name in ("User", "Repo", "Repository", "Service"):
+    for name in (
+        "User",
+        "repo",
+        "AuditLog",
+        "Repository",
+        "Service",
+        "load",
+        "save",
+    ):
         resolved = ctx.resolve(name, "app/main.py")
         if resolved is None:
             print(f"  resolve {name!r} from app/main.py -> <none>")
@@ -163,15 +221,29 @@ def print_resolution_context(ctx) -> None:
         )
 
 
-def print_call_records(parse_result) -> None:
-    print("\n7. call records after call_processor type enrichment")
+def print_call_records(
+    title: str,
+    parse_result,
+    graph: KnowledgeGraph,
+    ctx: ResolutionContext,
+) -> None:
+    print(f"\n{title}")
     for call in parse_result.calls:
+        resolved = ctx.resolve(call.called_name, call.file_path)
+        resolved_summary = "<none>"
+        if resolved is not None:
+            resolved_summary = (
+                f"tier={resolved.tier} candidates="
+                f"{[symbol_line(candidate) for candidate in resolved.candidates]}"
+            )
         print(
             "  - "
             f"file={call.file_path} source={call.source_id} "
+            f"source_node={node_name(graph, call.source_id)} "
             f"name={call.called_name} form={call.call_form} "
             f"receiver={call.receiver_name} "
-            f"receiver_type={call.receiver_type_name} args={call.arg_count}"
+            f"receiver_type={call.receiver_type_name} args={call.arg_count} "
+            f"raw_resolve={resolved_summary}"
         )
 
 
@@ -216,6 +288,7 @@ def main() -> int:
             print(f"  progress: {current}/{total} {detail}")
         print_graph_snapshot("graph after infile_processor", graph)
         print_parse_result(parse_result)
+        print_symbol_table(symbol_table, graph)
 
         print("\n4. import processor")
         ctx = ResolutionContext()
@@ -275,7 +348,44 @@ def main() -> int:
         )
         print("  CALLS edges added: " f"{after_call_edges - before_call_edges}")
         print_graph_snapshot("graph after call_processor", graph)
-        print_call_records(parse_result)
+        print_call_records(
+            "7. call records after call_processor type enrichment",
+            parse_result,
+            graph,
+            ctx,
+        )
+
+        print("\n8. cross-file propagation")
+        before_cross_call_edges = sum(
+            1
+            for rel in graph.iter_relationships()
+            if rel.type == RelationshipType.CALLS
+        )
+        cross_result = run_cross_file_propagation_phase(
+            graph=graph,
+            calls=parse_result.calls,
+            ctx=ctx,
+            type_envs=parse_result.type_envs,
+            file_contents=None,
+            repo_path=str(repo_path),
+        )
+        after_cross_call_edges = sum(
+            1
+            for rel in graph.iter_relationships()
+            if rel.type == RelationshipType.CALLS
+        )
+        print(f"  result: {cross_result}")
+        print(
+            "  CALLS edges added by cross-file propagation: "
+            f"{after_cross_call_edges - before_cross_call_edges}"
+        )
+        print_graph_snapshot("graph after cross_file_propagation", graph)
+        print_call_records(
+            "9. call records after cross-file propagation",
+            parse_result,
+            graph,
+            ctx,
+        )
 
     return 0
 
