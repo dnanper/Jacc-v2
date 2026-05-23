@@ -23,6 +23,7 @@ from repo_explorer.ingestion.heritage_processor import process_heritage
 from repo_explorer.ingestion.import_processor import process_imports
 from repo_explorer.ingestion.infile_processor import process_infile_information
 from repo_explorer.ingestion.mro_processor import compute_mro
+from repo_explorer.ingestion.process_processor import run_process_detection_phase
 from repo_explorer.ingestion.resolution_context import ResolutionContext
 from repo_explorer.ingestion.structure_processor import process_structure
 from repo_explorer.ingestion.symbol_table import SymbolTable
@@ -61,6 +62,10 @@ class User:
     pass
 
 
+def hydrate_user() -> User:
+    return User()
+
+
 class AuditLog:
     def save(self):
         return None
@@ -68,7 +73,7 @@ class AuditLog:
 
 class Repository(BaseRepository, CacheMixin):
     def load(self) -> User:
-        return User()
+        return hydrate_user()
 
     def save(self, user: User) -> User:
         return user
@@ -140,6 +145,16 @@ def print_graph_snapshot(title: str, graph: KnowledgeGraph) -> None:
             details.append(f"fan_out={props.fan_out}")
         if props.schema_entities:
             details.append(f"schema_entities={props.schema_entities}")
+        if props.process_type:
+            details.append(f"process_type={props.process_type}")
+        if props.step_count is not None:
+            details.append(f"step_count={props.step_count}")
+        if props.communities:
+            details.append(f"communities={props.communities}")
+        if props.entry_point_id:
+            details.append(f"entry_point={props.entry_point_id}")
+        if props.terminal_id:
+            details.append(f"terminal={props.terminal_id}")
         if props.description:
             details.append(f"description={props.description}")
         print("    - " + " | ".join(details))
@@ -202,6 +217,7 @@ def print_symbol_table(symbol_table: SymbolTable, graph: KnowledgeGraph) -> None
             "CacheMixin",
             "ping",
             "User",
+            "hydrate_user",
             "AuditLog",
             "Repository",
             "load",
@@ -236,6 +252,7 @@ def print_resolution_context(ctx) -> None:
 
     for name in (
         "User",
+        "hydrate_user",
         "repo",
         "AuditLog",
         "BaseRepository",
@@ -327,6 +344,25 @@ def print_community_phase_result(phase_result: dict) -> None:
     print("  memberships:")
     for membership in phase_result["memberships"]:
         print(f"    - {membership.node_id} -> {membership.community_id}")
+
+
+def print_process_phase_result(phase_result: dict) -> None:
+    print(f"  stats: {phase_result['stats']}")
+    print(
+        "  added: "
+        f"processes={phase_result['process_nodes_added']} "
+        f"steps={phase_result['step_edges_added']}"
+    )
+    print("  processes:")
+    for process in phase_result["processes"]:
+        print(
+            "    - "
+            f"id={process.id} label={process.label} "
+            f"type={process.process_type} steps={process.step_count} "
+            f"communities={process.communities}"
+        )
+        for step_index, node_id in enumerate(process.trace, start=1):
+            print(f"      {step_index}. {node_id}")
 
 
 def main() -> int:
@@ -531,6 +567,20 @@ def main() -> int:
                 print(f"  progress: {percent}% {message}")
             print_community_phase_result(community_result)
             print_graph_snapshot("graph after community_processor", graph)
+
+            print("\n13. process processor")
+            process_progress: list[tuple[str, int]] = []
+            process_result = run_process_detection_phase(
+                knowledge_graph=graph,
+                memberships=community_result["memberships"],
+                on_progress=lambda message, percent: process_progress.append(
+                    (message, percent)
+                ),
+            )
+            for message, percent in process_progress:
+                print(f"  progress: {percent}% {message}")
+            print_process_phase_result(process_result)
+            print_graph_snapshot("graph after process_processor", graph)
 
     return 0
 
