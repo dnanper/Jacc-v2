@@ -4,7 +4,7 @@ Caches per-file parse results (symbols, imports, calls, heritage) keyed by
 SHA-256 content hash. On re-ingestion, unchanged files are restored from
 cache instead of being re-parsed.
 
-Storage: data/repos/{hash}/cache/
+Storage: data/repos/{repo-name}-{hash}/cache/
   - manifest.json          — {rel_path: {content_hash, timestamp}}
   - parse_cache/{hash}.pkl — pickled FileParseResult per file
 """

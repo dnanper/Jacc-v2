@@ -1,7 +1,7 @@
 """LadybugDB (KuzuDB) adapter — schema, bulk load, queries, FTS, vector search.
 
 Replaces the Neo4j adapter. Uses KuzuDB as an embedded graph database
-stored centrally under data/repos/{hash}/lbug.
+stored centrally under data/repos/{repo-name}-{hash}/lbug.
 """
 
 from __future__ import annotations
@@ -12,8 +12,8 @@ import os
 import shutil
 
 import kuzu
-from graph.core.knowledge_graph import KnowledgeGraph
-from graph.schema.code_schema import (
+from ..core.knowledge_graph import KnowledgeGraph
+from ..schema.code_schema import (
     EMBEDDING_SCHEMA_QUERY,
     FTS_INDEXES,
     NODE_SCHEMA_QUERIES,
@@ -71,7 +71,7 @@ class LadybugAdapter:
     @property
     def is_read_only(self) -> bool:
         """True if the database was opened read-only (lock held by another process)."""
-        from graph.storage.kuzu_pool import KuzuPool
+        from .kuzu_pool import KuzuPool
 
         return KuzuPool.get().is_read_only(self._db_path)
 
@@ -91,7 +91,7 @@ class LadybugAdapter:
                 read-write; falls back to read-only if another process
                 holds the write lock.
         """
-        from graph.storage.kuzu_pool import KuzuPool
+        from .kuzu_pool import KuzuPool
 
         pool = KuzuPool.get()
         self._db = pool.get_database(self._db_path, read_only=read_only)
@@ -179,7 +179,7 @@ class LadybugAdapter:
 
         # Evict from pool BEFORE deleting files — pool holds the Database reference
         try:
-            from graph.storage.kuzu_pool import KuzuPool
+            from .kuzu_pool import KuzuPool
 
             KuzuPool.get().close(self._db_path)
         except Exception:
@@ -212,7 +212,7 @@ class LadybugAdapter:
             raise RuntimeError("Not connected. Call connect() first.")
         self._require_writable()
 
-        from graph.storage.csv_generator import generate_csvs
+        from .csv_generator import generate_csvs
 
         result = generate_csvs(graph, csv_dir)
 

@@ -22,6 +22,7 @@ from repo_explorer.ingestion.extraction.import_resolvers.utils import SuffixInde
 from repo_explorer.ingestion.heritage_processor import process_heritage
 from repo_explorer.ingestion.import_processor import process_imports
 from repo_explorer.ingestion.infile_processor import process_infile_information
+from repo_explorer.ingestion.lbug_loader import load_graph_to_lbug
 from repo_explorer.ingestion.mro_processor import compute_mro
 from repo_explorer.ingestion.process_processor import run_process_detection_phase
 from repo_explorer.ingestion.resolution_context import ResolutionContext
@@ -581,6 +582,20 @@ def main() -> int:
                 print(f"  progress: {percent}% {message}")
             print_process_phase_result(process_result)
             print_graph_snapshot("graph after process_processor", graph)
+
+            print("\n14. load to LadybugDB")
+            load_result = load_graph_to_lbug(
+                graph=graph,
+                repo_path=repo_path,
+                file_paths=file_paths,
+                community_nodes=community_result["communities"],
+                process_nodes=process_result["processes"],
+                force=True,
+            )
+            print(f"  db_path: {load_result.db_path}")
+            print(f"  csv_dir cleaned: {not Path(load_result.csv_dir).exists()}")
+            print(f"  cached_embeddings: {len(load_result.cached_embeddings)}")
+            print(f"  stats: {load_result.stats}")
 
     return 0
 

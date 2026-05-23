@@ -23,7 +23,8 @@ import time
 from contextlib import contextmanager
 
 import kuzu
-from graph.core.event_bus import EventBus
+
+from ..core.event_bus import EventBus
 
 logger = logging.getLogger(__name__)
 

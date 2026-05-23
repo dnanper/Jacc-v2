@@ -222,12 +222,15 @@ data/repos/
 data/registry.json
 data/mcp.log
 data/tmp/
+src/modules/data/
 *.pkl
 *.faiss
 *.lock.tmp
 csg/embeddings/models/
 csg/agent/logs/
 testcase/
+
+
 
 .omx/
 .claude/

@@ -10,8 +10,8 @@ import os
 import re
 from dataclasses import asdict, dataclass, field, is_dataclass
 
-from graph.core.knowledge_graph import KnowledgeGraph
-from graph.model.types import GraphNode
+from ..core.knowledge_graph import KnowledgeGraph
+from ..model.types import GraphNode
 
 MAX_FILE_CONTENT = 10_000
 MAX_SNIPPET = 50_000
@@ -45,6 +45,7 @@ _FILE_COLS = (
     "fanIn",
     "lineCount",
     "binary",
+    "infrastructure",
 )
 _FOLDER_COLS = ("id", "name", "filePath")
 

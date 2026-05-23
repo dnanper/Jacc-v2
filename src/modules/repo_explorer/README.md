@@ -42,3 +42,11 @@ Không dùng IMPORTS để clustering trực tiếp. IMPORTS chỉ được dùn
 
 - schema_extraction: scan node.properties.content của các node có source snippet, tìm dấu hiệu liên quan DB/schema, ví dụ:CREATE TABLE user
   ==> Nếu tìm thấy, thêm vào Node đó: node.properties.schema_entitie = ["user"]
+
+9. Process Processor:
+
+process_processor.py: tìm luồng thực thi từ call graph. Nó chọn entry point tốt, BFS theo cạnh CALLS, bỏ trace trùng/lồng nhau, rồi tạo Process và các step.
+
+entry_point_scoring.py: chấm điểm function/method nào giống “điểm bắt đầu” hơn. Điểm dựa vào số callee/caller, exported hay không, tên như main, run, handleX, Controller, và framework path.
+
+framework_detection.py: nhận diện framework qua path hoặc text. Ví dụ views.py được boost kiểu Django, pages/api kiểu Next.js API, controllers/\*.java kiểu Spring.

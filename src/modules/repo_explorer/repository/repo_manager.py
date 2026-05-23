@@ -1,6 +1,6 @@
 """Repository index registry and per-repo storage management.
 
-Per-repo storage:  data/repos/{hash}/
+Per-repo storage:  data/repos/{repo-name}-{hash}/
   - meta.json   — repo metadata (commit, stats, timestamps)
   - lbug/       — KuzuDB database (graph + embeddings + vector index)
   - cache/      — parse cache for incremental ingestion
@@ -56,8 +56,16 @@ def _repo_hash(repo_path: str | Path) -> str:
     return hashlib.md5(abs_path.encode()).hexdigest()[:12]
 
 
+def _safe_repo_slug(repo_path: str | Path) -> str:
+    """Return a filesystem-safe, human-readable repo name."""
+    name = Path(repo_path).resolve().name or "repo"
+    slug = "".join(ch.lower() if ch.isalnum() else "-" for ch in name)
+    slug = "-".join(part for part in slug.split("-") if part)
+    return slug or "repo"
+
+
 def get_storage_path(repo_path: str | Path) -> Path:
-    """Get the central storage directory for a repo under data/repos/{hash}/.
+    """Get the central storage directory for a repo under data/repos/{name}-{hash}/.
 
     If *repo_path* is already nested inside REPOS_DIR (e.g. a codebase
     extracted into ``data/repos/<hash>/<project>/``), the first sub-directory
@@ -75,7 +83,7 @@ def get_storage_path(repo_path: str | Path) -> Path:
         pass
 
     h = _repo_hash(repo_path)
-    return DATA_DIR / "repos" / h
+    return DATA_DIR / "repos" / f"{_safe_repo_slug(repo_path)}-{h}"
 
 
 def get_meta_path(repo_path: str | Path) -> Path:
