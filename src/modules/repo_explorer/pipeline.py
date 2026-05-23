@@ -541,49 +541,21 @@ def load_to_lbug(state: PipelineState) -> dict:
 
 def create_indexes(state: PipelineState) -> dict:
     """Phase 12: Create FTS indexes in LadybugDB."""
-    cfg = state["config"]
     repo_path = state["repo_path"]
-    db_path = str(get_storage_path(repo_path) / "lbug")
 
     check_cancelled(state)
     logger.info("Phase 12: Creating indexes")
 
-    adapter = LadybugAdapter(db_path=db_path)
-    adapter.connect()
+    from .ingestion.index_loader import create_lbug_indexes
 
-    try:
-        adapter.create_fts_indexes()
-    finally:
-        adapter.close()
-
-    commit = get_current_commit(repo_path)
-    stats = state.get("stats", {})
-
-    from datetime import datetime, timezone
-    meta = RepoMeta(
-        repo_path=str(repo_path),
-        last_commit=commit or "",
-        indexed_at=datetime.now(timezone.utc).isoformat(),
-        stats={
-            "files": stats.get("files", 0),
-            "nodes": stats.get("nodes", 0),
-            "edges": stats.get("relationships", 0),
-            "communities": stats.get("communities", 0),
-            "processes": stats.get("processes", 0),
-            "embeddings": 0,
-        },
+    result = create_lbug_indexes(
+        repo_path=repo_path,
+        stats=state.get("stats", {}),
+        state=dict(state),
+        save_graph_cache=True,
     )
-    save_meta(repo_path, meta)
-    register_repo(repo_path, meta)
-
-    # Save graph.json cache so both MCP and web app can serve it
-    try:
-        from csg.web.routes.analysis import serialize_results, save_graph_json
-        results = serialize_results(dict(state))
-        save_graph_json(repo_path, results)
-        logger.info("Phase 12: Saved graph.json cache")
-    except Exception:
-        logger.debug("Could not save graph.json cache", exc_info=True)
+    if result.graph_json_path:
+        logger.info("Phase 12: Saved graph.json cache at %s", result.graph_json_path)
 
     return {
         "progress": PipelineProgress(

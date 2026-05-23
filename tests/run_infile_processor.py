@@ -21,6 +21,7 @@ from repo_explorer.ingestion.community_processor import run_community_detection_
 from repo_explorer.ingestion.extraction.import_resolvers.utils import SuffixIndex
 from repo_explorer.ingestion.heritage_processor import process_heritage
 from repo_explorer.ingestion.import_processor import process_imports
+from repo_explorer.ingestion.index_loader import create_lbug_indexes
 from repo_explorer.ingestion.infile_processor import process_infile_information
 from repo_explorer.ingestion.lbug_loader import load_graph_to_lbug
 from repo_explorer.ingestion.mro_processor import compute_mro
@@ -596,6 +597,24 @@ def main() -> int:
             print(f"  csv_dir cleaned: {not Path(load_result.csv_dir).exists()}")
             print(f"  cached_embeddings: {len(load_result.cached_embeddings)}")
             print(f"  stats: {load_result.stats}")
+
+            print("\n15. create FTS indexes and repo metadata")
+            index_result = create_lbug_indexes(
+                repo_path=repo_path,
+                stats=load_result.stats,
+                state={
+                    "repo_path": repo_path,
+                    "repo_name": Path(repo_path).name,
+                    "file_paths": file_paths,
+                    "knowledge_graph": graph,
+                    "stats": load_result.stats,
+                },
+            )
+            print(f"  db_path: {index_result.db_path}")
+            print(f"  meta_path: {index_result.meta_path}")
+            print(f"  registry_updated: {index_result.registry_updated}")
+            print(f"  graph_json_path: {index_result.graph_json_path}")
+            print(f"  stats: {index_result.stats}")
 
     return 0
 

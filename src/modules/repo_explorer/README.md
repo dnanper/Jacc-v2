@@ -50,3 +50,15 @@ process_processor.py: tìm luồng thực thi từ call graph. Nó chọn entry 
 entry_point_scoring.py: chấm điểm function/method nào giống “điểm bắt đầu” hơn. Điểm dựa vào số callee/caller, exported hay không, tên như main, run, handleX, Controller, và framework path.
 
 framework_detection.py: nhận diện framework qua path hoặc text. Ví dụ views.py được boost kiểu Django, pages/api kiểu Next.js API, controllers/\*.java kiểu Spring.
+
+10. lbug_loader: Lưu graph vào ladybug database (modules/data/repos)
+
+11. index_loader:
+
+Mở LadybugDB tại get_storage_path(repo_path) / "lbug".
+Gọi adapter.create_fts_indexes(): Tạo index từ 2 cột searchText (tên symbol) và Content (code snippet) cho các bảng (File/Function/...)
+Lưu meta.json.
+Cập nhật registry.json.
+Lưu thêm graph.json cache nếu có state truyền vào.
+
+==> Sau khi graph đã được load vào LadybugDB, phase này làm database “queryable” hơn bằng FTS index, rồi ghi metadata để các phần khác biết repo này đã được index ở đâu, commit nào, số node/edge bao nhiêu. graph.json là cache JSON để UI/MCP/API có thể đọc nhanh mà không nhất thiết phải query Kuzu ngay.
