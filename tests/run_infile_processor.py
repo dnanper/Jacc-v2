@@ -18,6 +18,7 @@ from repo_explorer.ingestion.cross_file_propagation import (
     run_cross_file_propagation_phase,
 )
 from repo_explorer.ingestion.extraction.import_resolvers.utils import SuffixIndex
+from repo_explorer.ingestion.heritage_processor import process_heritage
 from repo_explorer.ingestion.import_processor import process_imports
 from repo_explorer.ingestion.infile_processor import process_infile_information
 from repo_explorer.ingestion.resolution_context import ResolutionContext
@@ -38,7 +39,15 @@ class Service:
         user: User = repo.load()
         return repo.save(user)
 ''',
+    "models/base.py": '''\
+class BaseRepository:
+    def ping(self):
+        return True
+''',
     "models/user.py": '''\
+from models.base import BaseRepository
+
+
 class User:
     pass
 
@@ -48,7 +57,7 @@ class AuditLog:
         return None
 
 
-class Repository:
+class Repository(BaseRepository):
     def load(self) -> User:
         return User()
 
@@ -150,7 +159,13 @@ def print_parse_result(parse_result) -> None:
             f"receiver={call.receiver_name} args={call.arg_count}"
         )
 
-    print(f"  heritage ({len(parse_result.heritage)}): {parse_result.heritage}")
+    print(f"  heritage ({len(parse_result.heritage)}):")
+    for heritage in parse_result.heritage:
+        print(
+            "    - "
+            f"file={heritage.file_path} class={heritage.class_name} "
+            f"parent={heritage.parent_name} kind={heritage.kind}"
+        )
     print(f"  assignments ({len(parse_result.assignments)}): {parse_result.assignments}")
     print(f"  type_envs: {sorted(parse_result.type_envs.keys())}")
     for file_path, type_env in sorted(parse_result.type_envs.items()):
@@ -163,11 +178,13 @@ def print_parse_result(parse_result) -> None:
 def print_symbol_table(symbol_table: SymbolTable, graph: KnowledgeGraph) -> None:
     print("\n3b. symbol table after infile_processor")
     print(f"  stats: {symbol_table.get_stats()}")
-    for file_path in ("app/main.py", "models/user.py"):
+    for file_path in ("app/main.py", "models/base.py", "models/user.py"):
         print(f"  file={file_path}")
         for name in (
             "Service",
             "build",
+            "BaseRepository",
+            "ping",
             "User",
             "AuditLog",
             "Repository",
@@ -205,6 +222,7 @@ def print_resolution_context(ctx) -> None:
         "User",
         "repo",
         "AuditLog",
+        "BaseRepository",
         "Repository",
         "Service",
         "load",
@@ -386,6 +404,34 @@ def main() -> int:
             graph,
             ctx,
         )
+
+        print("\n10. heritage processor")
+        heritage_progress: list[tuple[int, int]] = []
+        before_heritage_edges = sum(
+            1
+            for rel in graph.iter_relationships()
+            if rel.type in (RelationshipType.EXTENDS, RelationshipType.IMPLEMENTS)
+        )
+        process_heritage(
+            graph=graph,
+            heritage_records=parse_result.heritage,
+            ctx=ctx,
+            on_progress=lambda current, total: heritage_progress.append(
+                (current, total)
+            ),
+        )
+        for current, total in heritage_progress:
+            print(f"  progress: {current}/{total}")
+        after_heritage_edges = sum(
+            1
+            for rel in graph.iter_relationships()
+            if rel.type in (RelationshipType.EXTENDS, RelationshipType.IMPLEMENTS)
+        )
+        print(
+            "  EXTENDS/IMPLEMENTS edges added: "
+            f"{after_heritage_edges - before_heritage_edges}"
+        )
+        print_graph_snapshot("graph after heritage_processor", graph)
 
     return 0
 
