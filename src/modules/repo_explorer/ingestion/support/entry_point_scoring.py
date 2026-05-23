@@ -14,7 +14,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from ..config import SupportedLanguages
+from ...config import SupportedLanguages
 from .framework_detection import detect_framework_from_path
 
 UNIVERSAL_ENTRY_POINT_PATTERNS: list[re.Pattern] = [

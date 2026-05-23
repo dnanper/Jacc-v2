@@ -14,9 +14,9 @@ from repo_explorer.graph.core.knowledge_graph import KnowledgeGraph
 from repo_explorer.ingestion.extraction.import_resolvers.utils import SuffixIndex
 from repo_explorer.ingestion.import_processor import process_imports
 from repo_explorer.ingestion.infile_processor import ExtractedImport
-from repo_explorer.ingestion.resolution_context import ResolutionContext
+from repo_explorer.ingestion.support.resolution_context import ResolutionContext
 from repo_explorer.ingestion.structure_processor import process_structure
-from repo_explorer.ingestion.symbol_table import SymbolTable
+from repo_explorer.ingestion.support.symbol_table import SymbolTable
 
 
 class ImportProcessorTest(unittest.TestCase):

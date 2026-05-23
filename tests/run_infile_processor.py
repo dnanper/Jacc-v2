@@ -26,9 +26,9 @@ from repo_explorer.ingestion.infile_processor import process_infile_information
 from repo_explorer.ingestion.lbug_loader import load_graph_to_lbug
 from repo_explorer.ingestion.mro_processor import compute_mro
 from repo_explorer.ingestion.process_processor import run_process_detection_phase
-from repo_explorer.ingestion.resolution_context import ResolutionContext
+from repo_explorer.ingestion.support.resolution_context import ResolutionContext
 from repo_explorer.ingestion.structure_processor import process_structure
-from repo_explorer.ingestion.symbol_table import SymbolTable
+from repo_explorer.ingestion.support.symbol_table import SymbolTable
 from repo_explorer.parsing.ast_cache import ASTCache
 
 

@@ -10,14 +10,14 @@ from ..config import SupportedLanguages
 from ..graph.core.knowledge_graph import KnowledgeGraph
 from ..graph.model.types import GraphRelationship, RelationshipType
 from ..parsing.ast_helpers import generate_id
-from .import_resolution import (
+from .support.import_resolution import (
     ImportConfigs,
     ImportResult,
     ResolveCtx,
     resolve_import,
 )
 from .infile_processor import ExtractedImport
-from .resolution_context import (
+from .support.resolution_context import (
     ResolutionContext,
     NamedImportBinding,
 )

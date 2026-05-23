@@ -13,11 +13,11 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING
 
-from ..graph.core.knowledge_graph import KnowledgeGraph
-from ..graph.model.types import RelationshipType
+from ...graph.core.knowledge_graph import KnowledgeGraph
+from ...graph.model.types import RelationshipType
 
 if TYPE_CHECKING:
-    from .community_processor import CommunityMembership
+    from ..community_processor import CommunityMembership
 
 logger = logging.getLogger(__name__)
 

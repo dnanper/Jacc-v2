@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from ..config import SupportedLanguages
+from ...config import SupportedLanguages
 
 
 @dataclass(frozen=True)

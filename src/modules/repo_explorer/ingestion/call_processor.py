@@ -19,11 +19,11 @@ from ..graph.core.knowledge_graph import KnowledgeGraph
 from ..graph.model.types import GraphRelationship, RelationshipType
 from ..parsing.ast_helpers import generate_id
 from .infile_processor import ExtractedCall
-from .resolution_context import (
+from .support.resolution_context import (
     TIER_CONFIDENCE,
     ResolutionContext,
 )
-from .symbol_table import SymbolDefinition
+from .support.symbol_table import SymbolDefinition
 
 logger = logging.getLogger(__name__)
 

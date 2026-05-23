@@ -14,7 +14,7 @@ from repo_explorer.graph.core.knowledge_graph import KnowledgeGraph
 from repo_explorer.graph.model.types import RelationshipType
 from repo_explorer.ingestion.call_processor import process_calls
 from repo_explorer.ingestion.infile_processor import ExtractedCall
-from repo_explorer.ingestion.resolution_context import ResolutionContext
+from repo_explorer.ingestion.support.resolution_context import ResolutionContext
 
 
 class CallProcessorTest(unittest.TestCase):

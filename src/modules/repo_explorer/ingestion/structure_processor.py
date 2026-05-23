@@ -17,7 +17,7 @@ from ..graph.model.types import (
     NodeProperties,
     RelationshipType,
 )
-from .utils import generate_id
+from .support.utils import generate_id
 
 
 def process_structure(

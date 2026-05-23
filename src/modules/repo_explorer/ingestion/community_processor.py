@@ -25,8 +25,8 @@ from ..graph.model.types import (
     RelationshipType,
 )
 from ..parsing.ast_helpers import generate_id
-from .fan_in_processor import compute_fan_in
-from .schema_extraction import extract_schema_entities
+from .support.fan_in_processor import compute_fan_in
+from .support.schema_extraction import extract_schema_entities
 
 logger = logging.getLogger(__name__)
 

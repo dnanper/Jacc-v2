@@ -12,7 +12,7 @@ if str(MODULES) not in sys.path:
 
 from repo_explorer.graph.core.knowledge_graph import KnowledgeGraph
 from repo_explorer.ingestion.infile_processor import process_infile_information
-from repo_explorer.ingestion.symbol_table import SymbolTable
+from repo_explorer.ingestion.support.symbol_table import SymbolTable
 from repo_explorer.parsing.ast_cache import ASTCache
 
 

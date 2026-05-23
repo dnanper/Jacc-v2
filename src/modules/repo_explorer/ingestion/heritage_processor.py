@@ -22,7 +22,7 @@ from ..graph.core.knowledge_graph import KnowledgeGraph
 from ..graph.model.types import GraphRelationship, RelationshipType
 from ..parsing.ast_helpers import generate_id
 from .infile_processor import ExtractedHeritage
-from .resolution_context import TIER_CONFIDENCE, ResolutionContext
+from .support.resolution_context import TIER_CONFIDENCE, ResolutionContext
 
 _INTERFACE_NAME_RE = re.compile(r"^I[A-Z]")
 

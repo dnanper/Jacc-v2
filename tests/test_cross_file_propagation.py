@@ -23,7 +23,7 @@ from repo_explorer.ingestion.cross_file_propagation import (
     mark_import_cycle_edges,
 )
 from repo_explorer.ingestion.structure_processor import process_structure
-from repo_explorer.ingestion.symbol_table import SymbolTable
+from repo_explorer.ingestion.support.symbol_table import SymbolTable
 
 
 class CrossFilePropagationTest(unittest.TestCase):

@@ -35,7 +35,7 @@ from ..parsing.parser_loader import is_language_available, load_language, parse_
 from ..parsing.tree_sitter_queries import get_queries
 from .extraction.docstring_extractor import extract_docstring
 from .extraction.export_detection import is_exported
-from .symbol_table import SymbolTable
+from .support.symbol_table import SymbolTable
 
 from ..config import (
     BUILT_IN_NAMES,

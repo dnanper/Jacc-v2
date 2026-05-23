@@ -14,8 +14,8 @@ import logging
 import re
 from dataclasses import dataclass
 
-from ..config import SupportedLanguages
-from ..graph.core.knowledge_graph import KnowledgeGraph
+from ...config import SupportedLanguages
+from ...graph.core.knowledge_graph import KnowledgeGraph
 
 logger = logging.getLogger(__name__)
 

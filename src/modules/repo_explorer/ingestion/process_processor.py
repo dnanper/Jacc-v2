@@ -25,7 +25,7 @@ from ..graph.model.types import (
 )
 from ..parsing.ast_helpers import generate_id
 from .community_processor import CommunityMembership
-from .entry_point_scoring import (
+from .support.entry_point_scoring import (
     calculate_entry_point_score,
     is_test_file,
 )

@@ -9,12 +9,12 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Callable
 
-from .extraction.import_resolvers.utils import (
+from ..extraction.import_resolvers.utils import (
     SuffixIndex,
     resolve_relative_path,
 )
 
-from ..config import SupportedLanguages
+from ...config import SupportedLanguages
 
 
 @dataclass
@@ -92,7 +92,7 @@ def _resolve_python_dispatch(
     ctx: ResolveCtx,
 ) -> ImportResult | None:
     """Python: PEP 328 relative + proximity, then standard."""
-    from .extraction.import_resolvers.python import resolve_python_import
+    from ..extraction.import_resolvers.python import resolve_python_import
 
     result = resolve_python_import(current_file, raw_path, ctx.all_files)
     if result:
@@ -107,7 +107,7 @@ def _resolve_go_dispatch(
     ctx: ResolveCtx,
 ) -> ImportResult | None:
     """Go: package-based resolution."""
-    from .extraction.import_resolvers.go import resolve_go_import
+    from ..extraction.import_resolvers.go import resolve_go_import
 
     go_module = ctx.configs.go_module if ctx.configs else None
     files = resolve_go_import(raw_path, go_module, ctx.all_file_list)
@@ -127,7 +127,7 @@ def _resolve_java_dispatch(
     ctx: ResolveCtx,
 ) -> ImportResult | None:
     """Java: wildcard/member imports."""
-    from .extraction.import_resolvers.jvm import resolve_java_import
+    from ..extraction.import_resolvers.jvm import resolve_java_import
 
     result = resolve_java_import(raw_path, ctx.all_file_list, ctx.suffix_index)
     if result:
@@ -143,7 +143,7 @@ def _resolve_kotlin_dispatch(
     ctx: ResolveCtx,
 ) -> ImportResult | None:
     """Kotlin: JVM wildcard/member with .kt/.kts + .java interop."""
-    from .extraction.import_resolvers.jvm import resolve_kotlin_import
+    from ..extraction.import_resolvers.jvm import resolve_kotlin_import
 
     result = resolve_kotlin_import(raw_path, ctx.all_file_list, ctx.suffix_index)
     if result:
@@ -159,7 +159,7 @@ def _resolve_rust_dispatch(
     ctx: ResolveCtx,
 ) -> ImportResult | None:
     """Rust: crate::, super::, self:: + module paths."""
-    from .extraction.import_resolvers.rust import resolve_rust_import
+    from ..extraction.import_resolvers.rust import resolve_rust_import
 
     result = resolve_rust_import(current_file, raw_path, ctx.all_files)
     if result:
@@ -174,7 +174,7 @@ def _resolve_csharp_dispatch(
     ctx: ResolveCtx,
 ) -> ImportResult | None:
     """C#: namespace-based resolution."""
-    from .extraction.import_resolvers.csharp import resolve_csharp_import
+    from ..extraction.import_resolvers.csharp import resolve_csharp_import
 
     csharp_configs = ctx.configs.csharp_configs if ctx.configs else []
     files = resolve_csharp_import(
@@ -192,7 +192,7 @@ def _resolve_php_dispatch(
     ctx: ResolveCtx,
 ) -> ImportResult | None:
     """PHP: PSR-4 namespace resolution."""
-    from .extraction.import_resolvers.php import resolve_php_import
+    from ..extraction.import_resolvers.php import resolve_php_import
 
     composer = ctx.configs.composer_config if ctx.configs else None
     result = resolve_php_import(raw_path, composer, ctx.all_files)
@@ -208,7 +208,7 @@ def _resolve_ruby_dispatch(
     ctx: ResolveCtx,
 ) -> ImportResult | None:
     """Ruby: require/require_relative."""
-    from .extraction.import_resolvers.ruby import resolve_ruby_import
+    from ..extraction.import_resolvers.ruby import resolve_ruby_import
 
     result = resolve_ruby_import(raw_path, ctx.all_file_list, ctx.suffix_index)
     if result:
@@ -223,7 +223,7 @@ def _resolve_swift_dispatch(
     ctx: ResolveCtx,
 ) -> ImportResult | None:
     """Swift: target map lookup."""
-    from .extraction.import_resolvers.swift import resolve_swift_import
+    from ..extraction.import_resolvers.swift import resolve_swift_import
 
     swift_config = ctx.configs.swift_package_config if ctx.configs else None
     files = resolve_swift_import(raw_path, swift_config, ctx.all_file_list)

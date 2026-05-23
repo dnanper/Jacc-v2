@@ -24,11 +24,11 @@ from ..graph.core.knowledge_graph import KnowledgeGraph
 from ..graph.model.types import RelationshipType
 from .call_processor import process_calls
 from .infile_processor import ExtractedCall
-from .resolution_context import (
+from .support.resolution_context import (
     NamedImportBinding,
     ResolutionContext,
 )
-from .symbol_table import SymbolTable
+from .support.symbol_table import SymbolTable
 
 CROSS_FILE_SKIP_THRESHOLD = 0.03
 MAX_CROSS_FILE_REPROCESS = 2000
