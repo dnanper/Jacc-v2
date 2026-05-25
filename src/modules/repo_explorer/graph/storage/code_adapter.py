@@ -651,67 +651,75 @@ class LadybugAdapter:
             include_embedding=True,
         )
 
-    # def vector_search(
-    #     self,
-    #     query_text: str,
-    #     top_k: int = 10,
-    #     use_mmr: bool = True,
-    #     mmr_lambda: float = 0.7,
-    # ) -> list[dict]:
-    #     """Embed *query_text* on the fly and return nearest code symbols.
+    def vector_search(
+        self,
+        query_text: str,
+        top_k: int = 10,
+        use_mmr: bool = True,
+        mmr_lambda: float = 0.7,
+    ) -> list[dict]:
+        """Embed *query_text* on the fly and return nearest code symbols.
 
-    #     This is a convenience wrapper around :meth:`search_vector` that
-    #     handles text -> embedding conversion and distance -> similarity.
-    #     When *use_mmr* is True, applies Maximal Marginal Relevance reranking
-    #     to balance relevance and diversity.
+        This convenience wrapper keeps the explorer layer independent from
+        embedding implementation details. It returns ``similarity`` rather than
+        raw vector distance.
+        """
+        try:
+            from embeddings.embedding_pipeline import QUERY_PREFIX, get_or_create_model
+        except ImportError:
+            from modules.embeddings.embedding_pipeline import (
+                QUERY_PREFIX,
+                get_or_create_model,
+            )
 
-    #     Returns rows with ``similarity`` (1 - distance) instead of raw
-    #     ``distance``, matching what :mod:`semantic_linker` expects.
-    #     """
-    #     from csg.embeddings.embedding_pipeline import QUERY_PREFIX, get_or_create_model
+        model = get_or_create_model()
+        query_vector = model.embed_query(QUERY_PREFIX + query_text)
 
-    #     model = get_or_create_model()
-    #     query_vector = model.embed_query(QUERY_PREFIX + query_text)
+        if not use_mmr:
+            rows = self.search_vector(query_vector, limit=top_k)
+            for row in rows:
+                row["similarity"] = 1.0 - row.pop("distance", 0.0)
+            return rows
 
-    #     if not use_mmr:
-    #         rows = self.search_vector(query_vector, limit=top_k)
-    #         for row in rows:
-    #             row["similarity"] = 1.0 - row.pop("distance", 0.0)
-    #         return rows
+        try:
+            from repo_explorer.explore._search.mmr import MMRCandidate, mmr_rerank
+        except ImportError:
+            from modules.repo_explorer.explore._search.mmr import (
+                MMRCandidate,
+                mmr_rerank,
+            )
 
-    #     from csg.search.mmr import MMRCandidate, mmr_rerank
+        raw = self._search_vector_with_embeddings(query_vector, limit=top_k * 3)
+        if not raw:
+            return []
 
-    #     raw = self._search_vector_with_embeddings(query_vector, limit=top_k * 3)
-    #     if not raw:
-    #         return []
+        candidates = []
+        for row in raw:
+            emb = row.get("embedding")
+            if not emb:
+                continue
+            vec = list(emb) if not isinstance(emb, list) else emb
+            candidates.append(
+                MMRCandidate(
+                    id=row.get("nodeId", ""),
+                    vector=vec,
+                    similarity=1.0 - row.get("distance", 0.0),
+                    metadata={
+                        "nodeId": row.get("nodeId", ""),
+                        "name": row.get("name", ""),
+                        "label": row.get("label", ""),
+                        "filePath": row.get("filePath", ""),
+                        "startLine": row.get("startLine"),
+                        "endLine": row.get("endLine"),
+                    },
+                )
+            )
 
-    #     candidates = []
-    #     for row in raw:
-    #         emb = row.get("embedding")
-    #         if not emb:
-    #             continue
-    #         vec = list(emb) if not isinstance(emb, list) else emb
-    #         candidates.append(
-    #             MMRCandidate(
-    #                 id=row.get("nodeId", ""),
-    #                 vector=vec,
-    #                 similarity=1.0 - row.get("distance", 0.0),
-    #                 metadata={
-    #                     "nodeId": row.get("nodeId", ""),
-    #                     "name": row.get("name", ""),
-    #                     "label": row.get("label", ""),
-    #                     "filePath": row.get("filePath", ""),
-    #                     "startLine": row.get("startLine"),
-    #                     "endLine": row.get("endLine"),
-    #                 },
-    #             )
-    #         )
+        reranked = mmr_rerank(candidates, k=top_k, lambda_param=mmr_lambda)
 
-    #     reranked = mmr_rerank(candidates, k=top_k, lambda_param=mmr_lambda)
-
-    #     results = []
-    #     for cand in reranked:
-    #         result = dict(cand.metadata)
-    #         result["similarity"] = cand.similarity
-    #         results.append(result)
-    #     return results
+        results = []
+        for cand in reranked:
+            result = dict(cand.metadata)
+            result["similarity"] = cand.similarity
+            results.append(result)
+        return results

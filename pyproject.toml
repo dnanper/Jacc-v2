@@ -9,6 +9,7 @@ dependencies = [
     "kuzu>=0.11.3",
     "leidenalg>=0.11.0",
     "numpy>=2.4.6",
+    "openai>=1.0.0",
     "pathspec>=1.1.1",
     "tree-sitter>=0.25.2",
     "tree-sitter-ada>=0.1.0",
