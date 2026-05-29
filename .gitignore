@@ -226,11 +226,15 @@ src/modules/data/
 *.pkl
 *.faiss
 *.lock.tmp
+*.zip
 csg/embeddings/models/
 csg/agent/logs/
 testcase/
 
 
-
+test_repo/
 .omx/
 .claude/
+.codex/
+AGENTS.md
+CLAUDE.md
