@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from ._helpers import VALID_RELATION_TYPES
+from ._helpers import EDIT_RISK_RELATION_TYPES
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,7 @@ class ImpactMixin:
         visited_ids: set[str] = set(target_ids)
 
         all_affected: list[dict] = []
-        rel_types = list(VALID_RELATION_TYPES)
+        rel_types = list(EDIT_RISK_RELATION_TYPES)
 
         for d in range(1, self._IMPACT_MAX_DEPTH + 1):
             if direction == "upstream":

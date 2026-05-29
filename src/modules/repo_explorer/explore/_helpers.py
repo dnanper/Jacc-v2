@@ -16,6 +16,25 @@ CYPHER_WRITE_RE = re.compile(
 _META_RELATIONS = {"MEMBER_OF", "STEP_IN_PROCESS", "COMMUNITY_INTERACTS"}
 VALID_RELATION_TYPES = {r.value for r in RelationshipType} - _META_RELATIONS
 
+EDIT_RISK_RELATION_TYPES = {
+    RelationshipType.CALLS.value,
+    RelationshipType.ACCESSES.value,
+    RelationshipType.OVERRIDES.value,
+    RelationshipType.IMPLEMENTS.value,
+    RelationshipType.EXTENDS.value,
+}
+NAVIGATION_RELATION_TYPES = {
+    RelationshipType.CONTAINS.value,
+    RelationshipType.DEFINES.value,
+    RelationshipType.HAS_METHOD.value,
+    RelationshipType.HAS_PROPERTY.value,
+}
+ARCHITECTURE_RELATION_TYPES = {
+    RelationshipType.IMPORTS.value,
+    RelationshipType.INHERITS.value,
+    RelationshipType.USES.value,
+}
+
 
 # ---------------------------------------------------------------------------
 # Token estimation

@@ -19,7 +19,13 @@ import re
 
 from ..config import SupportedLanguages, get_language_from_filename
 from ..graph.core.knowledge_graph import KnowledgeGraph
-from ..graph.model.types import GraphRelationship, RelationshipType
+from ..graph.model.types import (
+    GraphNode,
+    GraphRelationship,
+    NodeLabel,
+    NodeProperties,
+    RelationshipType,
+)
 from ..parsing.ast_helpers import generate_id
 from .infile_processor import ExtractedHeritage
 from .support.resolution_context import TIER_CONFIDENCE, ResolutionContext
@@ -80,6 +86,30 @@ def _resolve_heritage_id(
     )
 
 
+def _ensure_external_parent_node(
+    graph: KnowledgeGraph,
+    node_id: str,
+    name: str,
+    label: str,
+) -> None:
+    """Create a stub node for an unresolved external heritage parent."""
+    if graph.get_node(node_id) is not None:
+        return
+
+    graph.add_node(
+        GraphNode(
+            id=node_id,
+            label=NodeLabel(label),
+            properties=NodeProperties(
+                name=name,
+                file_path="",
+                is_exported=True,
+                description="external heritage parent",
+            ),
+        )
+    )
+
+
 def process_heritage(
     graph: KnowledgeGraph,
     heritage_records: list[ExtractedHeritage],
@@ -122,7 +152,16 @@ def process_heritage(
                 id_prefix,
             )
 
-            if child_id and parent_id and child_id != parent_id:
+            if parent_id:
+                _ensure_external_parent_node(graph, parent_id, h.parent_name, id_prefix)
+
+            if (
+                child_id
+                and parent_id
+                and child_id != parent_id
+                and graph.get_node(child_id) is not None
+                and graph.get_node(parent_id) is not None
+            ):
                 graph.add_relationship(
                     GraphRelationship(
                         id=generate_id(rel_type, f"{child_id}->{parent_id}"),
@@ -149,7 +188,17 @@ def process_heritage(
                 "Interface",
             )
 
-            if cls_id and iface_id:
+            if iface_id:
+                _ensure_external_parent_node(
+                    graph, iface_id, h.parent_name, "Interface"
+                )
+
+            if (
+                cls_id
+                and iface_id
+                and graph.get_node(cls_id) is not None
+                and graph.get_node(iface_id) is not None
+            ):
                 graph.add_relationship(
                     GraphRelationship(
                         id=generate_id("IMPLEMENTS", f"{cls_id}->{iface_id}"),
@@ -176,7 +225,15 @@ def process_heritage(
                 "Trait",
             )
 
-            if struct_id and trait_id:
+            if trait_id:
+                _ensure_external_parent_node(graph, trait_id, h.parent_name, "Trait")
+
+            if (
+                struct_id
+                and trait_id
+                and graph.get_node(struct_id) is not None
+                and graph.get_node(trait_id) is not None
+            ):
                 graph.add_relationship(
                     GraphRelationship(
                         id=generate_id(
