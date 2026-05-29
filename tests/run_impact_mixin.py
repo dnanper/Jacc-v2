@@ -21,7 +21,7 @@ if str(SRC_MODULES) not in sys.path:
     sys.path.insert(0, str(SRC_MODULES))
 
 from repo_explorer.explore import Backend
-from repo_explorer.explore._helpers import VALID_RELATION_TYPES
+from repo_explorer.explore._helpers import EDIT_RISK_RELATION_TYPES
 from repo_explorer.graph.storage.code_adapter import LadybugAdapter
 from repo_explorer.repository.repo_manager import get_storage_path
 
@@ -112,7 +112,10 @@ def main() -> int:
     print(f"min_confidence: {args.min_confidence}")
 
     try:
-        dump("VALID_RELATION_TYPES used for traversal", sorted(VALID_RELATION_TYPES))
+        dump(
+            "EDIT_RISK_RELATION_TYPES used for traversal",
+            sorted(EDIT_RISK_RELATION_TYPES),
+        )
         dump(
             "impact(direction='upstream')",
             backend.impact(
