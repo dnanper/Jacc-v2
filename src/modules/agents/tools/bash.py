@@ -14,6 +14,8 @@ class RunCommandInput(BaseModel):
             "Shell command to run inside the SWE-Bench repository at /testbed. "
             "Use commands such as ls, sed, grep, python, pytest, and git diff to inspect, edit, "
             "reproduce, verify, and review the solution. Commands must be non-interactive. "
+            "Use Python file-edit scripts for reliable multi-line edits. "
+            "Do not use git diff to apply patches; git diff is only for inspection after editing. "
             "Do not prefix commands with bash -lc; the tool already runs commands through bash."
         )
     )
@@ -42,7 +44,10 @@ def build_bash_tool(
         The command executes in /testbed inside the task container. Avoid
         interactive programs and long-running background services. Do not prefix
         commands with bash -lc; pass the actual command, for example:
-        grep -RIn "target" src tests | head.
+        grep -RIn "target" src testing | head.
+        For multi-line edits, use a short Python script that reads the file,
+        replaces exact text, and writes it back. Do not use git diff as a patch
+        application command; run git diff only after editing to inspect changes.
         """
 
         return _truncate_output(

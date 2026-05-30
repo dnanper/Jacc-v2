@@ -15,6 +15,11 @@ if str(ROOT) not in sys.path:
 from src import run_swe
 
 
+class FakeTool:
+    def __init__(self, name: str) -> None:
+        self.name = name
+
+
 class RunSweTest(unittest.TestCase):
     def test_verified_task_loader_selects_instance_by_id(self) -> None:
         rows = [
@@ -77,7 +82,7 @@ class RunSweTest(unittest.TestCase):
             patch.object(run_swe, "load_swebench_instance", return_value=instance),
             patch.object(run_swe, "create_swebench_environment", return_value=fake_environment) as create_environment,
             patch.object(run_swe, "build_llm", return_value=MagicMock()) as build_llm,
-            patch.object(run_swe, "build_bash_tool", return_value=[MagicMock(name="bash")]) as build_tools,
+            patch.object(run_swe, "build_bash_tool", return_value=[FakeTool("bash")]) as build_tools,
             patch.object(run_swe, "BaseCodingAgent", return_value=fake_agent) as base_agent,
             patch.object(run_swe, "collect_patch", return_value="diff --git a/x.py b/x.py\n") as collect_patch,
             patch.object(run_swe, "write_run_outputs") as write_outputs,
@@ -86,20 +91,65 @@ class RunSweTest(unittest.TestCase):
 
         create_environment.assert_called_once()
         build_llm.assert_called_once_with("gpt-5-mini")
-        build_tools.assert_called_once_with(fake_environment)
+        build_tools.assert_called_once_with(
+            fake_environment,
+            max_output_chars=run_swe.SWEBENCH_BASH_MAX_OUTPUT_CHARS,
+        )
         base_agent.assert_called_once()
+        agent_config = base_agent.call_args.kwargs["config"]
+        self.assertEqual(agent_config.max_steps, 12)
+        self.assertEqual(
+            agent_config.recent_message_limit,
+            run_swe.SWEBENCH_RECENT_MESSAGE_LIMIT,
+        )
         fake_agent.solve.assert_called_once()
         collect_patch.assert_called_once_with(fake_environment)
         fake_environment.cleanup.assert_called_once()
         write_outputs.assert_called_once()
+        self.assertEqual(write_outputs.call_args.kwargs["model_name"], "gpt-5-mini")
         self.assertEqual(result["patch"], "diff --git a/x.py b/x.py\n")
         self.assertIn("pytest-dev__pytest-10356-", result["log_path"])
         self.assertTrue(result["log_path"].endswith(".log"))
+        self.assertTrue(result["predictions_path"].endswith("preds.jsonl"))
         self.assertEqual(result["trajectory"][1]["tool_calls"][0]["args"]["command"], "ls -la")
         self.assertEqual(result["trajectory"][2]["tool_name"], "bash")
         self.assertTrue(result["trajectory_path"].endswith("trajectory.json"))
         self.assertEqual(result["metrics"]["llm_calls"], 1)
         self.assertEqual(result["metrics"]["total_tokens"], 18)
+
+    def test_run_task_can_enable_ckg_tools_for_benchmark(self) -> None:
+        instance = {
+            "instance_id": "pytest-dev__pytest-10356",
+            "problem_statement": "fix pytest",
+        }
+        fake_environment = MagicMock()
+        fake_agent = MagicMock()
+        fake_agent.solve.return_value = MagicMock(
+            status="complete",
+            final_answer="done",
+            errors=[],
+            state={"messages": [AIMessage(content="done")]},
+        )
+
+        with (
+            patch.object(run_swe, "load_swebench_instance", return_value=instance),
+            patch.object(run_swe, "create_swebench_environment", return_value=fake_environment),
+            patch.object(run_swe, "prepare_swebench_ckg_backend", return_value=MagicMock()) as prepare_ckg,
+            patch.object(run_swe, "build_llm", return_value=MagicMock()),
+            patch.object(run_swe, "build_bash_tool", return_value=[FakeTool("bash")]),
+            patch.object(run_swe, "build_ckg_tools", return_value=[FakeTool("ckg_search")]) as build_ckg,
+            patch.object(run_swe, "BaseCodingAgent", return_value=fake_agent) as base_agent,
+            patch.object(run_swe, "collect_patch", return_value="diff --git a/x.py b/x.py\n"),
+            patch.object(run_swe, "write_run_outputs"),
+        ):
+            result = run_swe.run_task("pytest-dev__pytest-10356", use_ckg=True)
+
+        prepare_ckg.assert_called_once()
+        build_ckg.assert_called_once()
+        tools = base_agent.call_args.kwargs["tools"]
+        self.assertEqual([tool.name for tool in tools], ["bash", "ckg_search"])
+        self.assertTrue(base_agent.call_args.kwargs["config"].enable_ckg_phase_policy)
+        self.assertTrue(result["ckg"]["enabled"])
 
     def test_run_task_marks_empty_patch_or_answer_as_failed(self) -> None:
         instance = {
@@ -119,7 +169,7 @@ class RunSweTest(unittest.TestCase):
             patch.object(run_swe, "load_swebench_instance", return_value=instance),
             patch.object(run_swe, "create_swebench_environment", return_value=fake_environment),
             patch.object(run_swe, "build_llm", return_value=MagicMock()),
-            patch.object(run_swe, "build_bash_tool", return_value=[MagicMock(name="bash")]),
+            patch.object(run_swe, "build_bash_tool", return_value=[FakeTool("bash")]),
             patch.object(run_swe, "BaseCodingAgent", return_value=fake_agent),
             patch.object(run_swe, "collect_patch", return_value=""),
             patch.object(run_swe, "write_run_outputs"),
@@ -143,6 +193,48 @@ class RunSweTest(unittest.TestCase):
         self.assertEqual(rendered.count("Bug title\nDetails"), 1)
         self.assertNotIn("Checklist text", rendered)
         self.assertIn("Do not prefix commands with `bash -lc`", rendered)
+
+    def test_render_swebench_issue_includes_ckg_guidance_when_enabled(self) -> None:
+        rendered = run_swe.render_swebench_issue("fix pytest", use_ckg=True)
+
+        self.assertIn("You have bash plus read-only CKG tools", rendered)
+        self.assertIn("CKG was built from the initial /testbed snapshot", rendered)
+        self.assertIn("Use bash as the source of truth", rendered)
+        self.assertIn("Start with ckg_search", rendered)
+        self.assertIn("Use ckg_contract", rendered)
+        self.assertIn("Use ckg_crosscut", rendered)
+        self.assertIn("Use Python file-edit scripts", rendered)
+        self.assertIn("Do not use git diff to apply patches", rendered)
+
+    def test_copy_testbed_snapshot_prefers_git_archive_of_tracked_source(self) -> None:
+        fake_environment = MagicMock()
+        fake_environment.container_id = "container-1"
+        fake_environment.config.executable = "docker"
+        snapshot_root = Path(".agent_runs") / "copy-test" / "testbed"
+
+        def fake_run(command, **kwargs):
+            if command[:3] == ["docker", "exec", "-w"]:
+                if command[-2:] == ["rev-parse", "--show-toplevel"]:
+                    return MagicMock(stdout="/testbed\n", returncode=0)
+                if command[-3:] == ["archive", "--format=tar", "HEAD"]:
+                    kwargs["stdout"].write(b"tar-bytes")
+                    return MagicMock(returncode=0)
+            raise AssertionError(f"unexpected command: {command}")
+
+        try:
+            with (
+                patch.object(run_swe.subprocess, "run", side_effect=fake_run) as run,
+                patch.object(run_swe.tarfile, "open") as tar_open,
+            ):
+                copied = run_swe.copy_testbed_snapshot(fake_environment, snapshot_root)
+
+            self.assertTrue(copied)
+            self.assertTrue(snapshot_root.exists())
+            self.assertEqual(run.call_args_list[1].args[0][-3:], ["archive", "--format=tar", "HEAD"])
+            tar_open.return_value.__enter__.return_value.extractall.assert_called_once()
+        finally:
+            if snapshot_root.parent.exists():
+                run_swe.shutil.rmtree(snapshot_root.parent, ignore_errors=True)
 
     def test_serialize_agent_trajectory_captures_tool_calls_and_outputs(self) -> None:
         trajectory = run_swe.serialize_agent_trajectory(
@@ -222,6 +314,7 @@ class RunSweTest(unittest.TestCase):
                 max_steps=7,
                 docker_executable="docker",
                 workers=2,
+                use_ckg=True,
             )
 
         self.assertEqual(run_task.call_count, 2)
@@ -229,6 +322,7 @@ class RunSweTest(unittest.TestCase):
         self.assertEqual(batch["completed"], 1)
         self.assertEqual(batch["failed"], 1)
         self.assertEqual(batch["metrics"]["llm_calls"], 0)
+        self.assertTrue(all(call.kwargs["use_ckg"] for call in run_task.call_args_list))
         self.assertEqual([item["instance_id"] for item in batch["results"]], ["repo__task-1", "repo__task-2"])
 
     def test_make_predictions_jsonl_writes_model_patches(self) -> None:

@@ -30,6 +30,7 @@ class AgentConfig:
     max_steps: int = 20
     system_prompt: str = SYSTEM_PROMPT
     recent_message_limit: int = 20
+    enable_ckg_phase_policy: bool = False
 
 
 class AgentState(TypedDict, total=False):
@@ -42,6 +43,7 @@ class AgentState(TypedDict, total=False):
     errors: list[str]
     final_answer: str
     status: Literal["running", "complete", "failed"]
+    phase: Literal["explore", "targeted", "recover"]
 
 
 @dataclass(slots=True)

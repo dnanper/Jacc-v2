@@ -2,9 +2,16 @@
 
 from __future__ import annotations
 
+import json
 from typing import Any, Sequence
 
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    HumanMessage,
+    SystemMessage,
+    ToolMessage,
+)
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langgraph.graph import END, StateGraph
@@ -30,12 +37,14 @@ class BaseAgentWorkflow:
         return self.graph.invoke(state)
 
     def call_model(self, state: AgentState) -> AgentState:
-        response = self.llm.invoke(_prepare_messages(state))
+        phase = _detect_phase(state)
+        response = self.llm.invoke(_prepare_messages(state, phase=phase))
         return {
             "messages": [response],
             "iterations": state.get("iterations", 0) + 1,
             "final_answer": response.content if not _has_tool_calls(response) else "",
             "status": "running",
+            "phase": phase,
         }
 
     def finalize(self, state: AgentState) -> AgentState:
@@ -94,7 +103,11 @@ def _has_tool_calls(message: Any) -> bool:
     return isinstance(message, AIMessage) and bool(message.tool_calls)
 
 
-def _prepare_messages(state: AgentState) -> list[BaseMessage]:
+def _prepare_messages(
+    state: AgentState,
+    *,
+    phase: str | None = None,
+) -> list[BaseMessage]:
     """Prepare a coherent LLM input from state history.
 
     Keep durable context (system prompt + original task) and a recent valid
@@ -123,4 +136,94 @@ def _prepare_messages(state: AgentState) -> list[BaseMessage]:
     while tail and isinstance(tail[0], ToolMessage):
         tail = tail[1:]
 
+    phase_hint = _phase_hint(phase) if phase else None
+    if phase_hint:
+        return [*durable, SystemMessage(content=phase_hint), *tail]
     return [*durable, *tail]
+
+
+def _detect_phase(state: AgentState) -> str | None:
+    config = state["config"]
+    if not getattr(config, "enable_ckg_phase_policy", False):
+        return None
+
+    messages = list(state.get("messages", []))
+    if not _has_ckg_signal(messages):
+        return "explore"
+    if _recent_bash_error_count(messages) >= 2:
+        return "recover"
+    return "targeted"
+
+
+def _has_ckg_signal(messages: list[BaseMessage]) -> bool:
+    for message in messages:
+        if not isinstance(message, ToolMessage):
+            continue
+        if not (message.name or "").startswith("ckg_"):
+            continue
+        content = str(message.content)
+        if "container_path" in content or '"signal": "strong"' in content:
+            return True
+        try:
+            payload = json.loads(content)
+        except json.JSONDecodeError:
+            continue
+        if payload.get("signal") == "strong" or _contains_key(payload, "container_path"):
+            return True
+    return False
+
+
+def _recent_bash_error_count(messages: list[BaseMessage], limit: int = 8) -> int:
+    count = 0
+    for message in messages[-limit:]:
+        if not isinstance(message, ToolMessage) or message.name != "bash":
+            continue
+        content = str(message.content)
+        if content.startswith("Error invoking tool"):
+            count += 1
+            continue
+        try:
+            payload = json.loads(content)
+        except json.JSONDecodeError:
+            continue
+        returncode = payload.get("returncode")
+        if returncode not in (None, 0):
+            count += 1
+    return count
+
+
+def _contains_key(value: Any, target_key: str) -> bool:
+    if isinstance(value, dict):
+        return target_key in value or any(
+            _contains_key(item, target_key) for item in value.values()
+        )
+    if isinstance(value, list):
+        return any(_contains_key(item, target_key) for item in value)
+    return False
+
+
+def _phase_hint(phase: str | None) -> str:
+    if phase == "explore":
+        return (
+            "PHASE: explore. Prefer CKG localization tools before bash. "
+            "Start with ckg_search using a focused issue-shaped query. "
+            "Do not run broad commands like ls -R, find over the repository, "
+            "or full-file sed dumps unless CKG is unavailable or weak."
+        )
+    if phase == "targeted":
+        return (
+            "PHASE: targeted. CKG has identified likely files or symbols. "
+            "Stop repository-wide exploration. Prefer targeted bash reads like "
+            "nl -ba <file> | sed -n 'start,endp', ckg_symbol_context for a "
+            "known symbol, ckg_contract before editing signatures/callers, then "
+            "a Python file-edit script, git diff, and targeted verification. "
+            "Timeout values are seconds and must be <= 600."
+        )
+    if phase == "recover":
+        return (
+            "PHASE: recover. Recent targeted bash actions failed. Return to CKG "
+            "with one revised ckg_search or ckg_crosscut query, choose a better "
+            "file/symbol, then resume targeted bash reads. Do not repeat the "
+            "same failing command; timeout values are seconds and must be <= 600."
+        )
+    return ""

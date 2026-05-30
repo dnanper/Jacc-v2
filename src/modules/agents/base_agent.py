@@ -66,6 +66,7 @@ class BaseCodingAgent:
             "iterations": 0,
             "errors": [],
             "status": "running",
+            "phase": "explore",
         }
 
     def _resume_state(self, task: Task, state: AgentState) -> AgentState:

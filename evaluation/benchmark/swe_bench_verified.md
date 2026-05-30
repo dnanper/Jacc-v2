@@ -8,8 +8,6 @@ pydata\_\_xarray-3151
 
 django\_\_django-13512
 
-sympy\_\_sympy-18189
-
 django\_\_django-13028
 
 django\_\_django-11211

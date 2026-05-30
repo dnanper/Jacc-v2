@@ -3,7 +3,7 @@
 from .base_agent import BaseCodingAgent
 from .online_evolve import OnlineEvolveConfig, OnlineEvolveRuntime
 from .state import AgentConfig, AgentState, SolveResult, Task
-from .tools import build_bash_tool, build_create_tool
+from .tools import build_bash_tool, build_ckg_tools, build_create_tool
 
 __all__ = [
     "AgentConfig",
@@ -14,5 +14,6 @@ __all__ = [
     "SolveResult",
     "Task",
     "build_bash_tool",
+    "build_ckg_tools",
     "build_create_tool",
 ]
