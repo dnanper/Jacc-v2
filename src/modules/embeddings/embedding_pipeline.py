@@ -8,12 +8,12 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from math import sqrt
+from typing import Protocol
 
 try:
-    from openai import OpenAI
+    from langchain_openai import OpenAIEmbeddings
 except ImportError:  # pragma: no cover - exercised only without dependency
-    OpenAI = None  # type: ignore[assignment]
+    OpenAIEmbeddings = None  # type: ignore[assignment]
 
 from modules.repo_explorer.graph.core.knowledge_graph import KnowledgeGraph
 
@@ -43,60 +43,33 @@ def _esc_csv(val) -> str:
     return s
 
 
-class OpenAIEmbeddingModel:
-    """Small LangChain-like wrapper around OpenAI embeddings."""
+class EmbeddingModel(Protocol):
+    def embed_documents(self, texts: list[str]) -> list[list[float]]: ...
 
-    def __init__(self, model_id: str, dimensions: int) -> None:
-        if OpenAI is None:
-            raise RuntimeError(
-                "OpenAI embeddings require the 'openai' package. "
-                "Install project dependencies before running embeddings."
-            )
-        self.model_id = model_id
-        self.dimensions = dimensions
-        self._client = OpenAI()
-
-    def embed_documents(self, texts: list[str]) -> list[list[float]]:
-        if not texts:
-            return []
-        response = self._client.embeddings.create(
-            model=self.model_id,
-            input=texts,
-            dimensions=self.dimensions,
-        )
-        return [_normalize_vector(item.embedding) for item in response.data]
-
-    def embed_query(self, text: str) -> list[float]:
-        response = self._client.embeddings.create(
-            model=self.model_id,
-            input=text,
-            dimensions=self.dimensions,
-        )
-        return _normalize_vector(response.data[0].embedding)
+    def embed_query(self, text: str) -> list[float]: ...
 
 
-_model_instance: OpenAIEmbeddingModel | None = None
+_model_instance: EmbeddingModel | None = None
 _model_config: tuple[str, int] | None = None
-
-
-def _normalize_vector(vector: list[float]) -> list[float]:
-    norm = sqrt(sum(v * v for v in vector))
-    if norm == 0:
-        return vector
-    return [v / norm for v in vector]
 
 
 def get_or_create_model(
     model_id: str = DEFAULT_MODEL_ID,
     device: str = "auto",
     dimensions: int = DEFAULT_DIMENSIONS,
-) -> OpenAIEmbeddingModel:
-    """Return a cached OpenAI embedding model wrapper.
+) -> EmbeddingModel:
+    """Return a cached LangChain OpenAI embedding model.
 
     ``device`` is retained for backward-compatible callers, but ignored because
     OpenAI embeddings are remote.
     """
     global _model_instance, _model_config
+
+    if OpenAIEmbeddings is None:
+        raise RuntimeError(
+            "OpenAI embeddings require the 'langchain-openai' package. "
+            "Install project dependencies before running embeddings."
+        )
 
     key = (model_id, dimensions)
 
@@ -108,7 +81,7 @@ def get_or_create_model(
         model_id,
         dimensions,
     )
-    _model_instance = OpenAIEmbeddingModel(model_id=model_id, dimensions=dimensions)
+    _model_instance = OpenAIEmbeddings(model=model_id, dimensions=dimensions)
     _model_config = key
     return _model_instance
 
