@@ -29,7 +29,7 @@ class AgentConfig:
 
     max_steps: int = 20
     system_prompt: str = SYSTEM_PROMPT
-    recent_message_limit: int = 50
+    recent_message_limit: int = 20
 
 
 class AgentState(TypedDict, total=False):

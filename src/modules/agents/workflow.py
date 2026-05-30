@@ -41,16 +41,33 @@ class BaseAgentWorkflow:
     def finalize(self, state: AgentState) -> AgentState:
         state = dict(state)
         state["status"] = "complete"
-        if not state.get("final_answer"):
-            last = state["messages"][-1] if state.get("messages") else None
+        last = state["messages"][-1] if state.get("messages") else None
+        max_steps_reached = state.get("iterations", 0) >= state["config"].max_steps
+        incomplete_after_limit = max_steps_reached and (
+            _has_tool_calls(last)
+            or isinstance(last, ToolMessage)
+            or not state.get("final_answer")
+        )
+        if incomplete_after_limit:
+            state["status"] = "failed"
+            errors = list(state.get("errors", []))
+            if "max_steps_reached" not in errors:
+                errors.append("max_steps_reached")
+            state["errors"] = errors
+        else:
+            state["status"] = "complete"
+        if not state.get("final_answer") and not isinstance(last, ToolMessage):
             state["final_answer"] = getattr(last, "content", "") if last else ""
         return state
 
     def should_continue(self, state: AgentState) -> str:
-        if state.get("iterations", 0) >= state["config"].max_steps:
-            return "finalize"
         last = state["messages"][-1]
         return "tools" if _has_tool_calls(last) else "finalize"
+
+    def after_tools(self, state: AgentState) -> str:
+        if state.get("iterations", 0) >= state["config"].max_steps:
+            return "finalize"
+        return "call_model"
 
     def _compile_graph(self):
         graph = StateGraph(AgentState)
@@ -64,7 +81,11 @@ class BaseAgentWorkflow:
             self.should_continue,
             {"tools": "tools", "finalize": "finalize"},
         )
-        graph.add_edge("tools", "call_model")
+        graph.add_conditional_edges(
+            "tools",
+            self.after_tools,
+            {"call_model": "call_model", "finalize": "finalize"},
+        )
         graph.add_edge("finalize", END)
         return graph.compile()
 

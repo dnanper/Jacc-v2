@@ -23,16 +23,6 @@ SYSTEM_PROMPT = dedent(
     5. Run targeted verification.
     6. Finish with a concise summary of the change and verification.
 
-    Tool creation:
-    - A create_tool tool may be available.
-    - Use it when a small task-specific Python tool would make inspection,
-      localization, ranking, transformation, or verification clearer.
-    - Generated tools must be narrow, deterministic, and useful for the current
-      task.
-    - Generated tools must expose a callable run(...) function and produce
-      informative structured output.
-    - Do not create tools just to wrap a single trivial existing tool call.
-
     Boundaries:
     - Prefer minimal, targeted changes.
     - Do not modify tests unless explicitly instructed by the task.
@@ -53,9 +43,7 @@ INSTANCE_TEMPLATE = dedent(
 
     <instructions>
     Solve the task in the current repository using the available tools. Keep
-    actions incremental and evidence-driven. If new task-specific tools would
-    materially improve progress, create them through the available tool creation
-    mechanism, then use them after registration.
+    actions incremental and evidence-driven.
     </instructions>
     """
 ).strip()
