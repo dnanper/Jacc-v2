@@ -118,6 +118,37 @@ class BaseCodingAgentTest(unittest.TestCase):
         self.assertEqual([msg.type for msg in second.state["messages"]], ["system", "human", "ai", "ai", "tool", "ai"])
         self.assertIn("needs echo", second.state["messages"][1].content)
 
+    def test_tool_call_at_step_limit_is_executed_and_marked_failed(self) -> None:
+        class ToolAtLimitLLM:
+            def bind_tools(self, tools):
+                return self
+
+            def invoke(self, messages):
+                return AIMessage(
+                    content="calling echo",
+                    tool_calls=[
+                        {
+                            "name": "echo",
+                            "args": {"text": "last command"},
+                            "id": "call_echo",
+                            "type": "tool_call",
+                        }
+                    ],
+                )
+
+        agent = BaseCodingAgent(
+            llm=ToolAtLimitLLM(),
+            tools=[echo],
+            config=AgentConfig(max_steps=1),
+        )
+
+        result = agent.solve({"task_id": "demo-3", "issue": "run one command"})
+
+        self.assertEqual(result.status, "failed")
+        self.assertIn("max_steps_reached", result.errors)
+        self.assertEqual([msg.type for msg in result.state["messages"]], ["system", "human", "ai", "tool"])
+        self.assertIn("last command", result.state["messages"][-1].content)
+
 
 if __name__ == "__main__":
     unittest.main()

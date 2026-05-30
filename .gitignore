@@ -6,6 +6,10 @@ __pycache__/
 # C extensions
 *.so
 
+.agent_runs/
+logs/
+reference/
+
 # Distribution / packaging
 .Python
 build/

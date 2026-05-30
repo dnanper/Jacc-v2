@@ -19,54 +19,45 @@ from embeddings import embedding_pipeline
 from repo_explorer.graph.storage.code_adapter import LadybugAdapter
 
 
-class _FakeEmbeddingItem:
-    def __init__(self, embedding: list[float]) -> None:
-        self.embedding = embedding
+class _FakeOpenAIEmbeddings:
+    instances: list["_FakeOpenAIEmbeddings"] = []
+
+    def __init__(self, **kwargs) -> None:
+        self.kwargs = kwargs
+        self.document_inputs: list[list[str]] = []
+        self.query_inputs: list[str] = []
+        self.instances.append(self)
+
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        self.document_inputs.append(texts)
+        return [[3.0, 4.0] for _ in texts]
+
+    def embed_query(self, text: str) -> list[float]:
+        self.query_inputs.append(text)
+        return [3.0, 4.0]
 
 
-class _FakeEmbeddingResponse:
-    def __init__(self, vectors: list[list[float]]) -> None:
-        self.data = [_FakeEmbeddingItem(v) for v in vectors]
-
-
-class _FakeEmbeddingsResource:
-    def __init__(self) -> None:
-        self.calls: list[dict] = []
-
-    def create(self, **kwargs):
-        self.calls.append(kwargs)
-        inputs = kwargs["input"]
-        if isinstance(inputs, str):
-            return _FakeEmbeddingResponse([[3.0, 4.0]])
-        return _FakeEmbeddingResponse([[3.0, 4.0] for _ in inputs])
-
-
-class _FakeOpenAIClient:
-    def __init__(self) -> None:
-        self.embeddings = _FakeEmbeddingsResource()
-
-
-class OpenAIEmbeddingModelTest(unittest.TestCase):
+class OpenAIEmbeddingsTest(unittest.TestCase):
     def tearDown(self) -> None:
         embedding_pipeline.dispose_model()
+        _FakeOpenAIEmbeddings.instances.clear()
 
-    def test_openai_embedding_model_uses_configured_model_and_dimensions(self) -> None:
-        client = _FakeOpenAIClient()
-
-        with patch.object(embedding_pipeline, "OpenAI", return_value=client):
+    def test_get_or_create_model_uses_langchain_openai_embeddings(self) -> None:
+        with patch.object(
+            embedding_pipeline,
+            "OpenAIEmbeddings",
+            _FakeOpenAIEmbeddings,
+            create=True,
+        ):
             model = embedding_pipeline.get_or_create_model()
             vectors = model.embed_documents(["alpha", "beta"])
 
-        self.assertEqual(vectors, [[0.6, 0.8], [0.6, 0.8]])
+        self.assertIsInstance(model, _FakeOpenAIEmbeddings)
+        self.assertEqual(vectors, [[3.0, 4.0], [3.0, 4.0]])
+        self.assertEqual(model.document_inputs, [["alpha", "beta"]])
         self.assertEqual(
-            client.embeddings.calls,
-            [
-                {
-                    "model": "text-embedding-3-small",
-                    "input": ["alpha", "beta"],
-                    "dimensions": 768,
-                }
-            ],
+            model.kwargs,
+            {"model": "text-embedding-3-small", "dimensions": 768},
         )
 
 
