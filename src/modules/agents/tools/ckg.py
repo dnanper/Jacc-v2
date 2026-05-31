@@ -18,7 +18,25 @@ class CkgSearchInput(BaseModel):
             "symbols in the read-only initial /testbed snapshot."
         )
     )
-    limit: int = Field(default=5, ge=1, le=10)
+    limit: int = Field(default=5)
+
+
+class CkgRepairContextInput(BaseModel):
+    issue: str = Field(
+        description=(
+            "Issue text or focused repair question. The tool builds a compact "
+            "CKG localization bundle over the read-only initial snapshot."
+        )
+    )
+    limit: int = Field(default=5)
+    include_deep: bool = Field(
+        default=False,
+        description=(
+            "Set true only when the likely edit touches a shared/public API, "
+            "signature, inheritance relationship, or high-fan-in symbol and "
+            "contract/impact evidence is needed before editing."
+        ),
+    )
 
 
 class CkgFileContextInput(BaseModel):
@@ -29,7 +47,7 @@ class CkgFileContextInput(BaseModel):
         )
     )
     query: str = Field(default="", description="Optional focus query.")
-    limit: int = Field(default=5, ge=1, le=10)
+    limit: int = Field(default=5)
 
 
 class CkgSymbolContextInput(BaseModel):
@@ -84,6 +102,93 @@ def build_ckg_tools(
             container_root=container_root,
         )
 
+    def normalize_with_usage(
+        value: Any,
+        *,
+        limit_info: dict[str, Any] | None = None,
+    ) -> Any:
+        finalized = normalize(value)
+        if isinstance(finalized, dict) and limit_info:
+            usage = finalized.setdefault(
+                "_ckg_usage",
+                {
+                    "source": "read-only initial snapshot",
+                    "next_steps": [
+                        "Use CKG only to choose likely files, symbols, and relationships.",
+                        "Use bash to read current /testbed files before editing.",
+                        "Use bash for edits, tests, git diff, and final verification.",
+                    ],
+                },
+            )
+            usage.update(limit_info)
+        return finalized
+
+    @tool(args_schema=CkgRepairContextInput)
+    def ckg_repair_context(
+        issue: str,
+        limit: int = 5,
+        include_deep: bool = False,
+    ) -> dict[str, Any]:
+        """Build a compact multi-stage CKG evidence bundle for one issue.
+
+        Use this when starting a repair or when bash exploration is drifting.
+        It localizes likely files/symbols and gives a small amount of local
+        graph context. The result is read-only and snapshot-based; use bash for
+        authoritative current source, minimal edits, tests, and git diff. Set
+        include_deep=true only for risky shared/public edits that need contract
+        and impact evidence before editing.
+        """
+
+        search_limit, limit_info = _clamp_limit(limit)
+        search_result = _run_relevance(backend, issue, search_limit)
+        top_file = _first_file_path(search_result)
+        top_symbol = _first_symbol_name(search_result)
+
+        evidence: dict[str, Any] = {
+            "query": issue,
+            "search": search_result,
+            "file_context": None,
+            "symbol_context": None,
+            "contract": None,
+            "impact": None,
+            "next_actions": [],
+        }
+
+        if top_file:
+            evidence["file_context"] = _run_file_context(
+                backend,
+                top_file,
+                issue,
+                min(search_limit, 5),
+                snapshot_root,
+            )
+            evidence["next_actions"].append(
+                f"Read current /testbed/{_relative_path(top_file, snapshot_root)} before editing."
+            )
+            evidence["next_actions"].append(
+                "After reading the exact source region, prefer the smallest patch that addresses the failing behavior."
+            )
+
+        if top_symbol:
+            evidence["symbol_context"] = _safe_context_360(backend, top_symbol)
+            if include_deep:
+                evidence["contract"] = _safe_contract(backend, [top_symbol])
+                evidence["impact"] = _safe_impact(backend, top_symbol)
+                evidence["next_actions"].append(
+                    "Use contract/impact as risk guidance, then verify current source and tests with bash."
+                )
+            else:
+                evidence["next_actions"].append(
+                    "Skip deeper CKG tools unless the edit changes signatures, shared utilities, inheritance, or high-fan-in behavior."
+                )
+
+        if not top_file and not top_symbol:
+            evidence["next_actions"].append(
+                "CKG did not identify a concrete file or symbol; revise the query or inspect repository overview."
+            )
+
+        return normalize_with_usage(evidence, limit_info=limit_info)
+
     @tool(args_schema=CkgSearchInput)
     def ckg_search(query: str, limit: int = 5) -> dict[str, Any]:
         """Search the read-only CKG snapshot for likely files and symbols.
@@ -95,11 +200,9 @@ def build_ckg_tools(
         git diff.
         """
 
-        try:
-            result = backend.relevance(query, limit=limit)
-        except AttributeError:
-            result = backend.explore_auto(query=query, layer="relevance")
-        return normalize(result)
+        search_limit, limit_info = _clamp_limit(limit)
+        result = _run_relevance(backend, query, search_limit)
+        return normalize_with_usage(result, limit_info=limit_info)
 
     @tool(args_schema=CkgFileContextInput)
     def ckg_file_context(
@@ -115,12 +218,15 @@ def build_ckg_tools(
         /testbed/<file_path> before changing it.
         """
 
-        scope = f"file:{_relative_path(file_path, snapshot_root)}"
-        try:
-            result = backend.context_layer(scope, query=query, limit=limit)
-        except AttributeError:
-            result = backend.explore_auto(query=query, scope=scope, layer="context")
-        return normalize(result)
+        context_limit, limit_info = _clamp_limit(limit)
+        result = _run_file_context(
+            backend,
+            file_path,
+            query,
+            context_limit,
+            snapshot_root,
+        )
+        return normalize_with_usage(result, limit_info=limit_info)
 
     @tool(args_schema=CkgSymbolContextInput)
     def ckg_symbol_context(symbol_name: str) -> dict[str, Any]:
@@ -215,6 +321,7 @@ def build_ckg_tools(
         return normalize(result)
 
     return [
+        ckg_repair_context,
         ckg_search,
         ckg_file_context,
         ckg_symbol_context,
@@ -246,6 +353,118 @@ def _finalize_ckg_result(
             },
         )
     return compacted
+
+
+def _clamp_limit(limit: int, *, minimum: int = 1, maximum: int = 10) -> tuple[int, dict[str, Any]]:
+    requested = limit
+    try:
+        value = int(limit)
+    except (TypeError, ValueError):
+        value = maximum
+    clamped = max(minimum, min(maximum, value))
+    info: dict[str, Any] = {"limit_used": clamped}
+    if requested != clamped:
+        info["warnings"] = [
+            f"Requested limit {requested} was outside {minimum}..{maximum}; clamped to {clamped}."
+        ]
+    return clamped, info
+
+
+def _run_relevance(backend: Any, query: str, limit: int) -> dict[str, Any]:
+    try:
+        return backend.relevance(query, limit=limit)
+    except AttributeError:
+        return backend.explore_auto(query=query, layer="relevance")
+
+
+def _run_file_context(
+    backend: Any,
+    file_path: str,
+    query: str,
+    limit: int,
+    snapshot_root: Path,
+) -> dict[str, Any]:
+    scope = f"file:{_relative_path(file_path, snapshot_root)}"
+    try:
+        return backend.context_layer(scope, query=query, limit=limit)
+    except AttributeError:
+        return backend.explore_auto(query=query, scope=scope, layer="context")
+
+
+def _safe_context_360(backend: Any, symbol_name: str) -> dict[str, Any] | None:
+    try:
+        return backend.context_360(symbol_name)
+    except AttributeError:
+        return None
+
+
+def _safe_contract(backend: Any, symbols: list[str]) -> dict[str, Any] | None:
+    try:
+        return backend.contract(symbols)
+    except AttributeError:
+        try:
+            return backend.explore_auto(query=", ".join(symbols), layer="contract")
+        except AttributeError:
+            return None
+
+
+def _safe_impact(backend: Any, symbol_name: str) -> dict[str, Any] | None:
+    try:
+        result = backend.impact(symbol_name, direction="upstream", min_confidence=0.4)
+    except AttributeError:
+        return None
+    if isinstance(result, dict) and isinstance(result.get("affected"), list):
+        result = dict(result)
+        result["affected"] = result["affected"][:20]
+    return result
+
+
+def _first_file_path(value: Any) -> str:
+    found = _find_first_key(value, {"filePath", "file"})
+    return found if isinstance(found, str) else ""
+
+
+def _first_symbol_name(value: Any) -> str:
+    if isinstance(value, dict):
+        label = value.get("label") or value.get("type") or value.get("kind")
+        name = value.get("name")
+        if isinstance(name, str) and label in {
+            "Function",
+            "Method",
+            "Class",
+            "Interface",
+            "Constructor",
+            "Property",
+        }:
+            return name
+        for item in value.values():
+            result = _first_symbol_name(item)
+            if result:
+                return result
+    if isinstance(value, list):
+        for item in value:
+            result = _first_symbol_name(item)
+            if result:
+                return result
+    return ""
+
+
+def _find_first_key(value: Any, keys: set[str]) -> Any:
+    if isinstance(value, dict):
+        for key in keys:
+            item = value.get(key)
+            if item:
+                return item
+        for item in value.values():
+            result = _find_first_key(item, keys)
+            if result:
+                return result
+    if isinstance(value, list):
+        for item in value:
+            result = _find_first_key(item, keys)
+            if result:
+                return result
+    return None
 
 
 def _normalize_paths(value: Any, snapshot_root: Path, container_root: str) -> Any:

@@ -301,6 +301,76 @@ class BaseCodingAgentTest(unittest.TestCase):
             )
         )
 
+    def test_ckg_phase_policy_switches_to_edit_after_source_read(self) -> None:
+        class CaptureLLM:
+            def __init__(self) -> None:
+                self.inputs = []
+
+            def bind_tools(self, tools):
+                return self
+
+            def invoke(self, messages):
+                self.inputs.append(messages)
+                return AIMessage(content="done")
+
+        llm = CaptureLLM()
+        agent = BaseCodingAgent(
+            llm=llm,
+            tools=[echo],
+            config=AgentConfig(max_steps=3, enable_ckg_phase_policy=True),
+        )
+        state = agent._initial_state({"task_id": "demo-6", "issue": "target bug"})
+        state["messages"].extend(
+            [
+                AIMessage(
+                    content="search",
+                    tool_calls=[
+                        {
+                            "name": "ckg_search",
+                            "args": {"query": "target"},
+                            "id": "call_ckg",
+                            "type": "tool_call",
+                        }
+                    ],
+                ),
+                ToolMessage(
+                    name="ckg_search",
+                    tool_call_id="call_ckg",
+                    content='{"signal":"strong","container_path":"/testbed/pkg/target.py"}',
+                ),
+                AIMessage(
+                    content="read source",
+                    tool_calls=[
+                        {
+                            "name": "bash",
+                            "args": {
+                                "command": "nl -ba pkg/target.py | sed -n '1,80p'"
+                            },
+                            "id": "call_bash_read",
+                            "type": "tool_call",
+                        }
+                    ],
+                ),
+                ToolMessage(
+                    name="bash",
+                    tool_call_id="call_bash_read",
+                    content='{"returncode":0,"output":"1\\tdef target():\\n2\\t    return 1\\n"}',
+                ),
+            ]
+        )
+
+        update = agent.workflow.call_model(state)
+
+        self.assertEqual(update["phase"], "edit")
+        self.assertTrue(
+            any(
+                message.type == "system"
+                and "PHASE: edit" in message.content
+                and "smallest" in message.content
+                for message in llm.inputs[-1]
+            )
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

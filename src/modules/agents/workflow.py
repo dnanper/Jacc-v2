@@ -152,6 +152,8 @@ def _detect_phase(state: AgentState) -> str | None:
         return "explore"
     if _recent_bash_error_count(messages) >= 2:
         return "recover"
+    if _has_successful_source_read(messages):
+        return "edit"
     return "targeted"
 
 
@@ -192,6 +194,67 @@ def _recent_bash_error_count(messages: list[BaseMessage], limit: int = 8) -> int
     return count
 
 
+def _has_successful_source_read(messages: list[BaseMessage], limit: int = 12) -> bool:
+    for index, message in enumerate(messages[-limit:]):
+        if not isinstance(message, ToolMessage) or message.name != "bash":
+            continue
+        try:
+            payload = json.loads(str(message.content))
+        except json.JSONDecodeError:
+            continue
+        if payload.get("returncode") not in (None, 0):
+            continue
+        command = _matching_tool_command(messages, message.tool_call_id)
+        if _looks_like_source_read(command):
+            return True
+        output = str(payload.get("output") or "")
+        if index >= 0 and _looks_like_source_output(output):
+            return True
+    return False
+
+
+def _matching_tool_command(messages: list[BaseMessage], tool_call_id: str | None) -> str:
+    if not tool_call_id:
+        return ""
+    for message in reversed(messages):
+        if not isinstance(message, AIMessage):
+            continue
+        for call in message.tool_calls or []:
+            if call.get("id") != tool_call_id:
+                continue
+            args = call.get("args") or {}
+            command = args.get("command")
+            return command if isinstance(command, str) else ""
+    return ""
+
+
+def _looks_like_source_read(command: str) -> bool:
+    command = command.strip().lower()
+    if not command:
+        return False
+    read_markers = ("sed -n", "nl -ba", "cat ", "grep ", "rg ", "head ", "tail ")
+    source_markers = (".py", ".js", ".ts", ".tsx", ".java", ".go", ".rs", ".rb")
+    return any(marker in command for marker in read_markers) and any(
+        marker in command for marker in source_markers
+    )
+
+
+def _looks_like_source_output(output: str) -> bool:
+    if not output:
+        return False
+    code_markers = (
+        "def ",
+        "class ",
+        "import ",
+        "from ",
+        "return ",
+        "raise ",
+        "function ",
+        "const ",
+    )
+    return sum(marker in output for marker in code_markers) >= 2
+
+
 def _contains_key(value: Any, target_key: str) -> bool:
     if isinstance(value, dict):
         return target_key in value or any(
@@ -206,7 +269,9 @@ def _phase_hint(phase: str | None) -> str:
     if phase == "explore":
         return (
             "PHASE: explore. Prefer CKG localization tools before bash. "
-            "Start with ckg_search using a focused issue-shaped query. "
+            "Start with ckg_repair_context for a compact evidence bundle, "
+            "or ckg_search using a focused issue-shaped query when you need "
+            "only localization. "
             "Do not run broad commands like ls -R, find over the repository, "
             "or full-file sed dumps unless CKG is unavailable or weak."
         )
@@ -214,9 +279,21 @@ def _phase_hint(phase: str | None) -> str:
         return (
             "PHASE: targeted. CKG has identified likely files or symbols. "
             "Stop repository-wide exploration. Prefer targeted bash reads like "
-            "nl -ba <file> | sed -n 'start,endp', ckg_symbol_context for a "
-            "known symbol, ckg_contract before editing signatures/callers, then "
-            "a Python file-edit script, git diff, and targeted verification. "
+            "nl -ba <file> | sed -n 'start,endp'. Use ckg_symbol_context only "
+            "when the source read leaves the target symbol ambiguous. Use "
+            "ckg_contract or ckg_impact only before changing signatures, shared "
+            "utilities, public APIs, inherited behavior, or high-fan-in symbols. "
+            "Once the exact source region is read, move to a minimal source edit. "
+            "Timeout values are seconds and must be <= 600."
+        )
+    if phase == "edit":
+        return (
+            "PHASE: edit. You have CKG localization and have read current source "
+            "with bash. Stop searching unless the source disproves the hypothesis. "
+            "Make the smallest behavior-preserving patch that addresses the "
+            "reported failure; do not introduce broad fallback logic, new helper "
+            "mechanisms, or generalized rewrites unless the issue explicitly "
+            "requires them. Then inspect git diff and run targeted verification. "
             "Timeout values are seconds and must be <= 600."
         )
     if phase == "recover":

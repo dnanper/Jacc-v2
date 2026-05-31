@@ -119,6 +119,7 @@ class SwebenchToolTest(unittest.TestCase):
         self.assertEqual(
             names,
             [
+                "ckg_repair_context",
                 "ckg_search",
                 "ckg_file_context",
                 "ckg_symbol_context",
@@ -166,6 +167,168 @@ class SwebenchToolTest(unittest.TestCase):
             crosscut_result["shared_symbols"][0]["container_path"],
             "/testbed/src/pkg/shared.py",
         )
+
+    def test_ckg_search_clamps_oversized_limit_instead_of_failing(self) -> None:
+        class FakeBackend:
+            def __init__(self) -> None:
+                self.limits = []
+
+            def relevance(self, query="", limit=5):
+                self.limits.append(limit)
+                return {"hits": [{"filePath": "src/pkg/target.py"}]}
+
+        backend = FakeBackend()
+        tools = build_ckg_tools(
+            backend,
+            snapshot_root=Path(".agent_runs/swebench/demo/ckg_snapshot/testbed"),
+            container_root="/testbed",
+        )
+        search = next(tool for tool in tools if tool.name == "ckg_search")
+
+        result = search.invoke({"query": "target behavior", "limit": 20})
+
+        self.assertEqual(backend.limits, [10])
+        self.assertEqual(result["_ckg_usage"]["limit_used"], 10)
+        self.assertIn("clamped", result["_ckg_usage"]["warnings"][0])
+
+    def test_ckg_repair_context_builds_localization_bundle_by_default(self) -> None:
+        class FakeBackend:
+            def __init__(self) -> None:
+                self.calls = []
+
+            def relevance(self, query="", limit=5):
+                self.calls.append(("relevance", query, limit))
+                return {
+                    "signal": "strong",
+                    "communities": [
+                        {
+                            "hits": [
+                                {
+                                    "name": "target",
+                                    "label": "Function",
+                                    "filePath": "src/pkg/target.py",
+                                }
+                            ]
+                        }
+                    ],
+                }
+
+            def context_layer(self, scope, query="", limit=3):
+                self.calls.append(("context_layer", scope, query, limit))
+                return {
+                    "symbols": [
+                        {
+                            "name": "target",
+                            "type": "Function",
+                            "filePath": "src/pkg/target.py",
+                        }
+                    ]
+                }
+
+            def context_360(self, symbol_name):
+                self.calls.append(("context_360", symbol_name))
+                return {
+                    "symbol": {"name": symbol_name, "filePath": "src/pkg/target.py"},
+                    "callers": [{"name": "caller", "file": "src/pkg/caller.py"}],
+                }
+
+            def contract(self, symbols):
+                self.calls.append(("contract", tuple(symbols)))
+                return {
+                    "symbols": [
+                        {
+                            "name": symbols[0],
+                            "signature": "target(value)",
+                            "filePath": "src/pkg/target.py",
+                        }
+                    ]
+                }
+
+            def impact(self, target, direction="upstream", min_confidence=0.4):
+                self.calls.append(("impact", target, direction, min_confidence))
+                return {
+                    "target": {"name": target, "filePath": "src/pkg/target.py"},
+                    "risk": "LOW",
+                    "affected": [{"name": "caller", "filePath": "src/pkg/caller.py"}],
+                }
+
+        backend = FakeBackend()
+        tools = build_ckg_tools(
+            backend,
+            snapshot_root=Path(".agent_runs/swebench/demo/ckg_snapshot/testbed"),
+            container_root="/testbed",
+        )
+        repair_context = next(tool for tool in tools if tool.name == "ckg_repair_context")
+
+        result = repair_context.invoke({"issue": "target behavior", "limit": 20})
+
+        self.assertEqual(result["query"], "target behavior")
+        self.assertEqual(result["_ckg_usage"]["limit_used"], 10)
+        self.assertEqual(
+            [call[0] for call in backend.calls],
+            ["relevance", "context_layer", "context_360"],
+        )
+        self.assertEqual(
+            result["search"]["communities"][0]["hits"][0]["container_path"],
+            "/testbed/src/pkg/target.py",
+        )
+        self.assertEqual(
+            result["symbol_context"]["symbol"]["container_path"],
+            "/testbed/src/pkg/target.py",
+        )
+        self.assertIsNone(result["contract"])
+        self.assertIsNone(result["impact"])
+        self.assertTrue(
+            any("smallest patch" in action for action in result["next_actions"])
+        )
+
+    def test_ckg_repair_context_can_include_deep_risk_evidence(self) -> None:
+        class FakeBackend:
+            def __init__(self) -> None:
+                self.calls = []
+
+            def relevance(self, query="", limit=5):
+                self.calls.append(("relevance", query, limit))
+                return {
+                    "signal": "strong",
+                    "hits": [
+                        {
+                            "name": "target",
+                            "label": "Function",
+                            "filePath": "src/pkg/target.py",
+                        }
+                    ],
+                }
+
+            def context_layer(self, scope, query="", limit=3):
+                self.calls.append(("context_layer", scope, query, limit))
+                return {"symbols": []}
+
+            def context_360(self, symbol_name):
+                self.calls.append(("context_360", symbol_name))
+                return {"symbol": {"name": symbol_name}}
+
+            def contract(self, symbols):
+                self.calls.append(("contract", tuple(symbols)))
+                return {"symbols": [{"name": symbols[0]}]}
+
+            def impact(self, target, direction="upstream", min_confidence=0.4):
+                self.calls.append(("impact", target, direction, min_confidence))
+                return {"risk": "LOW", "affected": []}
+
+        tools = build_ckg_tools(
+            FakeBackend(),
+            snapshot_root=Path(".agent_runs/swebench/demo/ckg_snapshot/testbed"),
+            container_root="/testbed",
+        )
+        repair_context = next(tool for tool in tools if tool.name == "ckg_repair_context")
+
+        result = repair_context.invoke(
+            {"issue": "target behavior", "include_deep": True}
+        )
+
+        self.assertIsNotNone(result["contract"])
+        self.assertEqual(result["impact"]["risk"], "LOW")
 
     def test_ckg_outputs_are_compact_and_include_usage_guidance(self) -> None:
         class FakeBackend:
