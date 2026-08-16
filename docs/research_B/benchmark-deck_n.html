@@ -1,0 +1,2462 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Benchmark – Metric – Baseline · Code Knowledge Graph</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,75..125,400..900&family=JetBrains+Mono:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --ground: #eef1f5;
+        --paper: #fff;
+        --ink: #131c28;
+        --muted: #5c6b7f;
+        --faint: #8a98a9;
+        --grid: #d9e0e8;
+        --rule: #c9d2dc;
+        --a: #0b6e6e;
+        --a-wash: #e3f0ef;
+        --b: #4636a6;
+        --b-wash: #eae7f6;
+        --hot: #a8264f;
+        --pad: clamp(18px, 3vw, 44px);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: var(--ground);
+        background-image:
+          linear-gradient(var(--grid) 1px, transparent 1px),
+          linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+        background-size: 26px 26px;
+        color: var(--ink);
+        font-family: "Archivo", system-ui, sans-serif;
+        font-variation-settings: "wdth" 100;
+        -webkit-font-smoothing: antialiased;
+      }
+      .deck {
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 18px 16px 92px;
+      }
+      .slide {
+        display: none;
+        background: var(--paper);
+        border: 1px solid var(--rule);
+        border-left: 7px solid var(--muted);
+        min-height: calc(100vh - 130px);
+        padding: var(--pad);
+        animation: in 0.18s ease-out;
+      }
+      .slide.on {
+        display: flex;
+        flex-direction: column;
+      }
+      .slide[data-axis="A"] {
+        border-left-color: var(--a);
+      }
+      .slide[data-axis="B"] {
+        border-left-color: var(--b);
+      }
+      @keyframes in {
+        from {
+          opacity: 0;
+          transform: translateY(5px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .slide {
+          animation: none;
+        }
+      }
+
+      .meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 16px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 10.5px;
+        letter-spacing: 0.11em;
+        text-transform: uppercase;
+        color: var(--faint);
+        border-bottom: 1px solid var(--rule);
+        padding-bottom: 9px;
+        margin-bottom: 18px;
+      }
+      .meta .tag {
+        font-weight: 700;
+      }
+      [data-axis="A"] .meta .tag {
+        color: var(--a);
+      }
+      [data-axis="B"] .meta .tag {
+        color: var(--b);
+      }
+
+      h1 {
+        font-size: clamp(30px, 5.2vw, 58px);
+        line-height: 0.98;
+        margin: 0 0 14px;
+        font-weight: 900;
+        font-variation-settings: "wdth" 112;
+        letter-spacing: -0.026em;
+        text-wrap: balance;
+      }
+      h2 {
+        font-size: clamp(20px, 2.7vw, 30px);
+        line-height: 1.05;
+        margin: 0 0 14px;
+        font-weight: 800;
+        font-variation-settings: "wdth" 108;
+        letter-spacing: -0.02em;
+      }
+      h2 .qual {
+        font-weight: 400;
+        font-size: 0.52em;
+        color: var(--muted);
+        letter-spacing: 0;
+        font-variation-settings: "wdth" 100;
+      }
+      .sub {
+        color: var(--muted);
+        font-size: clamp(13px, 1.3vw, 15.5px);
+        line-height: 1.45;
+        margin: 0 0 16px;
+        max-width: 84ch;
+      }
+      p {
+        line-height: 1.55;
+        margin: 0 0 9px;
+        font-size: 13.6px;
+      }
+      .body {
+        flex: 1;
+        min-height: 0;
+        overflow: auto;
+      }
+
+      .stage {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        margin: 20px 0 9px;
+        padding-bottom: 6px;
+        border-bottom: 1.5px solid var(--ink);
+      }
+      .stage:first-child {
+        margin-top: 0;
+      }
+      .stage .num {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        color: var(--paper);
+        background: var(--muted);
+        padding: 2px 6px;
+      }
+      [data-axis="A"] .stage .num {
+        background: var(--a);
+      }
+      [data-axis="B"] .stage .num {
+        background: var(--b);
+      }
+      .stage .lbl {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+      }
+      .stage .of {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 10.5px;
+        color: var(--faint);
+        letter-spacing: 0.04em;
+        margin-left: auto;
+        text-align: right;
+      }
+      h4.mini {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin: 13px 0 6px;
+      }
+
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 12.3px;
+        margin: 0 0 6px;
+      }
+      th,
+      td {
+        padding: 5.5px 9px;
+        text-align: left;
+        border-bottom: 1px solid var(--rule);
+        vertical-align: top;
+      }
+      thead th {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 9.4px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        border-bottom: 1.5px solid var(--ink);
+        white-space: nowrap;
+      }
+      td.n,
+      th.n {
+        text-align: right;
+        font-family: "JetBrains Mono", monospace;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+      tbody tr:last-child td {
+        border-bottom: none;
+      }
+      .grp td {
+        background: #f2f5f8;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 9.4px;
+        font-weight: 700;
+        letter-spacing: 0.11em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      tr.target td {
+        background: #fbeef2;
+      }
+      tr.target td:first-child {
+        box-shadow: inset 3px 0 0 var(--hot);
+      }
+      tr.ctrl td {
+        background: #f4f2fb;
+        font-style: italic;
+      }
+      .win {
+        color: var(--hot);
+        font-weight: 700;
+      }
+
+      .cols {
+        display: grid;
+        gap: var(--pad);
+        grid-template-columns: 1fr 1fr;
+      }
+      .cols3 {
+        display: grid;
+        gap: 15px;
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .card {
+        border: 1px solid var(--rule);
+        padding: 12px 14px;
+        background: #fbfcfd;
+      }
+      .card h4 {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin: 0 0 7px;
+      }
+      .card p {
+        font-size: 12.5px;
+        margin: 0 0 6px;
+      }
+      .card p:last-child {
+        margin-bottom: 0;
+      }
+
+      .spec {
+        width: 100%;
+        font-size: 12.8px;
+      }
+      .spec td {
+        padding: 4.5px 0;
+        border-bottom: 1px dotted var(--rule);
+      }
+      .spec td:first-child {
+        width: 120px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 9.4px;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        color: var(--muted);
+        padding-right: 12px;
+      }
+      .formula,
+      .sample {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11.6px;
+        line-height: 1.65;
+        background: #f2f5f8;
+        border-left: 3px solid var(--muted);
+        padding: 11px 14px;
+        margin: 8px 0 11px;
+        white-space: pre-wrap;
+        overflow-x: auto;
+      }
+      [data-axis="A"] .formula,
+      [data-axis="A"] .sample {
+        border-left-color: var(--a);
+        background: var(--a-wash);
+      }
+      [data-axis="B"] .formula,
+      [data-axis="B"] .sample {
+        border-left-color: var(--b);
+        background: var(--b-wash);
+      }
+      .sample .k {
+        color: var(--hot);
+        font-weight: 700;
+      }
+      .sample .c {
+        color: var(--faint);
+      }
+      .caption {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 10px;
+        color: var(--faint);
+        margin: -6px 0 12px;
+        letter-spacing: 0.03em;
+      }
+      .note {
+        border-left: 3px solid var(--hot);
+        background: #fbeef2;
+        padding: 10px 14px;
+        margin: 10px 0;
+        font-size: 12.6px;
+        line-height: 1.5;
+      }
+      .note b {
+        color: var(--hot);
+      }
+      code,
+      .mono {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.9em;
+      }
+      code {
+        background: #f2f5f8;
+        padding: 1px 5px;
+        border: 1px solid var(--rule);
+      }
+      ul {
+        margin: 0 0 9px;
+        padding-left: 19px;
+      }
+      li {
+        line-height: 1.5;
+        margin-bottom: 5px;
+        font-size: 13.2px;
+      }
+
+      .pr {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        background: #fde8cf;
+        color: #8a4b08;
+        border: 1px solid #e4b77e;
+        padding: 1px 5px;
+        white-space: nowrap;
+      }
+      .pv {
+        font-weight: 700;
+      }
+      .src {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 10.2px;
+        color: var(--faint);
+        line-height: 1.6;
+        margin-top: auto;
+        padding-top: 12px;
+        border-top: 1px solid var(--rule);
+      }
+      .src b {
+        color: var(--muted);
+      }
+
+      .title-wrap {
+        display: grid;
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: var(--pad);
+        align-items: center;
+        flex: 1;
+      }
+      .eyebrow {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 16px;
+      }
+      .pick {
+        display: flex;
+        flex-direction: column;
+        gap: 9px;
+        margin-top: 16px;
+      }
+      .pick div {
+        border: 1px solid var(--rule);
+        padding: 10px 13px;
+        background: #fbfcfd;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+      }
+      .pick b {
+        font-size: 12.8px;
+      }
+      .pick span {
+        display: block;
+        color: var(--muted);
+        font-size: 10px;
+        letter-spacing: 0.05em;
+        margin-top: 3px;
+      }
+      .legend {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-top: 14px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 10.2px;
+        color: var(--muted);
+        align-items: center;
+      }
+
+      .nav {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 20;
+        background: rgba(238, 241, 245, 0.94);
+        backdrop-filter: blur(7px);
+        border-top: 1px solid var(--rule);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 9px clamp(12px, 3vw, 26px);
+      }
+      .rail {
+        display: flex;
+        gap: 4px;
+        flex: 1;
+        overflow: hidden;
+      }
+      .rail button {
+        flex: 1;
+        min-width: 5px;
+        height: 6px;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        background: var(--rule);
+        transition: background 0.15s;
+      }
+      .rail button[data-axis="A"] {
+        background: #b6d3d1;
+      }
+      .rail button[data-axis="B"] {
+        background: #c3bce4;
+      }
+      .rail button.on {
+        background: var(--ink);
+      }
+      .rail button:focus-visible {
+        outline: 2px solid var(--ink);
+        outline-offset: 2px;
+      }
+      .nav .btn {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        background: var(--paper);
+        border: 1px solid var(--ink);
+        color: var(--ink);
+        padding: 6px 13px;
+        cursor: pointer;
+      }
+      .nav .btn:hover {
+        background: var(--ink);
+        color: var(--paper);
+      }
+      .nav .btn:focus-visible {
+        outline: 2px solid var(--hot);
+        outline-offset: 2px;
+      }
+      .count {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--muted);
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+      }
+
+      @media (max-width: 900px) {
+        .cols,
+        .cols3,
+        .title-wrap {
+          grid-template-columns: 1fr;
+        }
+        .slide {
+          min-height: auto;
+        }
+        table {
+          font-size: 11.2px;
+        }
+        th,
+        td {
+          padding: 5px 6px;
+        }
+        .stage .of {
+          display: none;
+        }
+      }
+      @media (max-width: 560px) {
+        .spec td:first-child {
+          width: auto;
+          display: block;
+          padding-bottom: 1px;
+          border: none;
+        }
+        .spec td {
+          display: block;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="deck">
+      <!-- 1 ── KHUNG -->
+      <section class="slide on">
+        <div class="meta">
+          <span class="tag">Khung trình bày</span
+          ><span>Code Knowledge Graph · Luận văn</span>
+        </div>
+        <div class="title-wrap">
+          <div>
+            <div class="eyebrow">Đồ thị + bộ công cụ truy vấn cho agent</div>
+            <h1>Hai bộ dữ liệu, hai trục đánh giá</h1>
+            <p class="sub">
+              Slide 02 là <strong>ví dụ nền</strong> — một instance thật, dùng
+              làm tham chiếu cho mọi slide sau. Slide 03–07 theo cùng cấu trúc
+              ba bước: <strong>① Benchmark → ② Metric → ③ Baseline</strong>.
+            </p>
+            <div class="pick">
+              <div>
+                <b>BỘ 1 — SWE-bench Lite + Loc-Bench</b
+                ><span>ICLR 2024 + ACL 2025 · phục vụ cả hai trục</span>
+              </div>
+              <div>
+                <b>BỘ 2 — PyCG Evaluation Suite</b
+                ><span>ICSE 2021 · chỉ trục A — độ đúng của cạnh</span>
+              </div>
+            </div>
+            <div class="legend">
+              <span
+                ><span class="pv">ĐẬM</span> = đã bình duyệt tại hội nghị</span
+              >
+              <span
+                ><span class="pr">PREPRINT</span> = chưa bình duyệt, ghi rõ nơi
+                &amp; thời điểm nộp</span
+              >
+            </div>
+            <p class="sub" style="margin-top: 14px; margin-bottom: 0">
+              Chọn đúng bộ này vì đây
+              <strong>chính xác là định vị của LocAgent (ACL 2025)</strong> — so
+              sánh trực tiếp được, không phải chạy lại baseline.
+            </p>
+          </div>
+          <div>
+            <svg
+              viewBox="0 0 300 290"
+              width="100%"
+              role="img"
+              aria-label="Hai trục đánh giá: trục dọc là chất lượng đồ thị, trục ngang là chất lượng hệ thống"
+            >
+              <line
+                x1="46"
+                y1="250"
+                x2="284"
+                y2="250"
+                stroke="#4636A6"
+                stroke-width="2"
+              />
+              <line
+                x1="46"
+                y1="250"
+                x2="46"
+                y2="16"
+                stroke="#0B6E6E"
+                stroke-width="2"
+              />
+              <polygon points="284,250 276,246 276,254" fill="#4636A6" />
+              <polygon points="46,16 42,24 50,24" fill="#0B6E6E" />
+              <text
+                x="292"
+                y="254"
+                text-anchor="end"
+                font-family="JetBrains Mono,monospace"
+                font-size="10"
+                font-weight="700"
+                fill="#4636A6"
+              >
+                TRỤC B
+              </text>
+              <text
+                x="288"
+                y="268"
+                text-anchor="end"
+                font-family="JetBrains Mono,monospace"
+                font-size="9"
+                fill="#5C6B7F"
+              >
+                hệ thống (agent)
+              </text>
+              <text
+                x="54"
+                y="24"
+                font-family="JetBrains Mono,monospace"
+                font-size="10"
+                font-weight="700"
+                fill="#0B6E6E"
+              >
+                TRỤC A
+              </text>
+              <text
+                x="54"
+                y="38"
+                font-family="JetBrains Mono,monospace"
+                font-size="9"
+                fill="#5C6B7F"
+              >
+                đồ thị
+              </text>
+              <rect
+                x="60"
+                y="58"
+                width="140"
+                height="40"
+                fill="#E3F0EF"
+                stroke="#0B6E6E"
+              />
+              <text
+                x="70"
+                y="75"
+                font-family="JetBrains Mono,monospace"
+                font-size="9.5"
+                font-weight="700"
+                fill="#0B6E6E"
+              >
+                03 · PyCG suite
+              </text>
+              <text
+                x="70"
+                y="89"
+                font-family="JetBrains Mono,monospace"
+                font-size="8.5"
+                fill="#5C6B7F"
+              >
+                P / R của cạnh
+              </text>
+              <rect
+                x="60"
+                y="112"
+                width="196"
+                height="40"
+                fill="#E3F0EF"
+                stroke="#0B6E6E"
+              />
+              <text
+                x="70"
+                y="129"
+                font-family="JetBrains Mono,monospace"
+                font-size="9.5"
+                font-weight="700"
+                fill="#0B6E6E"
+              >
+                04 · không gọi LLM
+              </text>
+              <text
+                x="70"
+                y="143"
+                font-family="JetBrains Mono,monospace"
+                font-size="8.5"
+                fill="#5C6B7F"
+              >
+                Gold-Reachability@h · Coverage@budget
+              </text>
+              <rect
+                x="60"
+                y="176"
+                width="196"
+                height="58"
+                fill="#EAE7F6"
+                stroke="#4636A6"
+              />
+              <text
+                x="70"
+                y="194"
+                font-family="JetBrains Mono,monospace"
+                font-size="9.5"
+                font-weight="700"
+                fill="#4636A6"
+              >
+                05 · SWE-bench Lite · 06 · Loc-Bench
+              </text>
+              <text
+                x="70"
+                y="208"
+                font-family="JetBrains Mono,monospace"
+                font-size="9.5"
+                font-weight="700"
+                fill="#4636A6"
+              >
+                07 · so sánh có kiểm soát
+              </text>
+              <text
+                x="70"
+                y="224"
+                font-family="JetBrains Mono,monospace"
+                font-size="8.5"
+                fill="#5C6B7F"
+              >
+                Acc@k strict · NDCG · Pass@1 · ρ
+              </text>
+            </svg>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2 ── VÍ DỤ NỀN -->
+      <section class="slide">
+        <div class="meta">
+          <span class="tag">Ví dụ nền</span
+          ><span>Slide 02 / 08 · tham chiếu cho mọi slide sau</span>
+        </div>
+        <h2>
+          Một instance trông như thế nào
+          <span class="qual"
+            >— <code>astropy__astropy-12907</code>, có trong cả Lite và
+            Verified</span
+          >
+        </h2>
+        <div class="body">
+          <div class="stage">
+            <span class="num">01</span><span class="lbl">Benchmark</span
+            ><span class="of">Dữ liệu thô của một instance</span>
+          </div>
+          <div class="cols">
+            <div>
+              <div class="sample">
+                <span class="k">instance_id</span> astropy__astropy-12907
+                <span class="k">repo</span> astropy/astropy
+                <span class="k">base_commit</span>
+                d16bfe05a744909de4b27f5875fe0d4ed41ce607
+                <span class="k">version</span> 4.3
+                <span class="k">created_at</span> 2022-03-03T15:14:54Z
+                <span class="k">problem_statement</span> ← issue title + body
+                (input) <span class="k">patch</span> ← gold patch (KHÔNG đưa cho
+                model) <span class="k">test_patch</span> ← test do PR bổ sung
+                <span class="k">FAIL_TO_PASS</span>
+                ["…/test_separable.py::test_separable
+                [compound_model6-result6]", …]
+                <span class="k">PASS_TO_PASS</span> ← test phải không bị vỡ
+                <span class="k">hints_text</span> ← comment trên issue trước khi
+                có PR
+              </div>
+              <p class="caption">
+                Schema chính thức của SWE-bench / Lite / Verified ·
+                huggingface.co/datasets/SWE-bench
+              </p>
+            </div>
+            <div>
+              <h4 class="mini">
+                problem_statement — input duy nhất model nhận được
+              </h4>
+              <div class="sample">
+                <span class="c"
+                  >## Modeling's `separability_matrix` does not compute ##
+                  separability correctly for nested CompoundModels</span
+                >
+
+                cm = m.Linear1D(10) &amp; m.Linear1D(5) &gt;&gt;&gt;
+                separability_matrix(cm) array([[ True, False], [False, True]])
+                <span class="c"># đúng</span>
+
+                &gt;&gt;&gt; separability_matrix(m.Pix2Sky_TAN() &amp; cm)
+                array([[ True, True, False, False], [ True, True, False, False],
+                [False, False, True, True],
+                <span class="c"># ← sai</span> [False, False, True, True]])
+                "Suddenly the inputs and outputs are no longer separable? This
+                feels like a bug…"
+              </div>
+              <p class="caption">Rút gọn từ astropy/astropy issue #12906</p>
+            </div>
+          </div>
+
+          <div class="stage">
+            <span class="num">02</span><span class="lbl">Metric</span
+            ><span class="of">Từ gold patch suy ra ground truth ở 3 mức</span>
+          </div>
+          <div class="cols">
+            <div>
+              <div class="sample">
+                diff --git a/astropy/modeling/separable.py ---
+                a/astropy/modeling/separable.py +++
+                b/astropy/modeling/separable.py @@ -242,7 +242,7 @@ def
+                <span class="k">_cstack</span>(left, right): …
+                <span class="c"># đổi đúng 1 dòng</span>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Mức</th>
+                    <th>Ground truth</th>
+                    <th class="n">|T|</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>File</td>
+                    <td><code>astropy/modeling/separable.py</code></td>
+                    <td class="n">1</td>
+                  </tr>
+                  <tr>
+                    <td>Function</td>
+                    <td><code>_cstack</code></td>
+                    <td class="n">1</td>
+                  </tr>
+                  <tr>
+                    <td>Line</td>
+                    <td>1 dòng trong hunk <code>@@ -242</code></td>
+                    <td class="n">1</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div>
+              <p>
+                <strong>Acc@5 (file)</strong> = đúng nếu
+                <code>separable.py</code> nằm trong top-5 file dự đoán.
+                <strong>Function Acc@10</strong> = đúng nếu
+                <code>_cstack</code> nằm trong top-10.
+              </p>
+              <div class="note" style="margin-top: 8px">
+                <b>Vì sao instance này không phân biệt được strict và loose:</b>
+                chỉ có <strong>1 target</strong> nên "tất cả target trong top-k"
+                ≡ "ít nhất một target trong top-k".
+                <strong
+                  >Acc@k strict và Recall@k chỉ khác nhau khi |T| ≥ 2</strong
+                >
+                — và Loc-Bench có instance sửa tới 5 file, đó là lý do k phải
+                rộng hơn ở đó.
+              </div>
+            </div>
+          </div>
+
+          <div class="stage">
+            <span class="num">03</span><span class="lbl">Baseline</span
+            ><span class="of"
+              >Vì sao instance này cần đồ thị, không cần embedding</span
+            >
+          </div>
+          <div class="cols">
+            <div>
+              <div class="sample">
+                issue nhắc: separability_matrix
+                <span class="c">← public API</span>
+                │ gọi ▼ _separable │ tra bảng _operators ▼
+                <span class="k">_cstack</span>
+                <span class="c">← gold target</span>
+
+                δ (hop distance) = <span class="k">2+</span> →
+                <span class="k">nhóm "Hop 2"</span>
+              </div>
+              <p class="caption">
+                Chuỗi duyệt này khớp với trace agent thật được báo cáo trong
+                arXiv:2512.20957
+              </p>
+            </div>
+            <div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Cách tiếp cận</th>
+                    <th>Trên instance này</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>BM25 / embedding</strong></td>
+                    <td>
+                      Khớp <code>separability_matrix</code> —
+                      <strong>sai function</strong>. Tên
+                      <code>_cstack</code> không xuất hiện trong issue
+                    </td>
+                  </tr>
+                  <tr class="target">
+                    <td><strong>Duyệt đồ thị</strong></td>
+                    <td>
+                      Từ <code>separability_matrix</code> đi
+                      <strong>2 hop theo cạnh CALLS</strong> là tới
+                      <code>_cstack</code>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <div class="note">
+                <b
+                  >Đây là toàn bộ luận điểm của luận văn, gói trong một
+                  instance.</b
+                >
+                KGCompass báo cáo <strong>89,7%</strong> số bug họ định vị thành
+                công <em>không có gợi ý vị trí tường minh trong issue</em> và
+                chỉ tìm được qua duyệt đồ thị nhiều bước.
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="src">
+          <b>Nguồn:</b> SWE-bench dataset card (ICLR 2024) · astropy/astropy
+          issue #12906 · instance <code>astropy__astropy-12907</code> trong
+          SWE-bench Lite &amp; Verified · Yang et al., <i>KGCompass</i>,
+          arXiv:2503.21710 <span class="pr">preprint</span>
+        </div>
+      </section>
+
+      <!-- 3 ── A1 -->
+      <section class="slide" data-axis="A">
+        <div class="meta">
+          <span class="tag">Trục A · Chất lượng đồ thị</span
+          ><span>Slide 03 / 08</span>
+        </div>
+        <h2>
+          Độ đúng của cạnh
+          <span class="qual">— đồ thị sinh ra có khớp ground truth không?</span>
+        </h2>
+        <div class="body">
+          <div class="stage">
+            <span class="num">01</span><span class="lbl">Benchmark</span
+            ><span class="of">PyCG Evaluation Suite</span>
+          </div>
+          <div class="cols">
+            <div>
+              <table class="spec">
+                <tr>
+                  <td>Venue</td>
+                  <td>
+                    <span class="pv">ICSE 2021</span> — Salis, Sotiropoulos,
+                    Louridas, Spinellis, Mitropoulos.
+                    <em>PyCG: Practical Call Graph Generation in Python</em> ·
+                    arXiv:2103.00587
+                  </td>
+                </tr>
+                <tr>
+                  <td>Public tại</td>
+                  <td>
+                    <code>github.com/vitsalis/pycg-evaluation</code> · Docker ·
+                    Apache 2.0
+                  </td>
+                </tr>
+                <tr>
+                  <td>Micro</td>
+                  <td>
+                    <strong>112 module</strong> Python tối giản,
+                    <strong>16 category</strong> theo đặc trưng ngôn ngữ. Mỗi
+                    test = source + call graph JSON + mô tả ngắn,
+                    <strong>một đường thực thi duy nhất</strong>, không rẽ
+                    nhánh, không vòng lặp
+                  </td>
+                </tr>
+                <tr>
+                  <td>Macro</td>
+                  <td>
+                    <strong>5 package thật</strong> (Git submodule),
+                    <strong>kèm sẵn call graph ground-truth</strong>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Code evaluate</td>
+                  <td>
+                    <code>compare_macro_benchmark_cg.py</code> → CSV P/R ·
+                    <code>table4.py</code> · <code>table5.py</code> tái tạo bảng
+                    của paper
+                  </td>
+                </tr>
+                <tr>
+                  <td>Mở rộng</td>
+                  <td>
+                    <strong>Jarvis</strong> · arXiv:2305.05949
+                    <span class="pr">PREPRINT · nộp TOSEM</span> — 135 micro + 6
+                    ứng dụng thật
+                  </td>
+                </tr>
+              </table>
+            </div>
+            <div>
+              <h4 class="mini">
+                Một test case micro-benchmark trông như thế nào
+              </h4>
+              <div class="sample">
+                data/micro-benchmark/decorators/param_call/ ├── main.py └──
+                callgraph.json
+
+                <span class="c"># main.py</span>
+                def my_decorator(func): def wrapper(): func() return wrapper
+                @my_decorator def say(): pass say()
+
+                <span class="c"
+                  ># callgraph.json — caller FQN → [callee FQN]</span
+                >
+                { "main": ["main.my_decorator",
+                "main.my_decorator.&lt;locals&gt;.wrapper"],
+                "main.my_decorator": [],
+                "main.my_decorator.&lt;locals&gt;.wrapper": ["main.say"],
+                "main.say": [] }
+              </div>
+              <p class="caption">
+                Minh hoạ cấu trúc thư mục + định dạng JSON — không phải file
+                nguyên văn
+              </p>
+              <p style="font-size: 12.6px">
+                16 category:
+                <span class="mono"
+                  >assignments · builtins · classes · decorators · dicts ·
+                  direct_calls · exceptions · functions · generators · imports ·
+                  kwargs · lambdas · lists · mro · parameters · returns</span
+                >
+              </p>
+            </div>
+          </div>
+
+          <div class="stage">
+            <span class="num">02</span><span class="lbl">Metric</span
+            ><span class="of">Precision · Recall trên tập cạnh</span>
+          </div>
+          <div class="cols">
+            <div>
+              <div class="formula">
+                Precision = |E_gen ∩ E_gold| / |E_gen| Recall = |E_gen ∩ E_gold|
+                / |E_gold| + thời gian (s), bộ nhớ (MB) trên macro
+              </div>
+              <p style="font-size: 12.6px">
+                Trên micro, PyCG báo cáo nhị phân: <strong>complete</strong> =
+                không có false positive, <strong>sound</strong> = không thiếu
+                cạnh nào.
+              </p>
+            </div>
+            <div>
+              <p>
+                <strong>Báo P và R riêng biệt, không gộp F1.</strong> Hai trường
+                phái đối lập: <strong>ARISE</strong> chỉ resolve trường hợp
+                không mơ hồ, bỏ dynamic dispatch (<em
+                  >cạnh giả khiến agent đi đường sai, tai hại hơn cạnh thiếu</em
+                >) → ưu tiên precision. <strong>CGM</strong> over-approximate:
+                đưa tất cả override từ subclass vào, dùng Class Hierarchy
+                Analysis → ưu tiên recall.
+              </p>
+            </div>
+          </div>
+
+          <div class="stage">
+            <span class="num">03</span><span class="lbl">Baseline</span
+            ><span class="of">4 tool đã report trên chính suite này</span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Tool</th>
+                <th>Năm · Venue</th>
+                <th class="n">Precision</th>
+                <th class="n">Recall</th>
+                <th>Ghi chú từ paper gốc</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="target">
+                <td><strong>PyCG</strong></td>
+                <td>2021 · <span class="pv">ICSE</span></td>
+                <td class="n"><strong>~99.2%</strong></td>
+                <td class="n"><strong>~69.9%</strong></td>
+                <td>
+                  Mọi case &gt;98% cạnh sinh ra là true positive; 0.38 s cho 1k
+                  LoC
+                </td>
+              </tr>
+              <tr>
+                <td>Pyan</td>
+                <td>—</td>
+                <td class="n">trung bình</td>
+                <td class="n">thấp</td>
+                <td>
+                  Thêm cạnh tới tên class thay vì <code>__init__</code>; không
+                  theo dấu inter-procedural flow
+                </td>
+              </tr>
+              <tr>
+                <td>Depends</td>
+                <td>—</td>
+                <td class="n">&lt; PyCG</td>
+                <td class="n">&lt; Pyan</td>
+                <td>Unsound trong mọi case; complete ở 110/112 case micro</td>
+              </tr>
+              <tr class="target">
+                <td><strong>Jarvis</strong></td>
+                <td>2024 · <span class="pr">preprint, nộp TOSEM</span></td>
+                <td class="n"><span class="win">+84%</span> vs PyCG</td>
+                <td class="n"><span class="win">+≥20%</span> vs PyCG</td>
+                <td>
+                  Nhanh hơn ≥67%. PyCG hết bộ nhớ với chương trình &gt;2.000
+                  dòng
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="note">
+            <b>Hai giới hạn phải nói rõ:</b> (1) PyCG chỉ có GT cho cạnh
+            <code>CALLS</code> — không sao, các cạnh khác tất định từ AST nên
+            P/R ≈ 1.0 theo cấu tạo, nhưng phải nói thẳng. (2)
+            <strong
+              >Không có GT công khai cho cạnh data-flow trong Python</strong
+            >
+            — nếu schema có def-use edge thì phải tự dựng, theo cách Jarvis làm:
+            chạy <code>python -m trace --listfuncs</code>, lọc bỏ call ẩn của
+            interpreter (<code>_frozen_importlib</code>), rồi mở rộng thủ công.
+          </div>
+        </div>
+        <div class="src">
+          <b>Nguồn:</b> Salis et al., ICSE 2021, Tables III–V ·
+          <code>github.com/vitsalis/pycg-evaluation</code> README · Li et al.,
+          <i>Jarvis</i>, arXiv:2305.05949 §Ground Truth Construction
+          <span class="pr">preprint, nộp TOSEM</span> · Seddik &amp; Fard,
+          <i>ARISE</i>, arXiv:2605.03117 §3.2
+          <span class="pr">preprint 05/2026</span> · Tao et al., <i>CGM</i>,
+          NeurIPS 2025 App. B.2
+        </div>
+      </section>
+
+      <!-- 4 ── A2 -->
+      <section class="slide" data-axis="A">
+        <div class="meta">
+          <span class="tag">Trục A · Chất lượng đồ thị</span
+          ><span>Slide 04 / 08</span>
+        </div>
+        <h2>
+          Chất lượng đồ thị theo tác vụ
+          <span class="qual">— đồ thị có chứa đường đi tới đáp án không?</span>
+        </h2>
+        <div class="body">
+          <div class="stage">
+            <span class="num">01</span><span class="lbl">Benchmark</span
+            ><span class="of"
+              >SWE-bench Lite + Loc-Bench · dùng lại, không gọi LLM</span
+            >
+          </div>
+          <table class="spec">
+            <tr>
+              <td>Venue</td>
+              <td>
+                <span class="pv">ICLR 2024</span> (SWE-bench) ·
+                <span class="pv">ACL 2025</span> (Loc-Bench, kèm LocAgent)
+              </td>
+            </tr>
+            <tr>
+              <td>Cách dùng</td>
+              <td>
+                Chỉ cần <strong>đồ thị + gold patch</strong> — hai thứ đã có ở
+                slide 02. Không gọi LLM lần nào → chạy nhanh, không nhiễu, không
+                tốn API
+              </td>
+            </tr>
+            <tr>
+              <td>Vì sao</td>
+              <td>
+                Đây là tầng
+                <strong
+                  >gần như không paper code-KG 2025–2026 nào báo cáo</strong
+                >
+                — chỗ dễ tạo khác biệt nhất
+              </td>
+            </tr>
+          </table>
+
+          <div class="stage">
+            <span class="num">02</span><span class="lbl">Metric</span
+            ><span class="of"
+              >Gold-Reachability@h · Coverage@budget · thời gian dựng</span
+            >
+          </div>
+          <div class="cols">
+            <div>
+              <div class="formula">
+                C = node trích từ issue description T = node từ gold patch δ =
+                (1/|T|) · Σ min d(c, t) d = số hop Gold-Reachability@h = tỷ lệ
+                instance có δ ≤ h
+              </div>
+              <h4 class="mini">Áp vào ví dụ slide 02</h4>
+              <div class="sample">
+                C = { separability_matrix } T = { _cstack } δ =
+                d(separability_matrix, _cstack) = <span class="k">2</span> →
+                instance này thuộc nhóm <span class="k">Hop 2</span>
+              </div>
+              <p style="font-size: 12.6px">
+                Node gold không tới được thì
+                <strong>không agent nào tìm ra</strong>. Metric này chứng minh
+                giá trị schema <em>độc lập với chất lượng LLM</em> — reviewer
+                không thể phản biện "kết quả do model tốt".
+              </p>
+            </div>
+            <div>
+              <h4 class="mini">Bảng cần báo cáo — phân bố theo hop</h4>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Schema</th>
+                    <th class="n">Hop 0</th>
+                    <th class="n">Hop 1</th>
+                    <th class="n">Hop 2</th>
+                    <th class="n">3+ / ∞</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>File tree (không đồ thị)</td>
+                    <td class="n">…</td>
+                    <td class="n">…</td>
+                    <td class="n">…</td>
+                    <td class="n">…</td>
+                  </tr>
+                  <tr>
+                    <td>+ CALLS</td>
+                    <td class="n">…</td>
+                    <td class="n">…</td>
+                    <td class="n">…</td>
+                    <td class="n">…</td>
+                  </tr>
+                  <tr class="target">
+                    <td>+ data-flow (ours)</td>
+                    <td class="n">…</td>
+                    <td class="n">…</td>
+                    <td class="n">…</td>
+                    <td class="n win">↓</td>
+                  </tr>
+                </tbody>
+              </table>
+              <p class="caption">
+                Đưa 20% instance từ "3+ / ∞" xuống "Hop 1" là bằng chứng cấu
+                trúc thuần tuý
+              </p>
+              <h4 class="mini">Coverage@budget + IoU</h4>
+              <p style="font-size: 12.6px">
+                Tỷ lệ dòng gold phủ được dưới budget
+                <strong>8.000 token</strong> — đo retrieval
+                <strong>độc lập với reasoning của agent</strong>. Điều kiện
+                không dùng bundling thì tính trên cửa sổ BM25 cùng kích thước
+                token.
+              </p>
+            </div>
+          </div>
+
+          <div class="stage">
+            <span class="num">03</span><span class="lbl">Baseline</span
+            ><span class="of">SWE-bench Lite · 300 instance</span>
+          </div>
+          <div class="cols">
+            <div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Điều kiện</th>
+                    <th class="n">Cov@budget</th>
+                    <th class="n">Line IoU</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>RAG (BM25)</td>
+                    <td class="n">20.0</td>
+                    <td class="n">0.06</td>
+                  </tr>
+                  <tr>
+                    <td>
+                      SWE-agent
+                      <span class="mono" style="color: var(--faint)"
+                        >NeurIPS 24</span
+                      >
+                    </td>
+                    <td class="n">53.0</td>
+                    <td class="n">0.21</td>
+                  </tr>
+                  <tr class="target">
+                    <td>
+                      ARISE-STRUCTURAL
+                      <span class="mono" style="color: var(--muted)"
+                        >parity</span
+                      >
+                    </td>
+                    <td class="n">61.0</td>
+                    <td class="n">0.26</td>
+                  </tr>
+                  <tr class="ctrl">
+                    <td>ARISE-COARSE <span class="mono">control</span></td>
+                    <td class="n">62.0</td>
+                    <td class="n">0.27</td>
+                  </tr>
+                  <tr>
+                    <td>ARISE-SLICING</td>
+                    <td class="n">71.0</td>
+                    <td class="n">0.33</td>
+                  </tr>
+                  <tr class="target">
+                    <td><strong>ARISE-FULL</strong></td>
+                    <td class="n win">75.0</td>
+                    <td class="n win">0.36</td>
+                  </tr>
+                </tbody>
+              </table>
+              <p class="caption">
+                ARISE =
+                <span class="pr"
+                  >PREPRINT arXiv:2605.03117 · nộp arXiv 05/2026 · chưa bình
+                  duyệt</span
+                >
+              </p>
+            </div>
+            <div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Chi phí dựng đồ thị</th>
+                    <th>Số liệu</th>
+                    <th>Nguồn</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Dựng đồ thị / repo</td>
+                    <td>~3 phút trở lên, <em>offline</em></td>
+                    <td>CGM · <span class="pv">NeurIPS 2025</span></td>
+                  </tr>
+                  <tr>
+                    <td>Indexing / codebase</td>
+                    <td>vài giây</td>
+                    <td>LocAgent · <span class="pv">ACL 2025</span></td>
+                  </tr>
+                  <tr>
+                    <td>Truy vấn / issue</td>
+                    <td>3–7 giây, CPU nhẹ</td>
+                    <td>ARISE · <span class="pr">preprint 05/2026</span></td>
+                  </tr>
+                </tbody>
+              </table>
+              <div class="note">
+                LocAgent nhấn mạnh indexing chỉ mất vài giây/codebase nên dùng
+                được <strong>real-time</strong> và không cần sinh lại embedding
+                khi code đổi. Nếu toolset của bạn dựng đồ thị nhanh — đây là
+                điểm bán hàng, hãy đo.
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="src">
+          <b>Nguồn:</b> Chen et al., <i>LocAgent</i>, ACL 2025, §C.2 Quantifying
+          Task Difficulty · Seddik &amp; Fard, <i>ARISE</i>, arXiv:2605.03117
+          §3.5 + Table 4 —
+          <span class="pr">preprint, nộp arXiv 05/2026, chưa bình duyệt</span>
+          (Univ. of British Columbia) · Tao et al., <i>CGM</i>, NeurIPS 2025
+          App. C.4.1
+        </div>
+      </section>
+
+      <!-- 5 ── B · SWE-BENCH LITE -->
+      <section class="slide" data-axis="B">
+        <div class="meta">
+          <span class="tag">Trục B · Chất lượng hệ thống</span
+          ><span>Slide 05 / 08</span>
+        </div>
+        <h2>
+          SWE-bench Lite
+          <span class="qual"
+            >— chuẩn de-facto, 100% paper code-KG 2025–2026 đều report</span
+          >
+        </h2>
+        <div class="body">
+          <div class="stage">
+            <span class="num">01</span><span class="lbl">Benchmark</span
+            ><span class="of">300 instance · 11 repo Python</span>
+          </div>
+          <table class="spec">
+            <tr>
+              <td>Venue</td>
+              <td>
+                <span class="pv">ICLR 2024</span> — Jimenez, Yang, Wettig, Yao,
+                Pei, Press, Narasimhan.
+                <em
+                  >SWE-bench: Can Language Models Resolve Real-World GitHub
+                  Issues?</em
+                >
+                · arXiv:2310.06770
+              </td>
+            </tr>
+            <tr>
+              <td>Public tại</td>
+              <td>
+                <code>swebench.com</code> ·
+                <code>github.com/princeton-nlp/SWE-bench</code> · HF
+                <code>SWE-bench/SWE-bench_Lite</code> · leaderboard công khai
+              </td>
+            </tr>
+            <tr>
+              <td>Dữ liệu</td>
+              <td>
+                300 instance từ Django, Flask, SymPy, Matplotlib, Pytest,
+                Scikit-learn… <strong>Một instance = đúng như slide 02</strong>
+              </td>
+            </tr>
+            <tr>
+              <td>Code evaluate</td>
+              <td>
+                Chạy trong <strong>Docker</strong>. <em>Resolved</em> ⟺
+                <strong>toàn bộ FAIL_TO_PASS pass</strong> VÀ
+                <strong>không PASS_TO_PASS nào vỡ</strong>
+              </td>
+            </tr>
+            <tr>
+              <td>Cho localization</td>
+              <td>
+                LocAgent giữ <strong>274/300</strong> — loại instance không sửa
+                function nào
+              </td>
+            </tr>
+          </table>
+
+          <div class="stage">
+            <span class="num">02</span><span class="lbl">Metric</span
+            ><span class="of">Acc@k strict · NDCG@k · Resolve rate</span>
+          </div>
+          <div class="cols">
+            <div>
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width: 26%">Metric</th>
+                    <th>Định nghĩa</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="target">
+                    <td>
+                      <strong class="mono">Acc@k</strong>
+                      <span class="mono" style="color: var(--hot)">STRICT</span>
+                    </td>
+                    <td>
+                      Thành công <strong>chỉ khi TẤT CẢ</strong> vị trí liên
+                      quan nằm trong top-k. Cảm hứng R-Precision.
+                      <strong>Metric chính.</strong>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="mono">NDCG@k</td>
+                    <td>
+                      Chất lượng <em>xếp hạng</em>, không chỉ có mặt trong top-k
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="mono">Resolve rate</td>
+                    <td>
+                      Patch làm pass toàn bộ test. CGM: resolved nếu
+                      <em
+                        >giải quyết đúng issue và là superset của gold edits</em
+                      >
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="mono">$ / instance</td>
+                    <td>
+                      Kèm số vòng agent và
+                      <strong>cost-efficiency = Acc@10 / cost</strong>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div>
+              <h4 class="mini">Cấu hình k</h4>
+              <p class="mono" style="font-size: 12.3px">
+                File @1, @3, @5 &nbsp;·&nbsp; Module @5, @10 &nbsp;·&nbsp;
+                Function @5, @10
+              </p>
+              <h4 class="mini">Ground truth — cách suy ra, xem slide 02</h4>
+              <ul>
+                <li><strong>File gold</strong> = file bị gold patch sửa</li>
+                <li>
+                  <strong>Function gold</strong> = mỗi diff hunk →
+                  function/method bao quanh
+                </li>
+                <li>
+                  <strong>Loại khỏi target:</strong> document, import statement,
+                  comment
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="stage">
+            <span class="num">03</span><span class="lbl">Baseline</span
+            ><span class="of"
+              >Acc@k strict · 274 instance · rút gọn từ LocAgent Table 4 (16
+              dòng)</span
+            >
+          </div>
+          <div class="cols">
+            <div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Method</th>
+                    <th>Năm · Venue</th>
+                    <th class="n">File@5</th>
+                    <th class="n">Mod@10</th>
+                    <th class="n">Fn@10</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="grp">
+                    <td colspan="5">Retrieval / IR</td>
+                  </tr>
+                  <tr>
+                    <td>BM25</td>
+                    <td>1994</td>
+                    <td class="n">61.68</td>
+                    <td class="n">52.92</td>
+                    <td class="n">36.86</td>
+                  </tr>
+                  <tr>
+                    <td>CodeRankEmbed</td>
+                    <td>2024</td>
+                    <td class="n">84.67</td>
+                    <td class="n">78.83</td>
+                    <td class="n">58.76</td>
+                  </tr>
+                  <tr class="grp">
+                    <td colspan="5">Procedure / Agent · Claude-3.5</td>
+                  </tr>
+                  <tr>
+                    <td>Agentless</td>
+                    <td>2025 · <span class="pv">FSE</span></td>
+                    <td class="n">79.56</td>
+                    <td class="n">68.98</td>
+                    <td class="n">58.76</td>
+                  </tr>
+                  <tr>
+                    <td>SWE-agent</td>
+                    <td>2024 · <span class="pv">NeurIPS</span></td>
+                    <td class="n">90.15</td>
+                    <td class="n">78.10</td>
+                    <td class="n">64.60</td>
+                  </tr>
+                  <tr>
+                    <td>OpenHands</td>
+                    <td>2025 · <span class="pv">ICLR</span></td>
+                    <td class="n">90.15</td>
+                    <td class="n">83.58</td>
+                    <td class="n">70.07</td>
+                  </tr>
+                  <tr class="grp">
+                    <td colspan="5">Graph-based — mốc phải vượt</td>
+                  </tr>
+                  <tr class="target">
+                    <td>
+                      <strong>LocAgent</strong>
+                      <span class="mono" style="color: var(--faint)"
+                        >Qwen2.5-7B(ft)</span
+                      >
+                    </td>
+                    <td>2025 · <span class="pv">ACL</span></td>
+                    <td class="n">88.32</td>
+                    <td class="n">82.85</td>
+                    <td class="n">71.53</td>
+                  </tr>
+                  <tr class="target">
+                    <td>
+                      <strong>LocAgent</strong>
+                      <span class="mono" style="color: var(--faint)"
+                        >Qwen2.5-32B(ft)</span
+                      >
+                    </td>
+                    <td>2025 · <span class="pv">ACL</span></td>
+                    <td class="n">92.70</td>
+                    <td class="n">87.23</td>
+                    <td class="n">77.01</td>
+                  </tr>
+                  <tr class="target">
+                    <td>
+                      <strong>LocAgent</strong>
+                      <span class="mono" style="color: var(--faint)"
+                        >Claude-3.5</span
+                      >
+                    </td>
+                    <td>2025 · <span class="pv">ACL</span></td>
+                    <td class="n win">94.16</td>
+                    <td class="n win">87.59</td>
+                    <td class="n win">77.37</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div>
+              <h4 class="mini">Metric riêng · cùng benchmark</h4>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Method</th>
+                    <th>Năm · Venue</th>
+                    <th class="n">Kết quả</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>OrcaLoca</td>
+                    <td>2025 · <span class="pv">ICML</span></td>
+                    <td class="n">Fn match 65.33%</td>
+                  </tr>
+                  <tr>
+                    <td>CoSIL</td>
+                    <td>2025 · <span class="pv">ASE</span></td>
+                    <td class="n">Top-1 43.3%</td>
+                  </tr>
+                  <tr>
+                    <td>KGCompass</td>
+                    <td>2025 · <span class="pr">preprint</span></td>
+                    <td class="n">Fn loc 56.0%</td>
+                  </tr>
+                </tbody>
+              </table>
+              <h4 class="mini">Resolve rate — để nối leaderboard</h4>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Method</th>
+                    <th>Năm · Venue</th>
+                    <th class="n">%R</th>
+                    <th class="n">Cost</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="target">
+                    <td>KGCompass</td>
+                    <td>2025 · <span class="pr">preprint</span></td>
+                    <td class="n win">58.3%</td>
+                    <td class="n">$0.20</td>
+                  </tr>
+                  <tr class="target">
+                    <td>CGM-SWE-PY</td>
+                    <td>2025 · <span class="pv">NeurIPS</span></td>
+                    <td class="n">43.00%</td>
+                    <td class="n">—</td>
+                  </tr>
+                  <tr>
+                    <td>Agentless-v1.5</td>
+                    <td>2025 · <span class="pv">FSE</span></td>
+                    <td class="n">40.67%</td>
+                    <td class="n">—</td>
+                  </tr>
+                  <tr>
+                    <td>Prometheus</td>
+                    <td>2025 · <span class="pr">preprint</span></td>
+                    <td class="n">35.33%</td>
+                    <td class="n">$0.23</td>
+                  </tr>
+                  <tr>
+                    <td>LocAgent+Agentless</td>
+                    <td>2025 · <span class="pv">ACL</span></td>
+                    <td class="n">27.92% Pass@1</td>
+                    <td class="n">—</td>
+                  </tr>
+                  <tr>
+                    <td>RepoGraph +host</td>
+                    <td>2025 · <span class="pv">ICLR</span></td>
+                    <td class="n">+2.0 pp</td>
+                    <td class="n">—</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="src">
+          <b>Nguồn:</b> Jimenez et al., ICLR 2024 · Chen et al.,
+          <i>LocAgent</i>, ACL 2025, Table 4 (NDCG ở Table 11) · Tao et al.,
+          <i>CGM</i>, NeurIPS 2025 Table 1 · Yang et al., <i>KGCompass</i>,
+          arXiv:2503.21710 <span class="pr">preprint</span> · Pan et al.,
+          <i>Prometheus</i>, arXiv:2507.19942 <span class="pr">preprint</span> ·
+          Yu et al., ICML 2025 · Jiang et al., ASE 2025 · Ouyang et al., ICLR
+          2025
+        </div>
+      </section>
+
+      <!-- 6 ── B · LOC-BENCH -->
+      <section class="slide" data-axis="B">
+        <div class="meta">
+          <span class="tag">Trục B · Chất lượng hệ thống</span
+          ><span>Slide 06 / 08</span>
+        </div>
+        <h2>
+          Loc-Bench
+          <span class="qual"
+            >— benchmark duy nhất thiết kế riêng cho localization</span
+          >
+        </h2>
+        <div class="body">
+          <div class="stage">
+            <span class="num">01</span><span class="lbl">Benchmark</span
+            ><span class="of">560 instance · 4 category cân bằng</span>
+          </div>
+          <div class="cols">
+            <div>
+              <table class="spec">
+                <tr>
+                  <td>Venue</td>
+                  <td>
+                    <span class="pv">ACL 2025</span> — Chen, Tang, Deng, Wu, Wu,
+                    Jiang, Prasanna, Cohan, Wang. Kèm <em>LocAgent</em>, pp.
+                    8697–8727 · DOI 10.18653/v1/2025.acl-long.426
+                  </td>
+                </tr>
+                <tr>
+                  <td>Public tại</td>
+                  <td>
+                    HF <code>czlll/Loc-Bench_V1</code> ·
+                    <code>github.com/gersteinlab/LocAgent</code>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Schema</td>
+                  <td>
+                    Giống SWE-bench (slide 02)
+                    <strong>+ trường <code>category</code></strong>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Code evaluate</td>
+                  <td><code>evaluation.eval_metric.evaluate_results</code></td>
+                </tr>
+                <tr>
+                  <td>Chống nhiễm</td>
+                  <td>
+                    Bug Report thu từ issue <strong>tạo sau 10/2024</strong> —
+                    muộn hơn cutoff của phần lớn LLM hiện đại
+                  </td>
+                </tr>
+                <tr>
+                  <td>Lọc khi xây</td>
+                  <td>
+                    Repo &gt;5.000 stars · loại PR không giải quyết issue tường
+                    minh · loại PR sửa &gt;5 file hoặc &gt;10 function · nhãn do
+                    GPT-4o sample 3 lần, review thủ công khi lệch
+                  </td>
+                </tr>
+              </table>
+            </div>
+            <div>
+              <h4 class="mini">
+                Bốn category khác nhau ở chỗ nào — nhìn từ góc độ đồ thị
+              </h4>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Category</th>
+                    <th class="n">n</th>
+                    <th>Issue cho biết gì về vị trí</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Bug Report</strong></td>
+                    <td class="n">242</td>
+                    <td>
+                      Thường có stack trace hoặc code tái hiện →
+                      <strong>Hop 0–1</strong>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Feature Request</strong></td>
+                    <td class="n">150</td>
+                    <td>
+                      Mô tả hành vi <em>mong muốn</em>, chưa tồn tại trong code
+                      → <strong>không có neo</strong>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Performance</strong></td>
+                    <td class="n">139</td>
+                    <td>
+                      "X chậm" — biết triệu chứng, không biết nguyên nhân →
+                      <strong>đa hop</strong>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Security</strong></td>
+                    <td class="n">29</td>
+                    <td>Mô tả vector tấn công, hiếm khi nêu hàm cụ thể</td>
+                  </tr>
+                </tbody>
+              </table>
+              <p class="caption">
+                Cột thứ 3 là diễn giải của tôi, không phải phân loại của tác giả
+              </p>
+              <p style="font-size: 12.6px">
+                Trên SWE-bench Lite: Security = <span class="win">3</span>,
+                Performance = <span class="win">0</span>. Đạt 94% file Acc@5 ở
+                đó chỉ chứng minh năng lực trên <em>bug fixing</em>.
+              </p>
+            </div>
+          </div>
+
+          <div class="stage">
+            <span class="num">02</span><span class="lbl">Metric</span
+            ><span class="of">Acc@k strict — nhưng k lớn hơn</span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 22%">Dataset</th>
+                <th>File</th>
+                <th>Module</th>
+                <th>Function</th>
+                <th style="width: 40%">Lý do</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>SWE-bench Lite</td>
+                <td class="mono">@1, @3, @5</td>
+                <td class="mono">@5, @10</td>
+                <td class="mono">@5, @10</td>
+                <td>Ví dụ slide 02 có |T| = 1</td>
+              </tr>
+              <tr class="target">
+                <td><strong>Loc-Bench</strong></td>
+                <td class="mono">@<strong>5</strong>, @<strong>10</strong></td>
+                <td class="mono">@<strong>10</strong>, @<strong>15</strong></td>
+                <td class="mono">@<strong>10</strong>, @<strong>15</strong></td>
+                <td>
+                  Instance có thể sửa <strong>1–5 file</strong> → |T| lớn, và
+                  <strong>đây mới là chỗ Acc@k strict khác Recall@k</strong>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="font-size: 12.6px; color: var(--muted)">
+            <strong>Mức module</strong>: dự đoán đúng nếu
+            <em>bất kỳ function nào trong class bị patch</em> được xác định —
+            dùng để thấy hệ thống "đúng lớp nhưng sai hàm".
+          </p>
+
+          <div class="stage">
+            <span class="num">03</span><span class="lbl">Baseline</span
+            ><span class="of">560 instance · agent-based dùng Claude-3.5</span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Method</th>
+                <th>Năm · Venue</th>
+                <th>Model</th>
+                <th class="n">File@5</th>
+                <th class="n">@10</th>
+                <th class="n">Mod@10</th>
+                <th class="n">Fn@10</th>
+                <th class="n">@15</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>CodeRankEmbed</td>
+                <td>2024</td>
+                <td>—</td>
+                <td class="n">74.29</td>
+                <td class="n">80.89</td>
+                <td class="n">63.21</td>
+                <td class="n">43.39</td>
+                <td class="n">46.61</td>
+              </tr>
+              <tr>
+                <td>Agentless</td>
+                <td>2025 · <span class="pv">FSE</span></td>
+                <td>Claude-3.5</td>
+                <td class="n">67.50</td>
+                <td class="n">67.50</td>
+                <td class="n">53.39</td>
+                <td class="n">42.68</td>
+                <td class="n">42.68</td>
+              </tr>
+              <tr>
+                <td>SWE-agent</td>
+                <td>2024 · <span class="pv">NeurIPS</span></td>
+                <td>Claude-3.5</td>
+                <td class="n">77.68</td>
+                <td class="n">77.68</td>
+                <td class="n">63.57</td>
+                <td class="n">51.96</td>
+                <td class="n">51.96</td>
+              </tr>
+              <tr>
+                <td><strong>OpenHands</strong></td>
+                <td>2025 · <span class="pv">ICLR</span></td>
+                <td>Claude-3.5</td>
+                <td class="n">79.82</td>
+                <td class="n">80.00</td>
+                <td class="n">68.93</td>
+                <td class="n">59.11</td>
+                <td class="n">59.29</td>
+              </tr>
+              <tr class="target">
+                <td><strong>LocAgent</strong></td>
+                <td>2025 · <span class="pv">ACL</span></td>
+                <td>Qwen2.5-7B(ft)</td>
+                <td class="n">78.57</td>
+                <td class="n">79.64</td>
+                <td class="n">63.04</td>
+                <td class="n">51.43</td>
+                <td class="n">51.79</td>
+              </tr>
+              <tr class="target">
+                <td><strong>LocAgent</strong></td>
+                <td>2025 · <span class="pv">ACL</span></td>
+                <td>Claude-3.5</td>
+                <td class="n win">83.39</td>
+                <td class="n win">86.07</td>
+                <td class="n win">70.89</td>
+                <td class="n win">59.29</td>
+                <td class="n win">60.71</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="note">
+            <b>Quan sát nên trích:</b> LocAgent ghi nhận hiệu năng
+            <strong>giảm rõ rệt ở 3 category kia so với Bug Report</strong>,
+            giải thích do phân bố dữ liệu training thiên về bug report.
+          </div>
+        </div>
+        <div class="src">
+          <b>Nguồn:</b> Chen et al., <i>LocAgent</i>, ACL 2025, Table 7 + Figure
+          5 + Table 3 + Appendix B (Table 10 liệt kê keyword thu thập
+          Security/Performance)
+        </div>
+      </section>
+
+      <!-- 7 ── B · CONTROLLED -->
+      <section class="slide" data-axis="B">
+        <div class="meta">
+          <span class="tag">Trục B · Chất lượng hệ thống</span
+          ><span>Slide 07 / 08</span>
+        </div>
+        <h2>
+          So sánh có kiểm soát
+          <span class="qual">— cùng backbone, cùng harness, cùng prompt</span>
+        </h2>
+        <div class="body">
+          <div class="stage">
+            <span class="num">01</span><span class="lbl">Benchmark</span
+            ><span class="of">SWE-bench Lite 300 · giao thức ARISE</span>
+          </div>
+          <table class="spec">
+            <tr>
+              <td>Nguồn giao thức</td>
+              <td>
+                Seddik, S. &amp; Fard, F. (Univ. of British Columbia).
+                <em
+                  >ARISE: A Repository-level Graph Representation and Toolset
+                  for Agentic Fault Localization and Program Repair.</em
+                >
+                <span class="pr"
+                  >PREPRINT · nộp arXiv 05/2026 · arXiv:2605.03117 · CHƯA BÌNH
+                  DUYỆT, chưa có venue</span
+                >
+              </td>
+            </tr>
+            <tr>
+              <td>Dữ liệu</td>
+              <td>
+                SWE-bench Lite, dùng cả <strong>300 instance</strong> (khác
+                LocAgent dùng 274)
+              </td>
+            </tr>
+            <tr>
+              <td>Backbone</td>
+              <td>
+                <strong>Qwen2.5-Coder-32B-Instruct cho mọi dòng</strong> → so
+                sánh trực tiếp được, khác bảng slide 05 (mỗi dòng một backbone)
+              </td>
+            </tr>
+            <tr>
+              <td>Giao thức</td>
+              <td>
+                <strong>Hai task chạy ĐỘC LẬP.</strong> Localization → danh sách
+                xếp hạng
+                <code>{file, function, start_line, end_line, score}</code>,
+                parse bằng regex tất định. Repair → unified diff, apply rồi chạy
+                test suite
+              </td>
+            </tr>
+          </table>
+
+          <div class="stage">
+            <span class="num">02</span><span class="lbl">Metric</span
+            ><span class="of"
+              >Recall@k · F1@k · IoU · Coverage@budget · Spearman ρ</span
+            >
+          </div>
+          <div class="cols">
+            <div>
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width: 30%">Metric</th>
+                    <th>Định nghĩa</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="mono">Recall@k</td>
+                    <td>
+                      Có <strong>ít nhất một</strong> vị trí gold trong top-k
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="mono">F1@k</td>
+                    <td>
+                      Harmonic mean precision@k / recall@k —
+                      <strong>phạt over-prediction</strong>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="mono">IoU</td>
+                    <td>
+                      Intersection-over-union của tập dòng dự đoán và gold
+                    </td>
+                  </tr>
+                  <tr class="target">
+                    <td class="mono"><strong>ρ Spearman</strong></td>
+                    <td>
+                      Tương quan giữa <strong>Function Recall@1</strong> và
+                      <strong>Pass@1</strong>. Chỉ đo được nếu hai task chạy độc
+                      lập
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div>
+              <div class="note" style="margin-top: 0">
+                <b>Recall@k ≠ Acc@k strict.</b> Slide 05–06 dùng
+                <strong>Acc@k strict</strong> — tất cả gold phải trong top-k.
+                Slide này dùng <strong>Recall@k</strong> — ít nhất một.
+                <strong>Hai bảng không cùng thang đo, không được trộn.</strong>
+                (Trên ví dụ slide 02, |T| = 1 nên chúng trùng nhau — nhưng đó là
+                ngoại lệ.)
+              </div>
+              <p>
+                Baseline SWE-agent trong bảng dưới phải dùng
+                <em>cùng</em> system prompt localization và <em>cùng</em> output
+                format với các điều kiện còn lại — nếu không thì evaluation
+                protocol khác nhau và so sánh vô nghĩa.
+              </p>
+            </div>
+          </div>
+
+          <div class="stage">
+            <span class="num">03</span><span class="lbl">Baseline</span
+            ><span class="of">Điều kiện ngoại + ba control nội bộ</span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Condition</th>
+                <th class="n">File R@1</th>
+                <th class="n">Fn R@1</th>
+                <th class="n">Fn F1@3</th>
+                <th class="n">Line R@1</th>
+                <th class="n">Cov@bud</th>
+                <th class="n">Pass@1</th>
+                <th class="n">ρ</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>RAG (BM25)</td>
+                <td class="n">30.0</td>
+                <td class="n">15.0</td>
+                <td class="n">0.14</td>
+                <td class="n">5.0</td>
+                <td class="n">20.0</td>
+                <td class="n">2.67%</td>
+                <td class="n">0.05</td>
+              </tr>
+              <tr>
+                <td>
+                  SWE-agent
+                  <span class="mono" style="color: var(--faint)"
+                    >NeurIPS 24</span
+                  >
+                </td>
+                <td class="n">57.0</td>
+                <td class="n">43.0</td>
+                <td class="n">0.39</td>
+                <td class="n">26.0</td>
+                <td class="n">53.0</td>
+                <td class="n">17.3%</td>
+                <td class="n">0.38</td>
+              </tr>
+              <tr class="target">
+                <td>
+                  ARISE-STRUCTURAL
+                  <span class="mono" style="color: var(--muted)">= PARITY</span>
+                </td>
+                <td class="n">62.0</td>
+                <td class="n">50.0</td>
+                <td class="n">0.45</td>
+                <td class="n">31.0</td>
+                <td class="n">61.0</td>
+                <td class="n">19.0%</td>
+                <td class="n">0.42</td>
+              </tr>
+              <tr class="ctrl">
+                <td>ARISE-COARSE <span class="mono">= control</span></td>
+                <td class="n">62.0</td>
+                <td class="n">51.0</td>
+                <td class="n">0.46</td>
+                <td class="n">32.0</td>
+                <td class="n">62.0</td>
+                <td class="n">19.5%</td>
+                <td class="n">0.43</td>
+              </tr>
+              <tr>
+                <td>ARISE-SLICING</td>
+                <td class="n">65.0</td>
+                <td class="n">57.0</td>
+                <td class="n">0.52</td>
+                <td class="n">38.0</td>
+                <td class="n">71.0</td>
+                <td class="n">21.0%</td>
+                <td class="n">0.51</td>
+              </tr>
+              <tr class="target">
+                <td><strong>ARISE-FULL</strong></td>
+                <td class="n win">67.0</td>
+                <td class="n win">60.0</td>
+                <td class="n win">0.55</td>
+                <td class="n win">41.0</td>
+                <td class="n win">75.0</td>
+                <td class="n win">22.0%</td>
+                <td class="n win">0.53</td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="caption" style="margin-top: 4px">
+            Mọi dòng ARISE từ
+            <span class="pr"
+              >PREPRINT arXiv:2605.03117 · nộp 05/2026 · chưa bình duyệt</span
+            >
+            — <b class="win">ρ tăng đơn điệu 0.05 → 0.53</b>: cải thiện repair
+            thực sự <em>đi qua</em> localization.
+          </p>
+
+          <h4 class="mini">
+            Ba baseline nội bộ — quan trọng hơn mọi baseline ngoại
+          </h4>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 10%">Tên</th>
+                <th style="width: 32%">Cấu hình — áp vào ví dụ slide 02</th>
+                <th style="width: 25%">Chứng minh</th>
+                <th>Số liệu tham chiếu</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="ctrl">
+                <td><strong>COARSE</strong></td>
+                <td>
+                  Agent vẫn thấy tool <code>get_dataflow_slice</code>, nhưng đồ
+                  thị không có Statement node → gọi tool trên
+                  <code>_cstack</code> trả về <strong>rỗng</strong>
+                </td>
+                <td>
+                  Cải thiện đến từ <strong>dữ liệu đồ thị</strong>, không từ
+                  việc có thêm tool
+                </td>
+                <td>
+                  ARISE-COARSE ≈ ARISE-STRUCTURAL, chênh ≤1.0 điểm mọi cột
+                </td>
+              </tr>
+              <tr class="ctrl">
+                <td><strong>FLATTEN</strong></td>
+                <td>
+                  Cùng đồ thị, nhưng đưa <code>separable.py</code> vào prompt
+                  dưới dạng <strong>text theo thứ tự topo</strong> thay vì cho
+                  agent duyệt
+                </td>
+                <td>
+                  Giá trị nằm ở <strong>giữ nguyên cấu trúc</strong>, không chỉ
+                  ở việc có đồ thị
+                </td>
+                <td>
+                  CGM FlatGraph <strong>5.33%</strong> vs CGM
+                  <strong>43.00%</strong> — chênh
+                  <span class="win">37.67 điểm</span> ·
+                  <span class="pv">NeurIPS 2025</span>
+                </td>
+              </tr>
+              <tr class="ctrl">
+                <td><strong>PARITY</strong></td>
+                <td>
+                  Chỉ Tier-1 tool (search / traverse / get_code) — tái hiện năng
+                  lực LocAgent, <strong>cùng backbone, harness, prompt</strong>
+                </td>
+                <td>Làm cho so sánh với bảng slide 05 trở nên hợp lệ</td>
+                <td>
+                  ARISE-STRUCTURAL là điều kiện parity của LocAgent và RepoGraph
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="src">
+          <b>Nguồn:</b> Seddik &amp; Fard, <i>ARISE</i>, arXiv:2605.03117,
+          Tables 2–5 —
+          <b>preprint, nộp arXiv 05/2026, chưa bình duyệt, chưa có venue</b>
+          (Univ. of British Columbia) · Tao et al., <i>CGM</i>, NeurIPS 2025
+          Table 10 · Chen et al., <i>LocAgent</i>, ACL 2025 Table 6
+        </div>
+      </section>
+
+      <!-- 8 ── THỰC THI -->
+      <section class="slide">
+        <div class="meta">
+          <span class="tag">Thực thi</span><span>Slide 08 / 08</span>
+        </div>
+        <h2>Sáu bước chạy, ba cảnh báo khi so sánh</h2>
+        <div class="body">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 5%">#</th>
+                <th style="width: 40%">Chạy gì</th>
+                <th style="width: 15%">Chi phí</th>
+                <th>Lý do làm trước</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="mono">1</td>
+                <td>
+                  <strong>Slide 03 · PyCG suite</strong> — precision/recall cạnh
+                </td>
+                <td class="win">~0 · không LLM</td>
+                <td>Đồ thị sai thì mọi thứ sau vô nghĩa. Vài giờ là xong</td>
+              </tr>
+              <tr>
+                <td class="mono">2</td>
+                <td>
+                  <strong
+                    >Slide 04 · Gold-Reachability@h, Coverage@budget, thời gian
+                    dựng</strong
+                  >
+                </td>
+                <td class="win">~0 · không LLM</td>
+                <td>
+                  Biết ngay schema có tiềm năng không,
+                  <strong>trước khi tốn tiền API</strong>
+                </td>
+              </tr>
+              <tr>
+                <td class="mono">3</td>
+                <td>
+                  <strong>Slide 05–06 · localization</strong>, Qwen 7B, đủ 7
+                  điều kiện × 2 dataset
+                </td>
+                <td>Thấp ≈ $290</td>
+                <td>Ra được toàn bộ bảng ablation</td>
+              </tr>
+              <tr>
+                <td class="mono">4</td>
+                <td>
+                  Localization với 32B + proprietary — chỉ ours + PARITY +
+                  SWE-agent
+                </td>
+                <td>Trung bình</td>
+                <td>Đủ chứng minh generalization đa backbone</td>
+              </tr>
+              <tr>
+                <td class="mono">5</td>
+                <td>
+                  <strong>Slide 07 · repair (Pass@1) + Spearman ρ</strong>, task
+                  độc lập
+                </td>
+                <td>Cao</td>
+                <td>Chỉ chạy khi localization đã tốt</td>
+              </tr>
+              <tr>
+                <td class="mono">6</td>
+                <td>Cost analysis · failure-mode taxonomy · unique-fix Venn</td>
+                <td>Thấp</td>
+                <td>Phân tích trên dữ liệu đã có</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="cols3" style="margin-top: 18px">
+            <div class="card">
+              <h4>F1 · Chỉ so cùng backbone</h4>
+              <p>
+                Bảng slide 05 (mỗi dòng một backbone) là <em>bối cảnh</em>. Bảng
+                slide 07 (cùng Qwen2.5-Coder-32B) là
+                <em>so sánh có kiểm soát</em>. Không trộn hai bảng.
+              </p>
+            </div>
+            <div class="card">
+              <h4>F2 · Acc@k ≠ Recall@k</h4>
+              <p>
+                Slide 05–06 dùng <strong>Acc@k strict</strong> (tất cả gold
+                trong top-k); slide 07 dùng <strong>Recall@k</strong> (ít nhất
+                một). Chỉ trùng nhau khi <strong>|T| = 1</strong>.
+              </p>
+            </div>
+            <div class="card">
+              <h4>F3 · Ghi rõ mẫu số</h4>
+              <p>
+                SWE-bench Lite có <strong>300</strong>; LocAgent giữ
+                <strong>274</strong> cho localization; ARISE dùng cả
+                <strong>300</strong>.
+              </p>
+            </div>
+          </div>
+
+          <div class="note" style="margin-top: 16px">
+            <b
+              >Giảm chi phí — công thức đã kiểm chứng của LocAgent (ACL
+              2025).</b
+            >
+            Thu <strong>433 trajectory</strong> thành công từ Claude-3.5 →
+            fine-tune Qwen2.5-Coder-32B (LoRA + SFT, 5 epochs,
+            <code>lr 2e-4</code>, <code>max_token 128k</code>) → sample thêm
+            <strong>335 trajectory</strong> từ chính model đã ft → dùng cả
+            <strong>768 sample</strong> train model 7B. Kết quả: 32B(ft) ngang
+            Claude-3.5, 7B(ft) ngang GPT-4o, chi phí
+            <strong>$0.66 → $0.09</strong>.
+          </div>
+        </div>
+        <div class="src">
+          <b>Tài liệu chính —</b> <b>Đã bình duyệt:</b> SWE-bench (ICLR 2024,
+          arXiv:2310.06770) · LocAgent + Loc-Bench (ACL 2025, DOI
+          10.18653/v1/2025.acl-long.426) · PyCG (ICSE 2021, arXiv:2103.00587) ·
+          CGM (NeurIPS 2025, arXiv:2505.16901) · RepoGraph (ICLR 2025,
+          arXiv:2410.14684) · Agentless (FSE 2025, DOI 10.1145/3715754) ·
+          SWE-agent (NeurIPS 2024) · OpenHands (ICLR 2025) · OrcaLoca (ICML
+          2025) · CoSIL (ASE 2025). &nbsp;<b>Preprint chưa bình duyệt:</b> ARISE
+          (arXiv:2605.03117, nộp 05/2026) · KGCompass (arXiv:2503.21710, 2025) ·
+          Prometheus (arXiv:2507.19942, 2025) · Jarvis (arXiv:2305.05949, nộp
+          TOSEM).
+        </div>
+      </section>
+    </main>
+
+    <nav class="nav" aria-label="Điều hướng slide">
+      <button class="btn" id="prev" aria-label="Slide trước">←</button>
+      <div
+        class="rail"
+        id="rail"
+        role="tablist"
+        aria-label="Danh sách slide"
+      ></div>
+      <button class="btn" id="next" aria-label="Slide sau">→</button>
+      <span class="count" id="count"></span>
+    </nav>
+
+    <script>
+      (function () {
+        var slides = [].slice.call(document.querySelectorAll(".slide"));
+        var rail = document.getElementById("rail"),
+          count = document.getElementById("count"),
+          i = 0;
+        slides.forEach(function (s, idx) {
+          var b = document.createElement("button");
+          b.setAttribute("role", "tab");
+          b.setAttribute("aria-label", "Slide " + (idx + 1));
+          var ax = s.getAttribute("data-axis");
+          if (ax) b.setAttribute("data-axis", ax);
+          b.addEventListener("click", function () {
+            go(idx);
+          });
+          rail.appendChild(b);
+        });
+        var dots = [].slice.call(rail.children);
+        function go(n) {
+          i = Math.max(0, Math.min(slides.length - 1, n));
+          slides.forEach(function (s, idx) {
+            s.classList.toggle("on", idx === i);
+          });
+          dots.forEach(function (d, idx) {
+            d.classList.toggle("on", idx === i);
+            d.setAttribute("aria-selected", idx === i ? "true" : "false");
+          });
+          var ax = slides[i].getAttribute("data-axis");
+          count.textContent =
+            (ax ? ax + "·" : "") +
+            String(i + 1).padStart(2, "0") +
+            " / " +
+            slides.length;
+          window.scrollTo(0, 0);
+        }
+        document.getElementById("prev").addEventListener("click", function () {
+          go(i - 1);
+        });
+        document.getElementById("next").addEventListener("click", function () {
+          go(i + 1);
+        });
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "ArrowRight" || e.key === "PageDown") go(i + 1);
+          else if (e.key === "ArrowLeft" || e.key === "PageUp") go(i - 1);
+          else if (e.key === "Home") go(0);
+          else if (e.key === "End") go(slides.length - 1);
+        });
+        go(0);
+      })();
+    </script>
+  </body>
+</html>

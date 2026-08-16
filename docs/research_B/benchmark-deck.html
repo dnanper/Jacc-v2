@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Benchmark – Metric – Baseline · Code Knowledge Graph</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,75..125,400..900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ground:#EEF1F5;--paper:#FFF;--ink:#131C28;--muted:#5C6B7F;--faint:#8A98A9;
+  --grid:#D9E0E8;--rule:#C9D2DC;
+  --a:#0B6E6E;--a-wash:#E3F0EF;--b:#4636A6;--b-wash:#EAE7F6;--hot:#A8264F;
+  --pad:clamp(20px,3.4vw,52px);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--ground);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:26px 26px;color:var(--ink);
+  font-family:"Archivo",system-ui,sans-serif;font-variation-settings:"wdth" 100;
+  -webkit-font-smoothing:antialiased;
+}
+.deck{max-width:1240px;margin:0 auto;padding:18px 16px 92px}
+.slide{display:none;background:var(--paper);border:1px solid var(--rule);border-left:7px solid var(--muted);
+  min-height:calc(100vh - 130px);padding:var(--pad);animation:in .18s ease-out}
+.slide.on{display:flex;flex-direction:column}
+.slide[data-axis="A"]{border-left-color:var(--a)}
+.slide[data-axis="B"]{border-left-color:var(--b)}
+@keyframes in{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.slide{animation:none}}
+
+.meta{display:flex;justify-content:space-between;align-items:baseline;gap:16px;
+  font-family:"JetBrains Mono",monospace;font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--faint);border-bottom:1px solid var(--rule);padding-bottom:9px;margin-bottom:22px}
+.meta .tag{font-weight:700}
+[data-axis="A"] .meta .tag{color:var(--a)}
+[data-axis="B"] .meta .tag{color:var(--b)}
+
+h1{font-size:clamp(30px,5.2vw,60px);line-height:.98;margin:0 0 14px;font-weight:900;
+  font-variation-settings:"wdth" 112;letter-spacing:-.026em;text-wrap:balance}
+h2{font-size:clamp(22px,3.1vw,34px);line-height:1.05;margin:0 0 6px;font-weight:800;
+  font-variation-settings:"wdth" 108;letter-spacing:-.02em}
+.sub{color:var(--muted);font-size:clamp(13px,1.35vw,16px);line-height:1.45;margin:0 0 20px;max-width:80ch}
+h3{font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:700;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--muted);margin:24px 0 9px;padding-bottom:5px;border-bottom:1px solid var(--rule)}
+h3:first-child{margin-top:0}
+p{line-height:1.55;margin:0 0 11px;font-size:14.5px}
+.body{flex:1;min-height:0;overflow:auto}
+
+table{border-collapse:collapse;width:100%;font-size:12.6px;margin:0 0 6px}
+th,td{padding:6px 9px;text-align:left;border-bottom:1px solid var(--rule);vertical-align:top}
+thead th{font-family:"JetBrains Mono",monospace;font-size:9.6px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--muted);border-bottom:1.5px solid var(--ink);white-space:nowrap}
+td.n,th.n{text-align:right;font-family:"JetBrains Mono",monospace;font-variant-numeric:tabular-nums;white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+.grp td{background:#F2F5F8;font-family:"JetBrains Mono",monospace;font-size:9.6px;font-weight:700;
+  letter-spacing:.11em;text-transform:uppercase;color:var(--muted)}
+tr.target td{background:#FBEEF2}
+tr.target td:first-child{box-shadow:inset 3px 0 0 var(--hot)}
+tr.ctrl td{background:#F4F2FB;font-style:italic}
+.win{color:var(--hot);font-weight:700}
+
+.cols{display:grid;gap:var(--pad);grid-template-columns:1fr 1fr}
+.cols3{display:grid;gap:16px;grid-template-columns:repeat(3,1fr)}
+.card{border:1px solid var(--rule);padding:14px 16px;background:#FBFCFD}
+.card h4{font-family:"JetBrains Mono",monospace;font-size:10px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+.card p{font-size:13px;margin:0 0 7px}
+.card p:last-child{margin-bottom:0}
+
+.spec{width:100%;font-size:13px}
+.spec td{padding:5px 0;border-bottom:1px dotted var(--rule)}
+.spec td:first-child{width:132px;font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--muted);padding-right:12px}
+.formula{font-family:"JetBrains Mono",monospace;font-size:12.5px;line-height:1.7;background:#F2F5F8;
+  border-left:3px solid var(--muted);padding:12px 15px;margin:10px 0 14px;white-space:pre-wrap}
+[data-axis="A"] .formula{border-left-color:var(--a);background:var(--a-wash)}
+[data-axis="B"] .formula{border-left-color:var(--b);background:var(--b-wash)}
+.note{border-left:3px solid var(--hot);background:#FBEEF2;padding:11px 15px;margin:12px 0;font-size:13.2px;line-height:1.5}
+.note b{color:var(--hot)}
+code,.mono{font-family:"JetBrains Mono",monospace;font-size:.9em}
+code{background:#F2F5F8;padding:1px 5px;border:1px solid var(--rule)}
+ul{margin:0 0 12px;padding-left:19px}
+li{line-height:1.5;margin-bottom:6px;font-size:14px}
+.src{font-family:"JetBrains Mono",monospace;font-size:10.5px;color:var(--faint);line-height:1.55;
+  margin-top:auto;padding-top:14px;border-top:1px solid var(--rule)}
+.src b{color:var(--muted)}
+
+.title-wrap{display:grid;grid-template-columns:1.15fr .85fr;gap:var(--pad);align-items:center;flex:1}
+.eyebrow{font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:700;letter-spacing:.24em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:18px}
+.pick{display:flex;flex-direction:column;gap:11px;margin-top:22px}
+.pick div{border:1px solid var(--rule);padding:11px 14px;background:#FBFCFD;
+  font-family:"JetBrains Mono",monospace;font-size:12.5px}
+.pick b{font-size:13.5px}
+.pick span{display:block;color:var(--muted);font-size:10.5px;letter-spacing:.05em;margin-top:3px}
+
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(238,241,245,.94);
+  backdrop-filter:blur(7px);border-top:1px solid var(--rule);display:flex;align-items:center;gap:12px;
+  padding:9px clamp(12px,3vw,26px)}
+.rail{display:flex;gap:4px;flex:1;overflow:hidden}
+.rail button{flex:1;min-width:5px;height:6px;border:none;padding:0;cursor:pointer;background:var(--rule);transition:background .15s}
+.rail button[data-axis="A"]{background:#B6D3D1}
+.rail button[data-axis="B"]{background:#C3BCE4}
+.rail button.on{background:var(--ink)}
+.rail button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.nav .btn{font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:700;letter-spacing:.09em;
+  text-transform:uppercase;background:var(--paper);border:1px solid var(--ink);color:var(--ink);padding:6px 13px;cursor:pointer}
+.nav .btn:hover{background:var(--ink);color:var(--paper)}
+.nav .btn:focus-visible{outline:2px solid var(--hot);outline-offset:2px}
+.count{font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:700;color:var(--muted);
+  white-space:nowrap;font-variant-numeric:tabular-nums}
+
+@media (max-width:900px){
+  .cols,.cols3,.title-wrap{grid-template-columns:1fr}
+  .slide{min-height:auto}
+  table{font-size:11.4px}
+  th,td{padding:5px 6px}
+}
+@media (max-width:560px){.spec td:first-child{width:auto;display:block;padding-bottom:1px;border:none}.spec td{display:block}}
+</style>
+</head>
+<body>
+
+<main class="deck">
+
+<!-- 1 ── TITLE / CHỌN GÌ -->
+<section class="slide on">
+  <div class="meta"><span class="tag">Bộ đánh giá đã chọn</span><span>Code Knowledge Graph · Luận văn</span></div>
+  <div class="title-wrap">
+    <div>
+      <div class="eyebrow">Đồ thị + bộ công cụ truy vấn cho agent</div>
+      <h1>Hai bộ dữ liệu, hai trục đánh giá</h1>
+      <p class="sub">Trục A đo <strong>chất lượng đồ thị</strong> — tính trực tiếp từ đồ thị, không gọi LLM. Trục B đo <strong>chất lượng hệ thống</strong> khi agent dùng đồ thị.</p>
+      <div class="pick">
+        <div><b>BỘ 1 — SWE-bench Lite + Loc-Bench</b><span>ICLR 2024 + ACL 2025 · phục vụ cả hai trục · 16 baseline có số liệu</span></div>
+        <div><b>BỘ 2 — PyCG Evaluation Suite</b><span>ICSE 2021 · chỉ trục A — độ đúng của cạnh</span></div>
+      </div>
+      <p class="sub" style="margin-top:18px;margin-bottom:0">Chọn đúng bộ này vì đây <strong>chính xác là định vị của LocAgent (ACL 2025)</strong> — so sánh trực tiếp được, không phải chạy lại baseline.</p>
+    </div>
+    <div>
+      <svg viewBox="0 0 300 290" width="100%" role="img" aria-label="Hai trục đánh giá: trục dọc là chất lượng đồ thị, trục ngang là chất lượng hệ thống">
+        <line x1="46" y1="250" x2="284" y2="250" stroke="#4636A6" stroke-width="2"/>
+        <line x1="46" y1="250" x2="46" y2="16" stroke="#0B6E6E" stroke-width="2"/>
+        <polygon points="284,250 276,246 276,254" fill="#4636A6"/>
+        <polygon points="46,16 42,24 50,24" fill="#0B6E6E"/>
+        <text x="292" y="254" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="10" font-weight="700" fill="#4636A6">TRỤC B</text>
+        <text x="288" y="268" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="9" fill="#5C6B7F">hệ thống (agent)</text>
+        <text x="54" y="24" font-family="JetBrains Mono,monospace" font-size="10" font-weight="700" fill="#0B6E6E">TRỤC A</text>
+        <text x="54" y="38" font-family="JetBrains Mono,monospace" font-size="9" fill="#5C6B7F">đồ thị</text>
+        <rect x="60" y="58" width="110" height="42" fill="#E3F0EF" stroke="#0B6E6E"/>
+        <text x="70" y="76" font-family="JetBrains Mono,monospace" font-size="9.5" font-weight="700" fill="#0B6E6E">PyCG suite</text>
+        <text x="70" y="90" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#5C6B7F">A1 · P / R của cạnh</text>
+        <rect x="60" y="118" width="196" height="42" fill="#F2F5F8" stroke="#5C6B7F"/>
+        <text x="70" y="136" font-family="JetBrains Mono,monospace" font-size="9.5" font-weight="700" fill="#131C28">A2 · không gọi LLM</text>
+        <text x="70" y="150" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#5C6B7F">Gold-Reachability@h · Coverage@budget</text>
+        <rect x="60" y="182" width="196" height="52" fill="#EAE7F6" stroke="#4636A6"/>
+        <text x="70" y="200" font-family="JetBrains Mono,monospace" font-size="9.5" font-weight="700" fill="#4636A6">SWE-bench Lite + Loc-Bench</text>
+        <text x="70" y="214" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#5C6B7F">B · Acc@k · NDCG · Pass@1</text>
+        <text x="70" y="227" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#5C6B7F">834 instance</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- 2 ── TRỤC A: PyCG -->
+<section class="slide" data-axis="A">
+  <div class="meta"><span class="tag">Trục A1</span><span>Benchmark → Metric → Baseline</span></div>
+  <h2>PyCG Evaluation Suite — độ đúng của cạnh</h2>
+  <div class="body">
+  <div class="cols">
+    <div>
+      <h3>Benchmark</h3>
+      <table class="spec">
+        <tr><td>Venue</td><td><strong>ICSE 2021</strong> · arXiv:2103.00587</td></tr>
+        <tr><td>Public</td><td><code>github.com/vitsalis/pycg-evaluation</code> · Docker · Apache 2.0</td></tr>
+        <tr><td>Micro</td><td><strong>112 module</strong> Python tối giản, mỗi module cô lập một đặc trưng ngôn ngữ. GT thủ công</td></tr>
+        <tr><td>Macro</td><td><strong>5 package thật</strong>, <strong>kèm sẵn call graph ground-truth</strong></td></tr>
+        <tr><td>Code eval</td><td><code>compare_macro_benchmark_cg.py</code> → CSV P/R · <code>table4.py</code> · <code>table5.py</code></td></tr>
+        <tr><td>Mở rộng</td><td><strong>Jarvis</strong> (arXiv:2305.05949): 135 micro + 6 app thật</td></tr>
+      </table>
+    </div>
+    <div>
+      <h3>Metric</h3>
+      <div class="formula">Precision = |E_gen ∩ E_gold| / |E_gen|
+Recall    = |E_gen ∩ E_gold| / |E_gold|
++ thời gian (s), bộ nhớ (MB) trên macro</div>
+      <h3>Baseline đã report</h3>
+      <table>
+        <thead><tr><th>Tool</th><th>Năm</th><th class="n">Precision</th><th class="n">Recall</th></tr></thead>
+        <tbody>
+          <tr class="target"><td><strong>PyCG</strong></td><td>2021 ICSE</td><td class="n"><strong>~99.2%</strong></td><td class="n"><strong>~69.9%</strong></td></tr>
+          <tr><td>Pyan</td><td>—</td><td class="n">trung bình</td><td class="n">thấp</td></tr>
+          <tr><td>Depends</td><td>—</td><td class="n">&lt; PyCG</td><td class="n">&lt; Pyan</td></tr>
+          <tr class="target"><td><strong>Jarvis</strong></td><td>2024</td><td class="n"><span class="win">+84%</span> vs PyCG</td><td class="n"><span class="win">+≥20%</span> vs PyCG</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <h3>Ba điều phải nói rõ</h3>
+  <div class="cols3">
+    <div class="card"><h4>01 · Chỉ có cạnh CALLS</h4><p>Không có GT cho <code>contains</code>/<code>imports</code>/<code>inherits</code>. <strong>Không sao</strong> — chúng tất định từ AST, P/R ≈ 1.0 theo cấu tạo. Nói thẳng thay vì im lặng.</p></div>
+    <div class="card"><h4>02 · Không có GT data-flow</h4><p>Nếu schema có def-use edge, phải <strong>tự dựng GT</strong> trên ~200 function ngẫu nhiên và nêu rõ quy trình.</p></div>
+    <div class="card"><h4>03 · Cạnh thiếu ≠ cạnh sai</h4><p><strong>ARISE</strong> bỏ dynamic dispatch (<em>cạnh giả tai hại hơn cạnh thiếu</em>). <strong>CGM</strong> over-approximate + CHA. → Báo P và R <strong>riêng</strong>, không gộp F1.</p></div>
+  </div>
+  </div>
+  <div class="src"><b>Nguồn:</b> Salis et al. ICSE 2021, Tables 4–5 · Jarvis arXiv:2305.05949 · ARISE §3.2 · CGM App. B.2</div>
+</section>
+
+<!-- 3 ── TRỤC A2 -->
+<section class="slide" data-axis="A">
+  <div class="meta"><span class="tag">Trục A2</span><span>Trên SWE-bench Lite · không gọi LLM</span></div>
+  <h2>Chất lượng đồ thị theo tác vụ</h2>
+  <p class="sub">Tầng bị bỏ quên nhất trong toàn bộ paper code-KG 2025–2026 — và là chỗ dễ tạo khác biệt. Tính hoàn toàn từ đồ thị + gold patch.</p>
+  <div class="body">
+  <div class="cols">
+    <div>
+      <h3>Gold-Reachability@h — điều kiện <em>cần</em></h3>
+      <div class="formula">C = node trích từ issue description
+T = node từ gold patch
+δ = (1/|T|) · Σ min d(c, t)     d = số hop
+Gold-Reachability@h = tỷ lệ instance có δ ≤ h
+Báo cáo phân bố:  Hop 0 / 1 / 2 / 3+</div>
+      <p>Node gold không tới được thì <strong>không agent nào tìm ra</strong>. Metric này chứng minh giá trị schema <em>độc lập với chất lượng LLM</em> — reviewer không thể phản biện "kết quả do model tốt".</p>
+      <h3>Chi phí dựng</h3>
+      <p style="font-size:13.5px"><strong>CGM</strong> ~3 phút/repo, offline, không ảnh hưởng inference · <strong>LocAgent</strong> vài giây/codebase · <strong>ARISE</strong> truy vấn 3–7 s/issue, CPU nhẹ.</p>
+    </div>
+    <div>
+      <h3>Coverage@budget — retrieval tách khỏi reasoning</h3>
+      <p style="font-size:13.5px">Tỷ lệ dòng gold được phủ dưới budget <strong>8.000 token</strong>. Điều kiện không dùng bundling thì tính trên cửa sổ BM25 cùng kích thước token.</p>
+      <table>
+        <thead><tr><th>SWE-bench Lite</th><th class="n">Cov@budget</th><th class="n">Line IoU</th></tr></thead>
+        <tbody>
+          <tr><td>RAG (BM25)</td><td class="n">20.0</td><td class="n">0.06</td></tr>
+          <tr><td>SWE-agent</td><td class="n">53.0</td><td class="n">0.21</td></tr>
+          <tr class="target"><td>ARISE-STRUCTURAL <span class="mono" style="color:var(--muted)">parity</span></td><td class="n">61.0</td><td class="n">0.26</td></tr>
+          <tr class="ctrl"><td>ARISE-COARSE <span class="mono">control</span></td><td class="n">62.0</td><td class="n">0.27</td></tr>
+          <tr><td>ARISE-SLICING</td><td class="n">71.0</td><td class="n">0.33</td></tr>
+          <tr class="target"><td><strong>ARISE-FULL</strong></td><td class="n win">75.0</td><td class="n win">0.36</td></tr>
+        </tbody>
+      </table>
+      <div class="note"><b>Điểm bán hàng:</b> LocAgent nhấn mạnh indexing chỉ mất vài giây/codebase nên thực tế cho real-time, không cần sinh lại embedding khi code đổi. Nếu toolset dựng đồ thị nhanh — hãy đo và báo cáo.</div>
+    </div>
+  </div>
+  </div>
+  <div class="src"><b>Nguồn:</b> LocAgent §C.2 Quantifying Task Difficulty (ACL 2025) · ARISE §3.5 + Table 4 · CGM App. C.4.1</div>
+</section>
+
+<!-- 4 ── TRỤC B: BENCHMARK -->
+<section class="slide" data-axis="B">
+  <div class="meta"><span class="tag">Trục B</span><span>Benchmark</span></div>
+  <h2>SWE-bench Lite + Loc-Bench</h2>
+  <div class="body">
+  <div class="cols">
+    <div>
+      <h3>SWE-bench Lite</h3>
+      <table class="spec">
+        <tr><td>Venue</td><td><strong>ICLR 2024</strong> · arXiv:2310.06770</td></tr>
+        <tr><td>Public</td><td><code>swebench.com</code> · <code>github.com/princeton-nlp/SWE-bench</code></td></tr>
+        <tr><td>Quy mô</td><td><strong>300 instance</strong>, <strong>11 repo Python</strong> — Django, Flask, SymPy, Matplotlib, Pytest, Scikit-learn…</td></tr>
+        <tr><td>Code eval</td><td><strong>Docker</strong> · oracle = <strong>fail-to-pass</strong> với unit test do developer viết</td></tr>
+        <tr><td>Localization</td><td>LocAgent giữ <strong>274/300</strong> (loại instance không sửa function nào)</td></tr>
+      </table>
+    </div>
+    <div>
+      <h3>Loc-Bench</h3>
+      <table class="spec">
+        <tr><td>Venue</td><td><strong>ACL 2025</strong> (kèm LocAgent), pp. 8697–8727</td></tr>
+        <tr><td>Public</td><td>HF <code>czlll/Loc-Bench_V1</code> · <code>github.com/gersteinlab/LocAgent</code></td></tr>
+        <tr><td>Quy mô</td><td><strong>560 instance</strong>, 4 category cân bằng</td></tr>
+        <tr><td>Code eval</td><td><code>evaluation.eval_metric.evaluate_results</code></td></tr>
+        <tr><td>Chống nhiễm</td><td>Bug Report thu từ issue <strong>tạo sau 10/2024</strong> — muộn hơn cutoff của phần lớn LLM</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <h3>Vì sao bắt buộc phải có Loc-Bench</h3>
+  <div class="cols">
+    <div>
+      <table>
+        <thead><tr><th>Category</th><th class="n">SWE-bench Lite</th><th class="n">Loc-Bench</th></tr></thead>
+        <tbody>
+          <tr><td>Bug Report</td><td class="n">254</td><td class="n">242</td></tr>
+          <tr><td>Feature Request</td><td class="n">43</td><td class="n">150</td></tr>
+          <tr><td>Security</td><td class="n win">3</td><td class="n">29</td></tr>
+          <tr><td>Performance</td><td class="n win">0</td><td class="n">139</td></tr>
+          <tr><td><strong>Tổng</strong></td><td class="n"><strong>300</strong></td><td class="n"><strong>560</strong></td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:13.5px;margin-top:10px">Đạt 94% file Acc@5 trên SWE-bench Lite chỉ chứng minh năng lực trên <em>bug fixing</em>.</p>
+    </div>
+    <div>
+      <h3 style="margin-top:0">Định nghĩa ground truth — dùng đúng như vậy</h3>
+      <ul>
+        <li><strong>File gold</strong> = file bị gold patch sửa</li>
+        <li><strong>Function gold</strong> = ánh xạ mỗi diff hunk về function/method bao quanh</li>
+        <li><strong>Line gold</strong> = mọi dòng bị chạm (+/−), <strong>loại trừ</strong> context line và dòng trống</li>
+        <li><strong>Loại khỏi target:</strong> document, import statement, comment</li>
+      </ul>
+    </div>
+  </div>
+  </div>
+  <div class="src"><b>Nguồn:</b> Jimenez et al. ICLR 2024 · Chen et al. ACL 2025, §4.2 + Table 3 + App. B</div>
+</section>
+
+<!-- 5 ── TRỤC B: METRIC -->
+<section class="slide" data-axis="B">
+  <div class="meta"><span class="tag">Trục B</span><span>Metric · ý nghĩa &amp; cách tính</span></div>
+  <h2>Bộ metric localization</h2>
+  <div class="body">
+  <table>
+    <thead><tr><th style="width:17%">Metric</th><th>Định nghĩa</th><th style="width:13%">Nguồn</th></tr></thead>
+    <tbody>
+      <tr class="target"><td><strong class="mono">Acc@k</strong> <span class="mono" style="color:var(--hot)">STRICT</span></td><td>Thành công <strong>chỉ khi TẤT CẢ</strong> vị trí liên quan nằm trong top-k. Cảm hứng R-Precision. <strong>Metric chính.</strong></td><td>LocAgent</td></tr>
+      <tr><td class="mono">NDCG@k</td><td>Chất lượng <em>xếp hạng</em>, không chỉ có mặt trong top-k</td><td>LocAgent T.11</td></tr>
+      <tr><td class="mono">Recall@k</td><td>Có <strong>ít nhất một</strong> vị trí gold trong top-k — lỏng hơn Acc@k, <strong>không cùng thang đo</strong></td><td>ARISE</td></tr>
+      <tr><td class="mono">MRR</td><td>Mean reciprocal rank của vị trí gold đầu tiên</td><td>ARISE</td></tr>
+      <tr><td class="mono">F1@k</td><td>Harmonic mean precision@k / recall@k — <strong>phạt over-prediction</strong></td><td>ARISE</td></tr>
+      <tr><td class="mono">IoU</td><td>Intersection-over-union của tập dòng dự đoán và gold</td><td>ARISE</td></tr>
+      <tr><td class="mono">Coverage@budget</td><td>Tỷ lệ dòng gold phủ được dưới budget token — <strong>retrieval độc lập với reasoning</strong></td><td>ARISE</td></tr>
+      <tr><td class="mono">Empty Rate</td><td>Tỷ lệ trả về rỗng — gần như không ai báo cáo</td><td>CoSIL</td></tr>
+    </tbody>
+  </table>
+
+  <div class="cols">
+    <div>
+      <h3>Cấu hình k — khác nhau giữa hai dataset</h3>
+      <table>
+        <thead><tr><th>Dataset</th><th>File</th><th>Module</th><th>Function</th></tr></thead>
+        <tbody>
+          <tr><td>SWE-bench Lite</td><td class="mono">@1, @3, @5</td><td class="mono">@5, @10</td><td class="mono">@5, @10</td></tr>
+          <tr><td><strong>Loc-Bench</strong></td><td class="mono">@<strong>5</strong>, @<strong>10</strong></td><td class="mono">@<strong>10</strong>, @<strong>15</strong></td><td class="mono">@<strong>10</strong>, @<strong>15</strong></td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:13px;color:var(--muted)">Loc-Bench dùng k lớn hơn vì instance sửa 1–5 file. <strong>Mức module</strong>: đúng nếu <em>bất kỳ function nào trong class bị patch</em> được xác định.</p>
+    </div>
+    <div>
+      <h3>Downstream &amp; chi phí</h3>
+      <p style="font-size:13.5px"><strong>Resolve Rate / Pass@1</strong> — patch làm pass toàn bộ test. CGM: resolved nếu <em>giải quyết đúng issue và là superset của gold edits</em>.</p>
+      <p style="font-size:13.5px"><strong>Chi phí:</strong> $/instance · tokens phân rã theo tool · số vòng agent · <strong>cost-efficiency = Acc@10 / cost</strong>.</p>
+    </div>
+  </div>
+
+  <div class="note"><b>Giao thức bắt buộc — chạy 2 task ĐỘC LẬP.</b> Localization trả về danh sách xếp hạng <code>{file, function, start_line, end_line, score}</code>; repair trả về unified diff. Tách ra mới đo được <strong>Spearman ρ giữa Function Recall@1 và Pass@1</strong>. Baseline SWE-agent phải dùng <em>cùng</em> prompt localization và <em>cùng</em> output format.</div>
+  </div>
+  <div class="src"><b>Nguồn:</b> LocAgent §5.1 + Table 11 · ARISE §3.5 · CGM App. C.5.3 · CoSIL Table III</div>
+</section>
+
+<!-- 6 ── BASELINE -->
+<section class="slide" data-axis="B">
+  <div class="meta"><span class="tag">Trục B</span><span>Baseline · mốc phải vượt</span></div>
+  <h2>Localization — SWE-bench Lite &amp; Loc-Bench</h2>
+  <p class="sub">Acc@k strict. Rút gọn còn baseline mạnh nhất mỗi nhóm; bảng đầy đủ 16 dòng ở LocAgent Table 4.</p>
+  <div class="body">
+  <h3>SWE-bench Lite · 274 instance</h3>
+  <table>
+    <thead><tr><th>Method</th><th>Năm · Venue</th><th>Model</th><th class="n">File@1</th><th class="n">@5</th><th class="n">Mod@10</th><th class="n">Fn@5</th><th class="n">@10</th></tr></thead>
+    <tbody>
+      <tr class="grp"><td colspan="8">Retrieval / IR</td></tr>
+      <tr><td>BM25</td><td>1994</td><td>—</td><td class="n">38.69</td><td class="n">61.68</td><td class="n">52.92</td><td class="n">31.75</td><td class="n">36.86</td></tr>
+      <tr><td><strong>CodeRankEmbed</strong></td><td>2024</td><td>—</td><td class="n">52.55</td><td class="n">84.67</td><td class="n">78.83</td><td class="n">51.82</td><td class="n">58.76</td></tr>
+      <tr class="grp"><td colspan="8">Procedure / Agent</td></tr>
+      <tr><td>Agentless</td><td>2025 · <strong>FSE</strong></td><td>Claude-3.5</td><td class="n">72.63</td><td class="n">79.56</td><td class="n">68.98</td><td class="n">58.76</td><td class="n">58.76</td></tr>
+      <tr><td>SWE-agent</td><td>2024 · <strong>NeurIPS</strong></td><td>Claude-3.5</td><td class="n">77.37</td><td class="n">90.15</td><td class="n">78.10</td><td class="n">64.23</td><td class="n">64.60</td></tr>
+      <tr><td><strong>OpenHands</strong></td><td>2025 · <strong>ICLR</strong></td><td>Claude-3.5</td><td class="n">76.28</td><td class="n">90.15</td><td class="n">83.58</td><td class="n">68.25</td><td class="n">70.07</td></tr>
+      <tr class="grp"><td colspan="8">Graph-based — mốc phải vượt</td></tr>
+      <tr class="target"><td><strong>LocAgent</strong></td><td>2025 · <strong>ACL</strong></td><td>Qwen2.5-7B(ft)</td><td class="n">70.80</td><td class="n">88.32</td><td class="n">82.85</td><td class="n">64.23</td><td class="n">71.53</td></tr>
+      <tr class="target"><td><strong>LocAgent</strong></td><td>2025 · ACL</td><td>Qwen2.5-32B(ft)</td><td class="n">75.91</td><td class="n">92.70</td><td class="n">87.23</td><td class="n">71.90</td><td class="n">77.01</td></tr>
+      <tr class="target"><td><strong>LocAgent</strong></td><td>2025 · ACL</td><td>Claude-3.5</td><td class="n win">77.74</td><td class="n win">94.16</td><td class="n win">87.59</td><td class="n win">73.36</td><td class="n win">77.37</td></tr>
+    </tbody>
+  </table>
+
+  <div class="cols">
+    <div>
+      <h3>Loc-Bench · 560 instance</h3>
+      <table>
+        <thead><tr><th>Method</th><th>Model</th><th class="n">File@5</th><th class="n">Mod@10</th><th class="n">Fn@10</th></tr></thead>
+        <tbody>
+          <tr><td>CodeRankEmbed</td><td>—</td><td class="n">74.29</td><td class="n">63.21</td><td class="n">43.39</td></tr>
+          <tr><td>Agentless</td><td>Claude-3.5</td><td class="n">67.50</td><td class="n">53.39</td><td class="n">42.68</td></tr>
+          <tr><td>SWE-agent</td><td>Claude-3.5</td><td class="n">77.68</td><td class="n">63.57</td><td class="n">51.96</td></tr>
+          <tr><td><strong>OpenHands</strong></td><td>Claude-3.5</td><td class="n">79.82</td><td class="n">68.93</td><td class="n">59.11</td></tr>
+          <tr class="target"><td><strong>LocAgent</strong></td><td>Qwen2.5-7B(ft)</td><td class="n">78.57</td><td class="n">63.04</td><td class="n">51.43</td></tr>
+          <tr class="target"><td><strong>LocAgent</strong></td><td>Claude-3.5</td><td class="n win">83.39</td><td class="n win">70.89</td><td class="n win">59.29</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <h3>Metric riêng · cùng SWE-bench Lite</h3>
+      <table>
+        <thead><tr><th>Method</th><th>Năm · Venue</th><th>Metric</th><th class="n">Kết quả</th></tr></thead>
+        <tbody>
+          <tr><td>OrcaLoca</td><td>2025 · <strong>ICML</strong></td><td>Function match</td><td class="n">65.33%</td></tr>
+          <tr><td>CoSIL</td><td>2025 · <strong>ASE</strong></td><td>Top-1 acc</td><td class="n">43.3% · 44.6% Verified</td></tr>
+          <tr><td>KGCompass</td><td>2025 · preprint</td><td>Function fault loc</td><td class="n">56.0%</td></tr>
+          <tr><td>RepoGraph</td><td>2025 · <strong>ICLR</strong></td><td>Δ resolve rate</td><td class="n">+2.0 pp (GPT-4o)</td></tr>
+        </tbody>
+      </table>
+      <h3>Resolve rate — để nối leaderboard</h3>
+      <table>
+        <thead><tr><th>Method</th><th>Venue</th><th class="n">Lite %R</th><th class="n">Cost</th></tr></thead>
+        <tbody>
+          <tr class="target"><td>KGCompass</td><td>preprint</td><td class="n win">58.3%</td><td class="n">$0.20</td></tr>
+          <tr class="target"><td>CGM-SWE-PY</td><td><strong>NeurIPS 25</strong></td><td class="n">43.00%</td><td class="n">—</td></tr>
+          <tr><td>Agentless-v1.5</td><td><strong>FSE 25</strong></td><td class="n">40.67%</td><td class="n">—</td></tr>
+          <tr><td>Prometheus</td><td>preprint</td><td class="n">35.33%</td><td class="n">$0.23</td></tr>
+          <tr><td>LocAgent+Agentless</td><td><strong>ACL 25</strong></td><td class="n">27.92% Pass@1</td><td class="n">—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  </div>
+  <div class="src"><b>Nguồn:</b> LocAgent Tables 4, 7 (ACL 2025) · CGM Table 1 (NeurIPS 2025) · KGCompass · OrcaLoca ICML 2025 · CoSIL ASE 2025 · RepoGraph ICLR 2025</div>
+</section>
+
+<!-- 7 ── BASELINE NỘI BỘ + CÙNG BACKBONE -->
+<section class="slide" data-axis="B">
+  <div class="meta"><span class="tag">Baseline nội bộ</span><span>Chứng minh nhân quả</span></div>
+  <h2>Ba baseline quan trọng hơn mọi baseline ngoại</h2>
+  <p class="sub">Baseline ngoại chứng minh "hơn kém". Ba cái này chứng minh "vì sao". Thiếu chúng thì reviewer sẽ hỏi và bạn không trả lời được.</p>
+  <div class="body">
+  <table>
+    <thead><tr><th style="width:11%">Tên</th><th style="width:30%">Cấu hình</th><th style="width:27%">Chứng minh</th><th>Số liệu tham chiếu</th></tr></thead>
+    <tbody>
+      <tr class="ctrl"><td><strong>COARSE</strong></td><td>Giữ <strong>nguyên tool schema</strong> — agent vẫn thấy đủ tool — nhưng dựng đồ thị <strong>thiếu thành phần mới</strong>, tool đó luôn trả rỗng</td><td>Cải thiện đến từ <strong>dữ liệu đồ thị</strong>, không từ việc có thêm tool</td><td>ARISE-COARSE ≈ ARISE-STRUCTURAL, chênh ≤1.0 điểm · Pass@1 19.5% vs 19.0%</td></tr>
+      <tr class="ctrl"><td><strong>FLATTEN</strong></td><td>Cùng đồ thị, <strong>linearize thành text</strong> theo thứ tự topo</td><td>Giá trị nằm ở <strong>giữ nguyên cấu trúc</strong>, không chỉ ở việc có đồ thị</td><td>CGM FlatGraph <strong>5.33%</strong> vs CGM <strong>43.00%</strong> — chênh <span class="win">37.67 điểm</span></td></tr>
+      <tr class="ctrl"><td><strong>PARITY</strong></td><td>Tái hiện năng lực SOTA (LocAgent) với <strong>cùng backbone, harness, prompt</strong></td><td>Làm cho so sánh với bảng slide 6 trở nên hợp lệ</td><td>ARISE-STRUCTURAL = <em>"reproduce structural graph retrieval capabilities of LocAgent and RepoGraph under the same backbone and evaluation harness"</em></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Bảng cùng backbone — quý hơn bảng slide 6 · Qwen2.5-Coder-32B, 300 instance</h3>
+  <table>
+    <thead><tr><th>Condition</th><th class="n">File R@1</th><th class="n">Fn R@1</th><th class="n">Fn F1@3</th><th class="n">Line R@1</th><th class="n">Cov@bud</th><th class="n">Pass@1</th><th class="n">ρ Spearman</th></tr></thead>
+    <tbody>
+      <tr><td>RAG (BM25)</td><td class="n">30.0</td><td class="n">15.0</td><td class="n">0.14</td><td class="n">5.0</td><td class="n">20.0</td><td class="n">2.67%</td><td class="n">0.05</td></tr>
+      <tr><td>SWE-agent</td><td class="n">57.0</td><td class="n">43.0</td><td class="n">0.39</td><td class="n">26.0</td><td class="n">53.0</td><td class="n">17.3%</td><td class="n">0.38</td></tr>
+      <tr class="target"><td>ARISE-STRUCTURAL <span class="mono" style="color:var(--muted)">parity</span></td><td class="n">62.0</td><td class="n">50.0</td><td class="n">0.45</td><td class="n">31.0</td><td class="n">61.0</td><td class="n">19.0%</td><td class="n">0.42</td></tr>
+      <tr class="ctrl"><td>ARISE-COARSE <span class="mono">control</span></td><td class="n">62.0</td><td class="n">51.0</td><td class="n">0.46</td><td class="n">32.0</td><td class="n">62.0</td><td class="n">19.5%</td><td class="n">0.43</td></tr>
+      <tr><td>ARISE-SLICING</td><td class="n">65.0</td><td class="n">57.0</td><td class="n">0.52</td><td class="n">38.0</td><td class="n">71.0</td><td class="n">21.0%</td><td class="n">0.51</td></tr>
+      <tr class="target"><td><strong>ARISE-FULL</strong></td><td class="n win">67.0</td><td class="n win">60.0</td><td class="n win">0.55</td><td class="n win">41.0</td><td class="n win">75.0</td><td class="n win">22.0%</td><td class="n win">0.53</td></tr>
+    </tbody>
+  </table>
+  <div class="note"><b>Cột ρ là metric gần như không ai báo cáo và bạn nên có.</b> Tăng đơn điệu 0.05 → 0.38 → 0.42 → 0.51 → 0.53: chứng minh cải thiện repair thực sự <em>đi qua</em> localization. Chỉ đo được nếu chạy hai task độc lập.</div>
+  </div>
+  <div class="src"><b>Nguồn:</b> ARISE Tables 2–5 (arXiv:2605.03117, preprint) · CGM Table 10 (NeurIPS 2025) · LocAgent Table 6 (ACL 2025)</div>
+</section>
+
+<!-- 8 ── KẾ HOẠCH + CẢNH BÁO -->
+<section class="slide">
+  <div class="meta"><span class="tag">Thực thi</span><span>Kế hoạch &amp; cảnh báo</span></div>
+  <h2>Sáu bước chạy, ba cảnh báo khi so sánh</h2>
+  <div class="body">
+  <table>
+    <thead><tr><th style="width:5%">#</th><th style="width:40%">Chạy gì</th><th style="width:15%">Chi phí</th><th>Lý do làm trước</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">1</td><td><strong>A1 · PyCG suite</strong> — precision/recall cạnh</td><td class="win">~0 · không LLM</td><td>Đồ thị sai thì mọi thứ sau vô nghĩa. Vài giờ là xong</td></tr>
+      <tr><td class="mono">2</td><td><strong>A2 · Gold-Reachability@h, Coverage@budget, thời gian dựng</strong></td><td class="win">~0 · không LLM</td><td>Biết ngay schema có tiềm năng không, <strong>trước khi tốn tiền API</strong></td></tr>
+      <tr><td class="mono">3</td><td><strong>B · localization</strong>, Qwen 7B, đủ 7 điều kiện × 2 dataset</td><td>Thấp ≈ $290</td><td>Ra được toàn bộ bảng ablation</td></tr>
+      <tr><td class="mono">4</td><td>B · localization, 32B + proprietary — chỉ ours + PARITY + SWE-agent</td><td>Trung bình</td><td>Đủ chứng minh generalization đa backbone</td></tr>
+      <tr><td class="mono">5</td><td>B · repair (Pass@1) + Spearman ρ, <strong>task độc lập</strong></td><td>Cao</td><td>Chỉ chạy khi localization đã tốt</td></tr>
+      <tr><td class="mono">6</td><td>Cost analysis · failure-mode taxonomy · unique-fix Venn</td><td>Thấp</td><td>Phân tích trên dữ liệu đã có</td></tr>
+    </tbody>
+  </table>
+
+  <div class="cols3" style="margin-top:22px">
+    <div class="card"><h4>F1 · Chỉ so cùng backbone</h4><p>Bảng slide 6 (mỗi dòng một backbone) là <em>bối cảnh</em>. Bảng slide 7 (cùng Qwen2.5-Coder-32B) là <em>so sánh có kiểm soát</em>. Không trộn hai bảng.</p></div>
+    <div class="card"><h4>F2 · Acc@k ≠ Recall@k</h4><p>LocAgent dùng <strong>Acc@k strict</strong> (tất cả gold trong top-k); ARISE dùng <strong>Recall@k</strong> (ít nhất một). <strong>Không cùng thang đo.</strong></p></div>
+    <div class="card"><h4>F3 · Ghi rõ mẫu số</h4><p>SWE-bench Lite có <strong>300</strong>; LocAgent giữ <strong>274</strong> cho localization; ARISE dùng cả <strong>300</strong>.</p></div>
+  </div>
+
+  <div class="note" style="margin-top:20px"><b>Giảm chi phí — công thức đã kiểm chứng của LocAgent.</b> Thu <strong>433 trajectory</strong> thành công từ Claude-3.5 → fine-tune Qwen2.5-Coder-32B (LoRA + SFT, 5 epochs, <code>lr 2e-4</code>, <code>max_token 128k</code>) → sample thêm <strong>335 trajectory</strong> từ chính model đã ft → dùng cả <strong>768 sample</strong> train model 7B. Kết quả: 32B(ft) ngang Claude-3.5, 7B(ft) ngang GPT-4o, chi phí <strong>$0.66 → $0.09</strong>.</div>
+  </div>
+  <div class="src"><b>Tài liệu chính:</b> SWE-bench (ICLR 2024, arXiv:2310.06770) · LocAgent (ACL 2025, DOI 10.18653/v1/2025.acl-long.426) · PyCG (ICSE 2021, arXiv:2103.00587) · CGM (NeurIPS 2025, arXiv:2505.16901) · RepoGraph (ICLR 2025, arXiv:2410.14684) · Agentless (FSE 2025, DOI 10.1145/3715754) · ARISE (arXiv:2605.03117, preprint)</div>
+</section>
+
+</main>
+
+<nav class="nav" aria-label="Điều hướng slide">
+  <button class="btn" id="prev" aria-label="Slide trước">←</button>
+  <div class="rail" id="rail" role="tablist" aria-label="Danh sách slide"></div>
+  <button class="btn" id="next" aria-label="Slide sau">→</button>
+  <span class="count" id="count"></span>
+</nav>
+
+<script>
+(function(){
+  var slides=[].slice.call(document.querySelectorAll('.slide'));
+  var rail=document.getElementById('rail'),count=document.getElementById('count'),i=0;
+  slides.forEach(function(s,idx){
+    var b=document.createElement('button');
+    b.setAttribute('role','tab');b.setAttribute('aria-label','Slide '+(idx+1));
+    var ax=s.getAttribute('data-axis'); if(ax) b.setAttribute('data-axis',ax);
+    b.addEventListener('click',function(){go(idx);});
+    rail.appendChild(b);
+  });
+  var dots=[].slice.call(rail.children);
+  function go(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach(function(s,idx){s.classList.toggle('on',idx===i);});
+    dots.forEach(function(d,idx){d.classList.toggle('on',idx===i);d.setAttribute('aria-selected',idx===i?'true':'false');});
+    var ax=slides[i].getAttribute('data-axis');
+    count.textContent=(ax?ax+'·':'')+String(i+1).padStart(2,'0')+' / '+slides.length;
+    window.scrollTo(0,0);
+  }
+  document.getElementById('prev').addEventListener('click',function(){go(i-1);});
+  document.getElementById('next').addEventListener('click',function(){go(i+1);});
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key==='PageDown')go(i+1);
+    else if(e.key==='ArrowLeft'||e.key==='PageUp')go(i-1);
+    else if(e.key==='Home')go(0);
+    else if(e.key==='End')go(slides.length-1);
+  });
+  go(0);
+})();
+</script>
+</body>
+</html>
