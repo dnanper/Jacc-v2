@@ -15,7 +15,7 @@ class CkgSearchInput(BaseModel):
     query: str = Field(
         description=(
             "Natural-language or code query for locating relevant files and "
-            "symbols in the read-only initial /testbed snapshot."
+            "symbols in the read-only base-commit snapshot."
         )
     )
     limit: int = Field(default=5, ge=1, le=10)
@@ -24,8 +24,7 @@ class CkgSearchInput(BaseModel):
 class CkgFileContextInput(BaseModel):
     file_path: str = Field(
         description=(
-            "Relative file path from CKG results, e.g. src/pkg/module.py. "
-            "The path maps to /testbed/<file_path> for bash."
+            "Relative file path from CKG results, e.g. src/pkg/module.py."
         )
     )
     query: str = Field(default="", description="Optional focus query.")
@@ -64,7 +63,7 @@ class CkgCrosscutInput(BaseModel):
 
 
 class CkgImpactInput(BaseModel):
-    target: str = Field(description="Symbol name to analyze before editing.")
+    target: str = Field(description="Symbol name to analyze for localization evidence.")
     direction: Literal["upstream", "downstream"] = Field(default="upstream")
     min_confidence: float = Field(default=0.4, ge=0.0, le=1.0)
 
@@ -75,7 +74,7 @@ def build_ckg_tools(
     snapshot_root: Path,
     container_root: str = "/testbed",
 ) -> list[BaseTool]:
-    """Build read-only CKG tools over the initial SWE-Bench snapshot."""
+    """Build read-only CKG tools over an immutable benchmark snapshot."""
 
     def normalize(value: Any) -> Any:
         return _finalize_ckg_result(
@@ -90,9 +89,8 @@ def build_ckg_tools(
 
         Use this first for fault localization from the issue text. Ask a
         focused natural-language question, not a broad keyword dump. Results
-        return repo-relative paths plus /testbed container paths. This graph
-        was built before edits; Use bash for current source, edits, tests, and
-        git diff.
+        return repository-relative paths plus source spans from the immutable
+        base-commit snapshot.
         """
 
         try:
@@ -107,12 +105,11 @@ def build_ckg_tools(
         query: str = "",
         limit: int = 5,
     ) -> dict[str, Any]:
-        """Inspect symbols and execution context for one file in the snapshot.
+        """Inspect symbols and execution context for one snapshot file.
 
         Use after ckg_search identifies a likely file. This read-only result
-        helps identify important symbols and flows in that file. It may be
-        stale after edits. Use bash to read the authoritative current file at
-        /testbed/<file_path> before changing it.
+        identifies important symbols and flows in the immutable base-commit
+        snapshot.
         """
 
         scope = f"file:{_relative_path(file_path, snapshot_root)}"
@@ -126,21 +123,19 @@ def build_ckg_tools(
     def ckg_symbol_context(symbol_name: str) -> dict[str, Any]:
         """Get read-only callers, callees, signature, and snippet for a symbol.
 
-        Use this when you know a specific function/class/method name and need
-        surrounding call context before editing. Confirm exact current source
-        with bash because CKG was built from the initial snapshot.
+        Use this when a likely function, class, or method needs focused call
+        context as evidence for localization.
         """
 
         return normalize(backend.context_360(symbol_name))
 
     @tool(args_schema=CkgContractInput)
     def ckg_contract(symbols: list[str]) -> dict[str, Any]:
-        """Inspect read-only contracts for known symbols before editing.
+        """Inspect read-only contracts for known symbols.
 
-        Use this after ckg_search or ckg_symbol_context when the edit depends
-        on signatures, return types, callers, callees, inheritance, or override
-        relationships. Keep the list small and targeted. Use bash afterwards
-        to verify the exact current implementation in /testbed.
+        Use this after ckg_search or ckg_symbol_context when the localization
+        evidence depends on signatures, return types, callers, callees,
+        inheritance, or override relationships. Keep the list small and targeted.
         """
 
         limited_symbols = [symbol for symbol in symbols if symbol.strip()][:5]
@@ -155,11 +150,10 @@ def build_ckg_tools(
 
     @tool(args_schema=CkgCrosscutInput)
     def ckg_crosscut(query: str = "", scope: str = "") -> dict[str, Any]:
-        """Find read-only cross-file patterns before choosing an edit site.
+        """Find read-only cross-file patterns for localization.
 
         Use this for shared utilities, import cycles, duplicated logic,
-        framework hooks, or behavior spread across modules. It is useful before
-        modifying common code. Use bash for exact file contents and tests.
+        framework hooks, or behavior spread across modules.
         """
 
         normalized_scope = scope
@@ -181,12 +175,10 @@ def build_ckg_tools(
         direction: str = "upstream",
         min_confidence: float = 0.4,
     ) -> dict[str, Any]:
-        """Estimate read-only blast radius for a symbol before editing.
+        """Estimate read-only blast radius for a symbol.
 
-        Use for shared functions/classes before editing them. Direction
-        upstream shows dependents/callers; downstream shows dependencies. The
-        result is guidance only; tests and git diff must be run with bash in
-        /testbed.
+        Use this for shared functions or classes when upstream dependents or
+        downstream dependencies may explain the issue.
         """
 
         result = backend.impact(
@@ -204,8 +196,7 @@ def build_ckg_tools(
         """Show a compressed read-only map of repository communities.
 
         Use only when the repository layout is unfamiliar or search has weak
-        signal. This is higher-level than ckg_search. Do not use CKG tools for
-        edits; use bash for all current file contents, tests, and patches.
+        signal. This is higher-level than ckg_search.
         """
 
         try:
@@ -237,11 +228,11 @@ def _finalize_ckg_result(
         compacted.setdefault(
             "_ckg_usage",
             {
-                "source": "read-only initial snapshot",
+                "source": "read-only base-commit snapshot",
                 "next_steps": [
-                    "Use CKG only to choose likely files, symbols, and relationships.",
-                    "Use bash to read current /testbed files before editing.",
-                    "Use bash for edits, tests, git diff, and final verification.",
+                    "Use CKG to choose likely files, symbols, and relationships.",
+                    "Retrieve focused context until the localization evidence is sufficient.",
+                    "Return the required JSON localization result.",
                 ],
             },
         )

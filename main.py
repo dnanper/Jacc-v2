@@ -1,6 +1,5 @@
-def main():
-    print("Hello from ckg!")
+from src.run_localize import main
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

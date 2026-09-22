@@ -9,43 +9,10 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.modules.agents.tools import build_bash_tool, build_ckg_tools
+from src.modules.agents.tools import build_ckg_tools
 
 
-class SwebenchToolTest(unittest.TestCase):
-    def test_docker_tools_expose_only_bash_and_execute_in_task_container(self) -> None:
-        class FakeEnvironment:
-            config = MagicMock(cwd="/testbed")
-
-            def __init__(self) -> None:
-                self.actions = []
-
-            def execute(self, action, cwd="", *, timeout=None):
-                self.actions.append((action, cwd, timeout))
-                return {"output": "ok", "returncode": 0, "exception_info": ""}
-
-        env = FakeEnvironment()
-        tools = build_bash_tool(env, max_output_chars=1000)
-        bash = next(tool for tool in tools if tool.name == "bash")
-
-        command_result = bash.invoke({"command": "pytest -q", "timeout": 7})
-
-        self.assertEqual([tool.name for tool in tools], ["bash"])
-        self.assertEqual(command_result["output"], "ok")
-        self.assertEqual(env.actions[0], ({"command": "pytest -q"}, "/testbed", 7))
-
-    def test_bash_tool_description_explains_usage_boundaries(self) -> None:
-        env = MagicMock()
-        tools = build_bash_tool(env, max_output_chars=1000)
-        bash = tools[0]
-
-        self.assertIn("/testbed", bash.description)
-        self.assertIn("inspect", bash.description)
-        self.assertIn("edit", bash.description)
-        self.assertIn("verify", bash.description)
-        self.assertIn("non-interactive", bash.description)
-        self.assertIn("Do not prefix", bash.description)
-
+class CkgToolTest(unittest.TestCase):
     def test_ckg_tools_are_read_only_and_map_paths_to_testbed(self) -> None:
         class FakeBackend:
             def __init__(self) -> None:
@@ -130,9 +97,9 @@ class SwebenchToolTest(unittest.TestCase):
         )
         descriptions = {tool.name: tool.description for tool in tools}
         self.assertTrue(all("read-only" in description for description in descriptions.values()))
-        self.assertIn("before editing", descriptions["ckg_contract"])
+        self.assertIn("localization", descriptions["ckg_contract"])
         self.assertIn("cross-file", descriptions["ckg_crosscut"])
-        self.assertIn("Use bash", descriptions["ckg_search"])
+        self.assertIn("read-only", descriptions["ckg_search"])
 
         search = next(tool for tool in tools if tool.name == "ckg_search")
         result = search.invoke({"query": "target behavior", "limit": 5})
@@ -209,7 +176,7 @@ class SwebenchToolTest(unittest.TestCase):
             "/testbed/src/pkg/mod_0.py",
         )
         self.assertIn("_ckg_usage", result)
-        self.assertIn("Use bash", " ".join(result["_ckg_usage"]["next_steps"]))
+        self.assertIn("Return the required JSON", " ".join(result["_ckg_usage"]["next_steps"]))
 
 
 if __name__ == "__main__":

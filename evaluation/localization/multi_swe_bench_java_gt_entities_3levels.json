@@ -1,0 +1,1728 @@
+{
+  "fasterxml__jackson-databind-4641": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java::BeanDeserializerFactory"
+    ],
+    "found_functions": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java::BeanDeserializerFactory._resolveAnySetter"
+    ]
+  },
+  "fasterxml__jackson-databind-4615": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/AnnotationIntrospectorPair.java",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/PotentialCreator.java",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertiesCollector.java",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/AnnotationIntrospector.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/AnnotationIntrospector.java::AnnotationIntrospector",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/PotentialCreator.java::PotentialCreator",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertiesCollector.java::POJOPropertiesCollector",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/AnnotationIntrospectorPair.java::AnnotationIntrospectorPair"
+    ],
+    "found_functions": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/PotentialCreator.java::PotentialCreator.toString",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/PotentialCreator.java::PotentialCreator.param",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertiesCollector.java::POJOPropertiesCollector._addCreators",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/PotentialCreator.java::PotentialCreator.creatorMode",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/PotentialCreator.java::PotentialCreator.hasNameOrInjectForAllParams",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/PotentialCreator.java::PotentialCreator.implicitNameSimple",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/PotentialCreator.java::PotentialCreator.creator",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/PotentialCreator.java::PotentialCreator.introspectParamNames",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertiesCollector.java::POJOPropertiesCollector._removeNonFactoryStaticMethods",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/PotentialCreator.java::PotentialCreator.implicitName",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertiesCollector.java::POJOPropertiesCollector._collectCreators",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/PotentialCreator.java::PotentialCreator.explicitName",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertiesCollector.java::POJOPropertiesCollector._isDelegatingConstructor",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/PotentialCreator.java::PotentialCreator.paramCount",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertiesCollector.java::POJOPropertiesCollector._addExplicitlyAnnotatedCreators",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/PotentialCreator.java::PotentialCreator.hasNameFor",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/PotentialCreator.java::PotentialCreator.hasExplicitNames"
+    ]
+  },
+  "fasterxml__jackson-databind-4487": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/type/TypeFactory.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/type/TypeFactory.java::TypeFactory"
+    ],
+    "found_functions": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/type/TypeFactory.java::TypeFactory._fromWellKnownClass"
+    ]
+  },
+  "fasterxml__jackson-databind-4486": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/EnumDeserializer.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/EnumDeserializer.java::EnumDeserializer"
+    ],
+    "found_functions": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/EnumDeserializer.java::EnumDeserializer.useNullForUnknownEnum"
+    ]
+  },
+  "fasterxml__jackson-databind-4469": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/impl/MethodProperty.java",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/impl/FieldProperty.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/impl/FieldProperty.java::FieldProperty",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/impl/MethodProperty.java::MethodProperty"
+    ],
+    "found_functions": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/impl/MethodProperty.java::MethodProperty.set",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/impl/MethodProperty.java::MethodProperty.setAndReturn",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/impl/FieldProperty.java::FieldProperty.set",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/impl/FieldProperty.java::FieldProperty.setAndReturn"
+    ]
+  },
+  "fasterxml__jackson-databind-4468": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/ext/CoreXMLDeserializers.java",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/FromStringDeserializer.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/ext/CoreXMLDeserializers.java::CoreXMLDeserializers.Std",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/ext/CoreXMLDeserializers.java::CoreXMLDeserializers",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/FromStringDeserializer.java::FromStringDeserializer"
+    ],
+    "found_functions": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/FromStringDeserializer.java::FromStringDeserializer._deserializeFromEmptyString"
+    ]
+  },
+  "fasterxml__jackson-databind-4426": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertiesCollector.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertiesCollector.java::POJOPropertiesCollector"
+    ],
+    "found_functions": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertiesCollector.java::POJOPropertiesCollector._addCreatorParam"
+    ]
+  },
+  "fasterxml__jackson-databind-4365": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/AnnotationIntrospectorPair.java",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/PropertyName.java",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/AnnotationIntrospector.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/AnnotationIntrospectorPair.java::AnnotationIntrospectorPair",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/AnnotationIntrospector.java::AnnotationIntrospector",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/PropertyName.java::PropertyName"
+    ],
+    "found_functions": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/AnnotationIntrospectorPair.java::AnnotationIntrospectorPair.findNameForSerialization",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/AnnotationIntrospectorPair.java::AnnotationIntrospectorPair.findRootName",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/AnnotationIntrospectorPair.java::AnnotationIntrospectorPair.findIgnoreUnknownProperties",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/PropertyName.java::PropertyName.internSimpleName",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/AnnotationIntrospectorPair.java::AnnotationIntrospectorPair.findRenameByField",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/AnnotationIntrospectorPair.java::AnnotationIntrospectorPair.findWrapperName",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/AnnotationIntrospectorPair.java::AnnotationIntrospectorPair.findPropertiesToIgnore",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/AnnotationIntrospectorPair.java::AnnotationIntrospectorPair.findNameForDeserialization",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/PropertyName.java::PropertyName.hashCode",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/PropertyName.java::PropertyName.equals",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/AnnotationIntrospector.java::AnnotationIntrospector.findPropertiesToIgnore",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/AnnotationIntrospector.java::AnnotationIntrospector.findIgnoreUnknownProperties"
+    ]
+  },
+  "fasterxml__jackson-databind-4360": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/util/EnumValues.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/util/EnumValues.java::EnumValues"
+    ],
+    "found_functions": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/util/EnumValues.java::EnumValues.constructFromToString"
+    ]
+  },
+  "fasterxml__jackson-databind-4338": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/ser/std/ReferenceTypeSerializer.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/ser/std/ReferenceTypeSerializer.java::ReferenceTypeSerializer"
+    ],
+    "found_functions": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/ser/std/ReferenceTypeSerializer.java::ReferenceTypeSerializer.createContextual"
+    ]
+  },
+  "fasterxml__jackson-databind-4325": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/ThrowableDeserializer.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/ThrowableDeserializer.java::ThrowableDeserializer"
+    ],
+    "found_functions": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/ThrowableDeserializer.java::ThrowableDeserializer.deserializeFromObject"
+    ]
+  },
+  "fasterxml__jackson-databind-4320": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/CollectionDeserializer.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/CollectionDeserializer.java::CollectionDeserializer"
+    ],
+    "found_functions": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/CollectionDeserializer.java::CollectionDeserializer.handleNonArray",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/CollectionDeserializer.java::CollectionDeserializer._deserializeWithObjectId",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/CollectionDeserializer.java::CollectionDeserializer._tryToAddNull"
+    ]
+  },
+  "fasterxml__jackson-databind-4311": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertiesCollector.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertiesCollector.java::POJOPropertiesCollector"
+    ],
+    "found_functions": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertiesCollector.java::POJOPropertiesCollector._renameUsing"
+    ]
+  },
+  "fasterxml__jackson-databind-4304": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/ClassNameIdResolver.java",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/TypeNameIdResolver.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/ClassNameIdResolver.java::ClassNameIdResolver",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/TypeNameIdResolver.java::TypeNameIdResolver"
+    ],
+    "found_functions": []
+  },
+  "fasterxml__jackson-databind-4257": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertyBuilder.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertyBuilder.java::POJOPropertyBuilder"
+    ],
+    "found_functions": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertyBuilder.java::POJOPropertyBuilder.couldDeserialize"
+    ]
+  },
+  "fasterxml__jackson-databind-4230": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/node/ObjectNode.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/node/ObjectNode.java::ObjectNode"
+    ],
+    "found_functions": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/node/ObjectNode.java::ObjectNode.findValues",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/node/ObjectNode.java::ObjectNode.findParents",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/node/ObjectNode.java::ObjectNode.findValuesAsText"
+    ]
+  },
+  "fasterxml__jackson-databind-4228": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerBase.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerBase.java::BeanDeserializerBase"
+    ],
+    "found_functions": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerBase.java::BeanDeserializerBase._findDelegateDeserializer"
+    ]
+  },
+  "fasterxml__jackson-databind-4219": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/BasicDeserializerFactory.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/BasicDeserializerFactory.java::BasicDeserializerFactory"
+    ],
+    "found_functions": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/BasicDeserializerFactory.java::BasicDeserializerFactory.createArrayDeserializer"
+    ]
+  },
+  "fasterxml__jackson-databind-4189": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerBase.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerBase.java::BeanDeserializerBase"
+    ],
+    "found_functions": []
+  },
+  "fasterxml__jackson-databind-4186": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializer.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializer.java::BeanDeserializer"
+    ],
+    "found_functions": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializer.java::BeanDeserializer.vanillaDeserialize"
+    ]
+  },
+  "fasterxml__jackson-databind-4159": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java::DefaultTypeResolverBuilder",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java::ObjectMapper.DefaultTyping"
+    ],
+    "found_functions": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java::DefaultTypeResolverBuilder.useForType"
+    ]
+  },
+  "fasterxml__jackson-databind-4132": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/node/ObjectNode.java",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/JsonNode.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/JsonNode.java::JsonNode",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/node/ObjectNode.java::ObjectNode"
+    ],
+    "found_functions": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/JsonNode.java::JsonNode.withObject"
+    ]
+  },
+  "fasterxml__jackson-databind-4131": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/node/ObjectNode.java",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/node/BaseJsonNode.java",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/JsonNode.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/JsonNode.java::JsonNode",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/node/BaseJsonNode.java::BaseJsonNode",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/node/ObjectNode.java::ObjectNode"
+    ],
+    "found_functions": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/node/BaseJsonNode.java::BaseJsonNode.withArray"
+    ]
+  },
+  "fasterxml__jackson-databind-4087": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/util/BeanUtil.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/util/BeanUtil.java::BeanUtil"
+    ],
+    "found_functions": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/util/BeanUtil.java::BeanUtil.checkUnsupportedType"
+    ]
+  },
+  "fasterxml__jackson-databind-4072": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/ThrowableDeserializer.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/ThrowableDeserializer.java::ThrowableDeserializer"
+    ],
+    "found_functions": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/ThrowableDeserializer.java::ThrowableDeserializer.deserializeFromObject"
+    ]
+  },
+  "fasterxml__jackson-databind-4050": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java::ObjectMapper"
+    ],
+    "found_functions": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java::ObjectMapper.valueToTree"
+    ]
+  },
+  "fasterxml__jackson-databind-4048": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertiesCollector.java",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/MapperFeature.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/MapperFeature.java::MapperFeature",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertiesCollector.java::POJOPropertiesCollector"
+    ],
+    "found_functions": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertiesCollector.java::POJOPropertiesCollector._addFields"
+    ]
+  },
+  "fasterxml__jackson-databind-4015": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/DeserializationFeature.java",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/cfg/CoercionConfigs.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/cfg/CoercionConfigs.java::CoercionConfigs",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/DeserializationFeature.java::DeserializationFeature"
+    ],
+    "found_functions": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/cfg/CoercionConfigs.java::CoercionConfigs.findCoercion"
+    ]
+  },
+  "fasterxml__jackson-databind-4013": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/type/TypeParser.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/type/TypeParser.java::TypeParser"
+    ],
+    "found_functions": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/type/TypeParser.java::TypeParser._problem",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/type/TypeParser.java::TypeParser.parse",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/type/TypeParser.java::TypeParser.parseType",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/type/TypeParser.java::TypeParser.parseTypes"
+    ]
+  },
+  "fasterxml__jackson-databind-3860": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/StdNodeBasedDeserializer.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/StdNodeBasedDeserializer.java::StdNodeBasedDeserializer"
+    ],
+    "found_functions": []
+  },
+  "fasterxml__jackson-databind-3716": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/StdTypeResolverBuilder.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/StdTypeResolverBuilder.java::StdTypeResolverBuilder"
+    ],
+    "found_functions": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/StdTypeResolverBuilder.java::StdTypeResolverBuilder.buildTypeSerializer"
+    ]
+  },
+  "fasterxml__jackson-databind-3701": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/node/NodeCursor.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/node/NodeCursor.java::NodeCursor.ObjectCursor"
+    ],
+    "found_functions": []
+  },
+  "fasterxml__jackson-databind-3666": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/FactoryBasedEnumDeserializer.java",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializer.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializer.java::BeanDeserializer",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/FactoryBasedEnumDeserializer.java::FactoryBasedEnumDeserializer"
+    ],
+    "found_functions": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/FactoryBasedEnumDeserializer.java::FactoryBasedEnumDeserializer.deserialize",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializer.java::BeanDeserializer._deserializeFromArray"
+    ]
+  },
+  "fasterxml__jackson-databind-3626": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java::ObjectMapper"
+    ],
+    "found_functions": []
+  },
+  "fasterxml__jackson-databind-3625": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/cfg/CoercionConfigs.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/cfg/CoercionConfigs.java::CoercionConfigs"
+    ],
+    "found_functions": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/cfg/CoercionConfigs.java::CoercionConfigs.findCoercion"
+    ]
+  },
+  "fasterxml__jackson-databind-3621": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java::StdDeserializer"
+    ],
+    "found_functions": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java::StdDeserializer._parseShortPrimitive",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java::StdDeserializer._parseIntPrimitive",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java::StdDeserializer._deserializeWrappedValue",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java::StdDeserializer._parseFloatPrimitive",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java::StdDeserializer._parseLongPrimitive",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java::StdDeserializer._parseBytePrimitive",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java::StdDeserializer._parseDoublePrimitive",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java::StdDeserializer._parseDateFromArray",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java::StdDeserializer._parseBooleanPrimitive"
+    ]
+  },
+  "fasterxml__jackson-databind-3560": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/JsonMappingException.java",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/SettableAnyProperty.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/JsonMappingException.java::JsonMappingException",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/SettableAnyProperty.java::SettableAnyProperty"
+    ],
+    "found_functions": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/SettableAnyProperty.java::SettableAnyProperty._throwAsIOE",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/JsonMappingException.java::JsonMappingException.from",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/SettableAnyProperty.java::SettableAnyProperty.set"
+    ]
+  },
+  "fasterxml__jackson-databind-3509": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/type/LogicalType.java",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/NumberDeserializers.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/NumberDeserializers.java::DoubleDeserializer",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/NumberDeserializers.java::BigDecimalDeserializer",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/type/LogicalType.java::LogicalType",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java::StdDeserializer",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/NumberDeserializers.java::FloatDeserializer"
+    ],
+    "found_functions": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/NumberDeserializers.java::DoubleDeserializer._parseDouble",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/NumberDeserializers.java::BigDecimalDeserializer.deserialize",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java::StdDeserializer._parseFloatPrimitive",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java::StdDeserializer._parseDoublePrimitive",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/NumberDeserializers.java::FloatDeserializer._parseFloat"
+    ]
+  },
+  "fasterxml__jackson-databind-3371": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/SettableBeanProperty.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/SettableBeanProperty.java::SettableBeanProperty"
+    ],
+    "found_functions": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/SettableBeanProperty.java::SettableBeanProperty.deserializeWith"
+    ]
+  },
+  "fasterxml__jackson-databind-2036": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/DeserializationFeature.java",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/StdTypeResolverBuilder.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/DeserializationFeature.java::DeserializationFeature",
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/StdTypeResolverBuilder.java::StdTypeResolverBuilder"
+    ],
+    "found_functions": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/StdTypeResolverBuilder.java::StdTypeResolverBuilder.buildTypeDeserializer"
+    ]
+  },
+  "fasterxml__jackson-databind-1923": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/SubTypeValidator.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/SubTypeValidator.java::SubTypeValidator"
+    ],
+    "found_functions": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/SubTypeValidator.java::SubTypeValidator.validateSubType"
+    ]
+  },
+  "fasterxml__jackson-databind-3851": {
+    "found_files": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/FactoryBasedEnumDeserializer.java"
+    ],
+    "found_modules": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/FactoryBasedEnumDeserializer.java::FactoryBasedEnumDeserializer"
+    ],
+    "found_functions": [
+      "jackson-databind/src/main/java/com/fasterxml/jackson/databind/deser/std/FactoryBasedEnumDeserializer.java::FactoryBasedEnumDeserializer.deserialize"
+    ]
+  },
+  "mockito__mockito-3424": {
+    "found_files": [
+      "mockito/src/main/java/org/mockito/internal/creation/bytebuddy/InlineDelegateByteBuddyMockMaker.java",
+      "mockito/src/main/java/org/mockito/MockitoFramework.java",
+      "mockito/src/main/java/org/mockito/plugins/InlineMockMaker.java"
+    ],
+    "found_modules": [
+      "mockito/src/main/java/org/mockito/MockitoFramework.java::MockitoFramework",
+      "mockito/src/main/java/org/mockito/plugins/InlineMockMaker.java::InlineMockMaker",
+      "mockito/src/main/java/org/mockito/internal/creation/bytebuddy/InlineDelegateByteBuddyMockMaker.java::InlineDelegateByteBuddyMockMaker"
+    ],
+    "found_functions": [
+      "mockito/src/main/java/org/mockito/internal/creation/bytebuddy/InlineDelegateByteBuddyMockMaker.java::InlineDelegateByteBuddyMockMaker.mockable",
+      "mockito/src/main/java/org/mockito/internal/creation/bytebuddy/InlineDelegateByteBuddyMockMaker.java::InlineDelegateByteBuddyMockMaker.clearAllMocks"
+    ]
+  },
+  "mockito__mockito-3220": {
+    "found_files": [
+      "mockito/src/main/java/org/mockito/internal/configuration/plugins/DefaultMockitoPlugins.java",
+      "mockito/src/main/java/org/mockito/internal/util/MockNameImpl.java",
+      "mockito/src/main/java/org/mockito/internal/creation/MockSettingsImpl.java",
+      "mockito/src/main/java/org/mockito/internal/creation/settings/CreationSettings.java",
+      "mockito/src/main/java/org/mockito/mock/MockCreationSettings.java",
+      "mockito/src/main/java/org/mockito/plugins/DoNotMockEnforcer.java",
+      "mockito/src/main/java/org/mockito/internal/configuration/plugins/Plugins.java",
+      "mockito/src/main/java/org/mockito/internal/configuration/plugins/PluginRegistry.java",
+      "mockito/src/main/java/org/mockito/internal/MockitoCore.java"
+    ],
+    "found_modules": [
+      "mockito/src/main/java/org/mockito/internal/creation/MockSettingsImpl.java::MockSettingsImpl",
+      "mockito/src/main/java/org/mockito/internal/configuration/plugins/DefaultMockitoPlugins.java::DefaultMockitoPlugins",
+      "mockito/src/main/java/org/mockito/internal/creation/settings/CreationSettings.java::CreationSettings",
+      "mockito/src/main/java/org/mockito/mock/MockCreationSettings.java::MockCreationSettings",
+      "mockito/src/main/java/org/mockito/plugins/DoNotMockEnforcer.java::DoNotMockEnforcer",
+      "mockito/src/main/java/org/mockito/internal/util/MockNameImpl.java::MockNameImpl",
+      "mockito/src/main/java/org/mockito/internal/configuration/plugins/Plugins.java::Plugins",
+      "mockito/src/main/java/org/mockito/internal/MockitoCore.java::MockitoCore",
+      "mockito/src/main/java/org/mockito/internal/configuration/plugins/PluginRegistry.java::PluginRegistry"
+    ],
+    "found_functions": [
+      "mockito/src/main/java/org/mockito/internal/creation/MockSettingsImpl.java::MockSettingsImpl.validatedSettings",
+      "mockito/src/main/java/org/mockito/internal/creation/MockSettingsImpl.java::MockSettingsImpl.validatedStaticSettings",
+      "mockito/src/main/java/org/mockito/internal/configuration/plugins/Plugins.java::Plugins.getDoNotMockEnforcer",
+      "mockito/src/main/java/org/mockito/internal/MockitoCore.java::MockitoCore.mockStatic",
+      "mockito/src/main/java/org/mockito/internal/MockitoCore.java::MockitoCore.mock",
+      "mockito/src/main/java/org/mockito/internal/MockitoCore.java::MockitoCore.checkDoNotMockAnnotationForType",
+      "mockito/src/main/java/org/mockito/internal/configuration/plugins/PluginRegistry.java::PluginRegistry.getDoNotMockEnforcer",
+      "mockito/src/main/java/org/mockito/internal/MockitoCore.java::MockitoCore.checkDoNotMockAnnotation"
+    ]
+  },
+  "mockito__mockito-3173": {
+    "found_files": [
+      "mockito/src/main/java/org/mockito/internal/creation/bytebuddy/InlineDelegateByteBuddyMockMaker.java"
+    ],
+    "found_modules": [
+      "mockito/src/main/java/org/mockito/internal/creation/bytebuddy/InlineDelegateByteBuddyMockMaker.java::InlineDelegateByteBuddyMockMaker"
+    ],
+    "found_functions": [
+      "mockito/src/main/java/org/mockito/internal/creation/bytebuddy/InlineDelegateByteBuddyMockMaker.java::InlineDelegateByteBuddyMockMaker.newInstance"
+    ]
+  },
+  "mockito__mockito-3167": {
+    "found_files": [
+      "mockito/src/main/java/org/mockito/internal/creation/bytebuddy/InlineDelegateByteBuddyMockMaker.java"
+    ],
+    "found_modules": [
+      "mockito/src/main/java/org/mockito/internal/creation/bytebuddy/InlineDelegateByteBuddyMockMaker.java::InlineDelegateByteBuddyMockMaker"
+    ],
+    "found_functions": [
+      "mockito/src/main/java/org/mockito/internal/creation/bytebuddy/InlineDelegateByteBuddyMockMaker.java::InlineDelegateByteBuddyMockMaker.prettifyFailure"
+    ]
+  },
+  "mockito__mockito-3133": {
+    "found_files": [
+      "mockito/src/main/java/org/mockito/internal/util/reflection/GenericMaster.java",
+      "mockito/src/main/java/org/mockito/internal/configuration/CaptorAnnotationProcessor.java",
+      "mockito/subprojects/junit-jupiter/src/main/java/org/mockito/junit/jupiter/MockitoExtension.java",
+      "mockito/src/main/java/org/mockito/Captor.java"
+    ],
+    "found_modules": [
+      "mockito/subprojects/junit-jupiter/src/main/java/org/mockito/junit/jupiter/MockitoExtension.java::MockitoExtension",
+      "mockito/src/main/java/org/mockito/internal/util/reflection/GenericMaster.java::GenericMaster",
+      "mockito/src/main/java/org/mockito/internal/configuration/CaptorAnnotationProcessor.java::CaptorAnnotationProcessor"
+    ],
+    "found_functions": [
+      "mockito/src/main/java/org/mockito/internal/util/reflection/GenericMaster.java::GenericMaster.getGenericType",
+      "mockito/subprojects/junit-jupiter/src/main/java/org/mockito/junit/jupiter/MockitoExtension.java::MockitoExtension.resolveParameter",
+      "mockito/subprojects/junit-jupiter/src/main/java/org/mockito/junit/jupiter/MockitoExtension.java::MockitoExtension.supportsParameter",
+      "mockito/subprojects/junit-jupiter/src/main/java/org/mockito/junit/jupiter/MockitoExtension.java::MockitoExtension.retrieveAnnotationFromTestClasses"
+    ]
+  },
+  "mockito__mockito-3129": {
+    "found_files": [
+      "mockito/src/main/java/org/mockito/internal/configuration/plugins/DefaultMockitoPlugins.java",
+      "mockito/src/main/java/org/mockito/plugins/MockitoPlugins.java",
+      "mockito/src/main/java/org/mockito/internal/util/MockUtil.java"
+    ],
+    "found_modules": [
+      "mockito/src/main/java/org/mockito/internal/configuration/plugins/DefaultMockitoPlugins.java::DefaultMockitoPlugins",
+      "mockito/src/main/java/org/mockito/plugins/MockitoPlugins.java::MockitoPlugins",
+      "mockito/src/main/java/org/mockito/internal/util/MockUtil.java::MockUtil"
+    ],
+    "found_functions": [
+      "mockito/src/main/java/org/mockito/internal/util/MockUtil.java::MockUtil.getMockMaker"
+    ]
+  },
+  "apache__dubbo-11781": {
+    "found_files": [
+      "dubbo/dubbo-common/src/main/java/org/apache/dubbo/common/URLStrParser.java"
+    ],
+    "found_modules": [
+      "dubbo/dubbo-common/src/main/java/org/apache/dubbo/common/URLStrParser.java::URLStrParser"
+    ],
+    "found_functions": [
+      "dubbo/dubbo-common/src/main/java/org/apache/dubbo/common/URLStrParser.java::URLStrParser.addParam"
+    ]
+  },
+  "apache__dubbo-10638": {
+    "found_files": [
+      "dubbo/dubbo-common/src/main/java/org/apache/dubbo/common/utils/CompatibleTypeUtils.java",
+      "dubbo/dubbo-common/src/main/java/org/apache/dubbo/common/utils/PojoUtils.java"
+    ],
+    "found_modules": [
+      "dubbo/dubbo-common/src/main/java/org/apache/dubbo/common/utils/CompatibleTypeUtils.java::CompatibleTypeUtils",
+      "dubbo/dubbo-common/src/main/java/org/apache/dubbo/common/utils/PojoUtils.java::PojoUtils"
+    ],
+    "found_functions": [
+      "dubbo/dubbo-common/src/main/java/org/apache/dubbo/common/utils/CompatibleTypeUtils.java::CompatibleTypeUtils.compatibleTypeConvert",
+      "dubbo/dubbo-common/src/main/java/org/apache/dubbo/common/utils/PojoUtils.java::PojoUtils.generalize"
+    ]
+  },
+  "apache__dubbo-7041": {
+    "found_files": [
+      "dubbo/dubbo-common/src/main/java/org/apache/dubbo/common/utils/ReflectUtils.java"
+    ],
+    "found_modules": [
+      "dubbo/dubbo-common/src/main/java/org/apache/dubbo/common/utils/ReflectUtils.java::ReflectUtils"
+    ],
+    "found_functions": [
+      "dubbo/dubbo-common/src/main/java/org/apache/dubbo/common/utils/ReflectUtils.java::ReflectUtils.getReturnTypes"
+    ]
+  },
+  "elastic__logstash-17021": {
+    "found_files": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java"
+    ],
+    "found_modules": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java::BufferedTokenizerExt"
+    ],
+    "found_functions": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java::BufferedTokenizerExt.isEmpty",
+      "logstash/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java::BufferedTokenizerExt.flush",
+      "logstash/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java::BufferedTokenizerExt.extract"
+    ]
+  },
+  "elastic__logstash-17020": {
+    "found_files": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java"
+    ],
+    "found_modules": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java::BufferedTokenizerExt"
+    ],
+    "found_functions": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java::BufferedTokenizerExt.isEmpty",
+      "logstash/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java::BufferedTokenizerExt.flush",
+      "logstash/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java::BufferedTokenizerExt.extract"
+    ]
+  },
+  "elastic__logstash-17019": {
+    "found_files": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java"
+    ],
+    "found_modules": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java::BufferedTokenizerExt"
+    ],
+    "found_functions": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java::BufferedTokenizerExt.isEmpty",
+      "logstash/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java::BufferedTokenizerExt.flush",
+      "logstash/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java::BufferedTokenizerExt.extract"
+    ]
+  },
+  "elastic__logstash-16968": {
+    "found_files": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java"
+    ],
+    "found_modules": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java::BufferedTokenizerExt"
+    ],
+    "found_functions": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java::BufferedTokenizerExt.isEmpty",
+      "logstash/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java::BufferedTokenizerExt.flush",
+      "logstash/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java::BufferedTokenizerExt.extract"
+    ]
+  },
+  "elastic__logstash-16681": {
+    "found_files": [
+      "logstash/logstash-core/src/main/java/org/logstash/plugins/pipeline/PipelineBusV2.java"
+    ],
+    "found_modules": [
+      "logstash/logstash-core/src/main/java/org/logstash/plugins/pipeline/PipelineBusV2.java::AddressStateMapping"
+    ],
+    "found_functions": [
+      "logstash/logstash-core/src/main/java/org/logstash/plugins/pipeline/PipelineBusV2.java::AddressStateMapping.mutate"
+    ]
+  },
+  "elastic__logstash-16579": {
+    "found_files": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java"
+    ],
+    "found_modules": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java::BufferedTokenizerExt"
+    ],
+    "found_functions": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java::BufferedTokenizerExt.isEmpty",
+      "logstash/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java::BufferedTokenizerExt.flush",
+      "logstash/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java::BufferedTokenizerExt.extract"
+    ]
+  },
+  "elastic__logstash-16569": {
+    "found_files": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java"
+    ],
+    "found_modules": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java::BufferedTokenizerExt"
+    ],
+    "found_functions": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java::BufferedTokenizerExt.isEmpty",
+      "logstash/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java::BufferedTokenizerExt.flush",
+      "logstash/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java::BufferedTokenizerExt.extract"
+    ]
+  },
+  "elastic__logstash-16482": {
+    "found_files": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java"
+    ],
+    "found_modules": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java::BufferedTokenizerExt"
+    ],
+    "found_functions": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java::BufferedTokenizerExt.isEmpty",
+      "logstash/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java::BufferedTokenizerExt.flush",
+      "logstash/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java::BufferedTokenizerExt.extract"
+    ]
+  },
+  "elastic__logstash-16195": {
+    "found_files": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueReader.java",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java"
+    ],
+    "found_modules": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueReader.java::DeadLetterQueueReader",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter"
+    ],
+    "found_functions": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueReader.java::DeadLetterQueueReader.removeSegmentsBefore",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.close"
+    ]
+  },
+  "elastic__logstash-16094": {
+    "found_files": [
+      "logstash/logstash-core/src/main/java/org/logstash/log/CustomLogEventSerializer.java"
+    ],
+    "found_modules": [
+      "logstash/logstash-core/src/main/java/org/logstash/log/CustomLogEventSerializer.java::CustomLogEventSerializer"
+    ],
+    "found_functions": [
+      "logstash/logstash-core/src/main/java/org/logstash/log/CustomLogEventSerializer.java::CustomLogEventSerializer.writeStructuredMessage"
+    ]
+  },
+  "elastic__logstash-16079": {
+    "found_files": [
+      "logstash/tools/jvm-options-parser/src/main/java/org/logstash/launchers/JvmOptionsParser.java"
+    ],
+    "found_modules": [
+      "logstash/tools/jvm-options-parser/src/main/java/org/logstash/launchers/JvmOptionsParser.java::JvmOptionsParser"
+    ],
+    "found_functions": [
+      "logstash/tools/jvm-options-parser/src/main/java/org/logstash/launchers/JvmOptionsParser.java::JvmOptionsParser.handleJvmOptions"
+    ]
+  },
+  "elastic__logstash-15969": {
+    "found_files": [
+      "logstash/logstash-core/src/main/java/org/logstash/log/CustomLogEventSerializer.java"
+    ],
+    "found_modules": [
+      "logstash/logstash-core/src/main/java/org/logstash/log/CustomLogEventSerializer.java::CustomLogEventSerializer"
+    ],
+    "found_functions": [
+      "logstash/logstash-core/src/main/java/org/logstash/log/CustomLogEventSerializer.java::CustomLogEventSerializer.writeStructuredMessage"
+    ]
+  },
+  "elastic__logstash-15964": {
+    "found_files": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java"
+    ],
+    "found_modules": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.NoopScheduler",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.FixedRateScheduler",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.SchedulerService",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter"
+    ],
+    "found_functions": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.close"
+    ]
+  },
+  "elastic__logstash-15928": {
+    "found_files": [
+      "logstash/tools/jvm-options-parser/src/main/java/org/logstash/launchers/JvmOptionsParser.java"
+    ],
+    "found_modules": [
+      "logstash/tools/jvm-options-parser/src/main/java/org/logstash/launchers/JvmOptionsParser.java::JvmOptionsParser"
+    ],
+    "found_functions": [
+      "logstash/tools/jvm-options-parser/src/main/java/org/logstash/launchers/JvmOptionsParser.java::JvmOptionsParser.handleJvmOptions"
+    ]
+  },
+  "elastic__logstash-15925": {
+    "found_files": [
+      "logstash/tools/jvm-options-parser/src/main/java/org/logstash/launchers/JvmOptionsParser.java"
+    ],
+    "found_modules": [
+      "logstash/tools/jvm-options-parser/src/main/java/org/logstash/launchers/JvmOptionsParser.java::JvmOptionsParser"
+    ],
+    "found_functions": [
+      "logstash/tools/jvm-options-parser/src/main/java/org/logstash/launchers/JvmOptionsParser.java::JvmOptionsParser.handleJvmOptions"
+    ]
+  },
+  "elastic__logstash-15697": {
+    "found_files": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java"
+    ],
+    "found_modules": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.Builder",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::Builder",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter"
+    ],
+    "found_functions": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::Builder.build"
+    ]
+  },
+  "elastic__logstash-15680": {
+    "found_files": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java"
+    ],
+    "found_modules": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.Builder",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::Builder",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter"
+    ],
+    "found_functions": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::Builder.build"
+    ]
+  },
+  "elastic__logstash-15241": {
+    "found_files": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java"
+    ],
+    "found_modules": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter"
+    ],
+    "found_functions": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.readTimestampOfLastEventInSegment",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.updateOldestSegmentReference"
+    ]
+  },
+  "elastic__logstash-15233": {
+    "found_files": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java"
+    ],
+    "found_modules": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter"
+    ],
+    "found_functions": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.readTimestampOfLastEventInSegment",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.updateOldestSegmentReference"
+    ]
+  },
+  "elastic__logstash-15008": {
+    "found_files": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java"
+    ],
+    "found_modules": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.FinalizeWhen"
+    ],
+    "found_functions": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.updateOldestSegmentReference",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.deleteTailSegment",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.cleanupTempFile",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.finalizeSegment",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.createFlushScheduler",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.deleteTemporaryFile",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.innerWriteEntry",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.nextWriter",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.close",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.flushCheck",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.sealSegment",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.isCurrentWriterStale"
+    ]
+  },
+  "elastic__logstash-15000": {
+    "found_files": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java"
+    ],
+    "found_modules": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.FinalizeWhen"
+    ],
+    "found_functions": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.updateOldestSegmentReference",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.deleteTailSegment",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.cleanupTempFile",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.finalizeSegment",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.createFlushScheduler",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.deleteTemporaryFile",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.innerWriteEntry",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.nextWriter",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.close",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.flushCheck",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.sealSegment",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.isCurrentWriterStale"
+    ]
+  },
+  "elastic__logstash-14981": {
+    "found_files": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java"
+    ],
+    "found_modules": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter"
+    ],
+    "found_functions": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.readTimestampOfLastEventInSegment",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.updateOldestSegmentReference"
+    ]
+  },
+  "elastic__logstash-14970": {
+    "found_files": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java"
+    ],
+    "found_modules": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter"
+    ],
+    "found_functions": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.readTimestampOfLastEventInSegment",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.updateOldestSegmentReference"
+    ]
+  },
+  "elastic__logstash-14898": {
+    "found_files": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java"
+    ],
+    "found_modules": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.Builder",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::Builder",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter"
+    ],
+    "found_functions": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::Builder.build",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.finalizeSegment"
+    ]
+  },
+  "elastic__logstash-14897": {
+    "found_files": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java"
+    ],
+    "found_modules": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.Builder",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::Builder",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter"
+    ],
+    "found_functions": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::Builder.build",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.finalizeSegment"
+    ]
+  },
+  "elastic__logstash-14878": {
+    "found_files": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java"
+    ],
+    "found_modules": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.Builder",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::Builder",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter"
+    ],
+    "found_functions": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::Builder.build",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.finalizeSegment"
+    ]
+  },
+  "elastic__logstash-14571": {
+    "found_files": [
+      "logstash/logstash-core/src/main/java/org/logstash/execution/AbstractPipelineExt.java",
+      "logstash/logstash-core/src/main/java/org/logstash/instrument/metrics/FlowMetric.java"
+    ],
+    "found_modules": [
+      "logstash/logstash-core/src/main/java/org/logstash/instrument/metrics/FlowMetric.java::FlowMetric.Capture",
+      "logstash/logstash-core/src/main/java/org/logstash/execution/AbstractPipelineExt.java::AbstractPipelineExt",
+      "logstash/logstash-core/src/main/java/org/logstash/instrument/metrics/FlowMetric.java::FlowMetric",
+      "logstash/logstash-core/src/main/java/org/logstash/instrument/metrics/FlowMetric.java::Capture"
+    ],
+    "found_functions": [
+      "logstash/logstash-core/src/main/java/org/logstash/execution/AbstractPipelineExt.java::AbstractPipelineExt.initOrGetCounterMetric",
+      "logstash/logstash-core/src/main/java/org/logstash/instrument/metrics/FlowMetric.java::FlowMetric.getType",
+      "logstash/logstash-core/src/main/java/org/logstash/instrument/metrics/FlowMetric.java::FlowMetric.capture",
+      "logstash/logstash-core/src/main/java/org/logstash/instrument/metrics/FlowMetric.java::FlowMetric.doCapture",
+      "logstash/logstash-core/src/main/java/org/logstash/instrument/metrics/FlowMetric.java::FlowMetric.getValue",
+      "logstash/logstash-core/src/main/java/org/logstash/execution/AbstractPipelineExt.java::AbstractPipelineExt.createFlowMetric",
+      "logstash/logstash-core/src/main/java/org/logstash/instrument/metrics/FlowMetric.java::Capture.calculateRate",
+      "logstash/logstash-core/src/main/java/org/logstash/instrument/metrics/FlowMetric.java::Capture.calculateCapturePeriod"
+    ]
+  },
+  "elastic__logstash-14058": {
+    "found_files": [
+      "logstash/logstash-core/src/main/java/org/logstash/execution/AbstractPipelineExt.java",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java"
+    ],
+    "found_modules": [
+      "logstash/logstash-core/src/main/java/org/logstash/execution/AbstractPipelineExt.java::AbstractPipelineExt",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter"
+    ],
+    "found_functions": [
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.cleanupTempFile",
+      "logstash/logstash-core/src/main/java/org/logstash/execution/AbstractPipelineExt.java::AbstractPipelineExt.collectDlqStats",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.innerWriteEntry",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.isWindows",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.getPath",
+      "logstash/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java::DeadLetterQueueWriter.writeEntry"
+    ]
+  },
+  "elastic__logstash-14045": {
+    "found_files": [],
+    "found_modules": [],
+    "found_functions": []
+  },
+  "elastic__logstash-14027": {
+    "found_files": [
+      "logstash/logstash-core/src/main/java/org/logstash/plugins/pipeline/PipelineBus.java",
+      "logstash/logstash-core/src/main/java/org/logstash/ackedqueue/Page.java",
+      "logstash/logstash-core/src/main/java/org/logstash/plugins/pipeline/PipelineInput.java"
+    ],
+    "found_modules": [
+      "logstash/logstash-core/src/main/java/org/logstash/ackedqueue/Page.java::Page",
+      "logstash/logstash-core/src/main/java/org/logstash/plugins/pipeline/PipelineBus.java::PipelineBus",
+      "logstash/logstash-core/src/main/java/org/logstash/plugins/pipeline/PipelineInput.java::PipelineInput"
+    ],
+    "found_functions": [
+      "logstash/logstash-core/src/main/java/org/logstash/plugins/pipeline/PipelineBus.java::PipelineBus.sendEvents",
+      "logstash/logstash-core/src/main/java/org/logstash/ackedqueue/Page.java::Page.hasSpace"
+    ]
+  },
+  "elastic__logstash-14000": {
+    "found_files": [
+      "logstash/logstash-core/src/main/java/org/logstash/config/ir/expression/ExpressionSubstitution.java",
+      "logstash/logstash-core/src/main/java/org/logstash/Rubyfier.java",
+      "logstash/logstash-core/src/main/java/org/logstash/plugins/AliasRegistry.java",
+      "logstash/logstash-core/src/main/java/org/logstash/config/ir/compiler/EventCondition.java",
+      "logstash/logstash-core/src/main/java/org/logstash/plugins/factory/PluginFactoryExt.java",
+      "logstash/logstash-core/src/main/java/org/logstash/config/ir/CompiledPipeline.java",
+      "logstash/logstash-core/src/main/java/org/logstash/plugins/ConfigVariableExpander.java",
+      "logstash/logstash-core/src/main/java/org/logstash/plugins/discovery/PluginRegistry.java",
+      "logstash/logstash-core/src/main/java/org/logstash/config/ir/expression/ValueExpression.java"
+    ],
+    "found_modules": [
+      "logstash/logstash-core/src/main/java/org/logstash/config/ir/compiler/EventCondition.java::Compiler",
+      "logstash/logstash-core/src/main/java/org/logstash/plugins/factory/PluginFactoryExt.java::PluginFactoryExt",
+      "logstash/logstash-core/src/main/java/org/logstash/config/ir/CompiledPipeline.java::CompiledExecution",
+      "logstash/logstash-core/src/main/java/org/logstash/plugins/ConfigVariableExpander.java::ConfigVariableExpander",
+      "logstash/logstash-core/src/main/java/org/logstash/Rubyfier.java::Rubyfier",
+      "logstash/logstash-core/src/main/java/org/logstash/config/ir/expression/ValueExpression.java::ValueExpression",
+      "logstash/logstash-core/src/main/java/org/logstash/plugins/AliasRegistry.java::AliasRegistry",
+      "logstash/logstash-core/src/main/java/org/logstash/config/ir/CompiledPipeline.java::CompiledPipeline",
+      "logstash/logstash-core/src/main/java/org/logstash/plugins/discovery/PluginRegistry.java::PluginRegistry",
+      "logstash/logstash-core/src/main/java/org/logstash/config/ir/expression/ExpressionSubstitution.java::ExpressionSubstitution"
+    ],
+    "found_functions": [
+      "logstash/logstash-core/src/main/java/org/logstash/plugins/ConfigVariableExpander.java::ConfigVariableExpander.expand",
+      "logstash/logstash-core/src/main/java/org/logstash/config/ir/CompiledPipeline.java::CompiledExecution.compileDependencies",
+      "logstash/logstash-core/src/main/java/org/logstash/config/ir/compiler/EventCondition.java::Compiler.rubyFieldEquals",
+      "logstash/logstash-core/src/main/java/org/logstash/plugins/discovery/PluginRegistry.java::PluginRegistry.getInstance",
+      "logstash/logstash-core/src/main/java/org/logstash/config/ir/expression/ExpressionSubstitution.java::ExpressionSubstitution.substituteBoolExpression",
+      "logstash/logstash-core/src/main/java/org/logstash/Rubyfier.java::Rubyfier.initConverters",
+      "logstash/logstash-core/src/main/java/org/logstash/plugins/AliasRegistry.java::AliasRegistry.loadAliasesDefinitions",
+      "logstash/logstash-core/src/main/java/org/logstash/config/ir/CompiledPipeline.java::CompiledPipeline.expandConfigVariables"
+    ]
+  },
+  "elastic__logstash-13997": {
+    "found_files": [
+      "logstash/logstash-core/src/main/java/org/logstash/config/ir/expression/ExpressionSubstitution.java",
+      "logstash/logstash-core/src/main/java/org/logstash/Rubyfier.java",
+      "logstash/logstash-core/src/main/java/org/logstash/config/ir/compiler/EventCondition.java",
+      "logstash/logstash-core/src/main/java/org/logstash/config/ir/CompiledPipeline.java",
+      "logstash/logstash-core/src/main/java/org/logstash/plugins/ConfigVariableExpander.java",
+      "logstash/logstash-core/src/main/java/org/logstash/config/ir/expression/ValueExpression.java"
+    ],
+    "found_modules": [
+      "logstash/logstash-core/src/main/java/org/logstash/config/ir/compiler/EventCondition.java::Compiler",
+      "logstash/logstash-core/src/main/java/org/logstash/config/ir/CompiledPipeline.java::CompiledExecution",
+      "logstash/logstash-core/src/main/java/org/logstash/plugins/ConfigVariableExpander.java::ConfigVariableExpander",
+      "logstash/logstash-core/src/main/java/org/logstash/Rubyfier.java::Rubyfier",
+      "logstash/logstash-core/src/main/java/org/logstash/config/ir/expression/ValueExpression.java::ValueExpression",
+      "logstash/logstash-core/src/main/java/org/logstash/config/ir/CompiledPipeline.java::CompiledPipeline",
+      "logstash/logstash-core/src/main/java/org/logstash/config/ir/expression/ExpressionSubstitution.java::ExpressionSubstitution"
+    ],
+    "found_functions": [
+      "logstash/logstash-core/src/main/java/org/logstash/plugins/ConfigVariableExpander.java::ConfigVariableExpander.expand",
+      "logstash/logstash-core/src/main/java/org/logstash/config/ir/CompiledPipeline.java::CompiledExecution.compileDependencies",
+      "logstash/logstash-core/src/main/java/org/logstash/config/ir/compiler/EventCondition.java::Compiler.rubyFieldEquals",
+      "logstash/logstash-core/src/main/java/org/logstash/config/ir/expression/ExpressionSubstitution.java::ExpressionSubstitution.substituteBoolExpression",
+      "logstash/logstash-core/src/main/java/org/logstash/Rubyfier.java::Rubyfier.initConverters",
+      "logstash/logstash-core/src/main/java/org/logstash/plugins/ConfigVariableExpander.java::ConfigVariableExpander.close",
+      "logstash/logstash-core/src/main/java/org/logstash/config/ir/CompiledPipeline.java::CompiledPipeline.expandConfigVariables"
+    ]
+  },
+  "elastic__logstash-13931": {
+    "found_files": [
+      "logstash/logstash-core/src/main/java/org/logstash/ackedqueue/io/FileCheckpointIO.java"
+    ],
+    "found_modules": [
+      "logstash/logstash-core/src/main/java/org/logstash/ackedqueue/io/FileCheckpointIO.java::FileCheckpointIO"
+    ],
+    "found_functions": [
+      "logstash/logstash-core/src/main/java/org/logstash/ackedqueue/io/FileCheckpointIO.java::FileCheckpointIO.write",
+      "logstash/logstash-core/src/main/java/org/logstash/ackedqueue/io/FileCheckpointIO.java::FileCheckpointIO.purge"
+    ]
+  },
+  "elastic__logstash-13930": {
+    "found_files": [
+      "logstash/logstash-core/src/main/java/org/logstash/ackedqueue/io/FileCheckpointIO.java"
+    ],
+    "found_modules": [
+      "logstash/logstash-core/src/main/java/org/logstash/ackedqueue/io/FileCheckpointIO.java::FileCheckpointIO"
+    ],
+    "found_functions": [
+      "logstash/logstash-core/src/main/java/org/logstash/ackedqueue/io/FileCheckpointIO.java::FileCheckpointIO.write",
+      "logstash/logstash-core/src/main/java/org/logstash/ackedqueue/io/FileCheckpointIO.java::FileCheckpointIO.purge"
+    ]
+  },
+  "elastic__logstash-13914": {
+    "found_files": [],
+    "found_modules": [],
+    "found_functions": []
+  },
+  "elastic__logstash-13902": {
+    "found_files": [
+      "logstash/logstash-core/src/main/java/org/logstash/ackedqueue/io/FileCheckpointIO.java"
+    ],
+    "found_modules": [
+      "logstash/logstash-core/src/main/java/org/logstash/ackedqueue/io/FileCheckpointIO.java::FileCheckpointIO"
+    ],
+    "found_functions": [
+      "logstash/logstash-core/src/main/java/org/logstash/ackedqueue/io/FileCheckpointIO.java::FileCheckpointIO.write",
+      "logstash/logstash-core/src/main/java/org/logstash/ackedqueue/io/FileCheckpointIO.java::FileCheckpointIO.purge"
+    ]
+  },
+  "elastic__logstash-13880": {
+    "found_files": [],
+    "found_modules": [],
+    "found_functions": []
+  },
+  "elastic__logstash-13825": {
+    "found_files": [
+      "logstash/logstash-core/src/main/java/org/logstash/launchers/JvmOptionsParser.java"
+    ],
+    "found_modules": [
+      "logstash/logstash-core/src/main/java/org/logstash/launchers/JvmOptionsParser.java::JvmOptionsParser"
+    ],
+    "found_functions": [
+      "logstash/logstash-core/src/main/java/org/logstash/launchers/JvmOptionsParser.java::JvmOptionsParser.handleJvmOptions",
+      "logstash/logstash-core/src/main/java/org/logstash/launchers/JvmOptionsParser.java::JvmOptionsParser.main",
+      "logstash/logstash-core/src/main/java/org/logstash/launchers/JvmOptionsParser.java::JvmOptionsParser.javaMajorVersion",
+      "logstash/logstash-core/src/main/java/org/logstash/launchers/JvmOptionsParser.java::JvmOptionsParser.parseAndInjectEnvironment",
+      "logstash/logstash-core/src/main/java/org/logstash/launchers/JvmOptionsParser.java::JvmOptionsParser.parse",
+      "logstash/logstash-core/src/main/java/org/logstash/launchers/JvmOptionsParser.java::JvmOptionsParser.parseJvmOptions"
+    ]
+  },
+  "fasterxml__jackson-dataformat-xml-644": {
+    "found_files": [
+      "jackson-dataformat-xml/src/main/java/com/fasterxml/jackson/dataformat/xml/ser/ToXmlGenerator.java"
+    ],
+    "found_modules": [
+      "jackson-dataformat-xml/src/main/java/com/fasterxml/jackson/dataformat/xml/ser/ToXmlGenerator.java::ToXmlGenerator.Feature",
+      "jackson-dataformat-xml/src/main/java/com/fasterxml/jackson/dataformat/xml/ser/ToXmlGenerator.java::ToXmlGenerator"
+    ],
+    "found_functions": [
+      "jackson-dataformat-xml/src/main/java/com/fasterxml/jackson/dataformat/xml/ser/ToXmlGenerator.java::ToXmlGenerator.writeNumber"
+    ]
+  },
+  "fasterxml__jackson-dataformat-xml-638": {
+    "found_files": [
+      "jackson-dataformat-xml/src/main/java/com/fasterxml/jackson/dataformat/xml/JacksonXmlAnnotationIntrospector.java"
+    ],
+    "found_modules": [
+      "jackson-dataformat-xml/src/main/java/com/fasterxml/jackson/dataformat/xml/JacksonXmlAnnotationIntrospector.java::JacksonXmlAnnotationIntrospector"
+    ],
+    "found_functions": [
+      "jackson-dataformat-xml/src/main/java/com/fasterxml/jackson/dataformat/xml/JacksonXmlAnnotationIntrospector.java::JacksonXmlAnnotationIntrospector.findNamespace"
+    ]
+  },
+  "fasterxml__jackson-dataformat-xml-590": {
+    "found_files": [
+      "jackson-dataformat-xml/src/main/java/com/fasterxml/jackson/dataformat/xml/JacksonXmlAnnotationIntrospector.java"
+    ],
+    "found_modules": [
+      "jackson-dataformat-xml/src/main/java/com/fasterxml/jackson/dataformat/xml/JacksonXmlAnnotationIntrospector.java::JacksonXmlAnnotationIntrospector"
+    ],
+    "found_functions": []
+  },
+  "fasterxml__jackson-dataformat-xml-544": {
+    "found_files": [
+      "jackson-dataformat-xml/src/main/java/com/fasterxml/jackson/dataformat/xml/ser/ToXmlGenerator.java"
+    ],
+    "found_modules": [
+      "jackson-dataformat-xml/src/main/java/com/fasterxml/jackson/dataformat/xml/ser/ToXmlGenerator.java::ToXmlGenerator"
+    ],
+    "found_functions": [
+      "jackson-dataformat-xml/src/main/java/com/fasterxml/jackson/dataformat/xml/ser/ToXmlGenerator.java::ToXmlGenerator.writeRawValue"
+    ]
+  },
+  "fasterxml__jackson-dataformat-xml-531": {
+    "found_files": [
+      "jackson-dataformat-xml/src/main/java/com/fasterxml/jackson/dataformat/xml/XmlFactory.java",
+      "jackson-dataformat-xml/src/main/java/com/fasterxml/jackson/dataformat/xml/XmlFactoryBuilder.java",
+      "jackson-dataformat-xml/src/main/java/com/fasterxml/jackson/dataformat/xml/XmlMapper.java",
+      "jackson-dataformat-xml/src/main/java/com/fasterxml/jackson/dataformat/xml/deser/XmlTokenStream.java",
+      "jackson-dataformat-xml/src/main/java/com/fasterxml/jackson/dataformat/xml/ser/ToXmlGenerator.java",
+      "jackson-dataformat-xml/src/main/java/com/fasterxml/jackson/dataformat/xml/deser/FromXmlParser.java"
+    ],
+    "found_modules": [
+      "jackson-dataformat-xml/src/main/java/com/fasterxml/jackson/dataformat/xml/deser/XmlTokenStream.java::XmlTokenStream",
+      "jackson-dataformat-xml/src/main/java/com/fasterxml/jackson/dataformat/xml/XmlFactoryBuilder.java::XmlFactoryBuilder",
+      "jackson-dataformat-xml/src/main/java/com/fasterxml/jackson/dataformat/xml/ser/ToXmlGenerator.java::ToXmlGenerator",
+      "jackson-dataformat-xml/src/main/java/com/fasterxml/jackson/dataformat/xml/XmlMapper.java::XmlMapper",
+      "jackson-dataformat-xml/src/main/java/com/fasterxml/jackson/dataformat/xml/XmlMapper.java::XmlMapper.Builder",
+      "jackson-dataformat-xml/src/main/java/com/fasterxml/jackson/dataformat/xml/XmlFactory.java::XmlFactory",
+      "jackson-dataformat-xml/src/main/java/com/fasterxml/jackson/dataformat/xml/deser/FromXmlParser.java::FromXmlParser"
+    ],
+    "found_functions": [
+      "jackson-dataformat-xml/src/main/java/com/fasterxml/jackson/dataformat/xml/XmlFactory.java::XmlFactory.createParser",
+      "jackson-dataformat-xml/src/main/java/com/fasterxml/jackson/dataformat/xml/XmlFactory.java::XmlFactory._createParser",
+      "jackson-dataformat-xml/src/main/java/com/fasterxml/jackson/dataformat/xml/deser/XmlTokenStream.java::XmlTokenStream._handleRepeatElement",
+      "jackson-dataformat-xml/src/main/java/com/fasterxml/jackson/dataformat/xml/deser/XmlTokenStream.java::XmlTokenStream.initialize",
+      "jackson-dataformat-xml/src/main/java/com/fasterxml/jackson/dataformat/xml/XmlFactory.java::XmlFactory.createGenerator",
+      "jackson-dataformat-xml/src/main/java/com/fasterxml/jackson/dataformat/xml/deser/XmlTokenStream.java::XmlTokenStream._initStartElement",
+      "jackson-dataformat-xml/src/main/java/com/fasterxml/jackson/dataformat/xml/ser/ToXmlGenerator.java::ToXmlGenerator.writeFieldName"
+    ]
+  },
+  "alibaba__fastjson2-2775": {
+    "found_files": [
+      "fastjson2/core/src/main/java/com/alibaba/fastjson2/JSON.java"
+    ],
+    "found_modules": [
+      "fastjson2/core/src/main/java/com/alibaba/fastjson2/JSON.java::JSON"
+    ],
+    "found_functions": []
+  },
+  "alibaba__fastjson2-2559": {
+    "found_files": [
+      "fastjson2/core/src/main/java/com/alibaba/fastjson2/util/TypeUtils.java"
+    ],
+    "found_modules": [
+      "fastjson2/core/src/main/java/com/alibaba/fastjson2/util/TypeUtils.java::TypeUtils"
+    ],
+    "found_functions": [
+      "fastjson2/core/src/main/java/com/alibaba/fastjson2/util/TypeUtils.java::TypeUtils.cast"
+    ]
+  },
+  "alibaba__fastjson2-2285": {
+    "found_files": [
+      "fastjson2/core/src/main/java/com/alibaba/fastjson2/writer/ObjectWriterBaseModule.java"
+    ],
+    "found_modules": [
+      "fastjson2/core/src/main/java/com/alibaba/fastjson2/writer/ObjectWriterBaseModule.java::ObjectWriterBaseModule"
+    ],
+    "found_functions": [
+      "fastjson2/core/src/main/java/com/alibaba/fastjson2/writer/ObjectWriterBaseModule.java::ObjectWriterBaseModule.getBeanInfo"
+    ]
+  },
+  "alibaba__fastjson2-2097": {
+    "found_files": [
+      "fastjson2/core/src/main/java/com/alibaba/fastjson2/reader/ObjectReaderImplList.java"
+    ],
+    "found_modules": [
+      "fastjson2/core/src/main/java/com/alibaba/fastjson2/reader/ObjectReaderImplList.java::ObjectReaderImplList"
+    ],
+    "found_functions": [
+      "fastjson2/core/src/main/java/com/alibaba/fastjson2/reader/ObjectReaderImplList.java::ObjectReaderImplList.of"
+    ]
+  },
+  "alibaba__fastjson2-1245": {
+    "found_files": [
+      "fastjson2/core/src/main/java/com/alibaba/fastjson2/reader/ObjectReaderImplList.java",
+      "fastjson2/core/src/main/java/com/alibaba/fastjson2/filter/ContextAutoTypeBeforeHandler.java"
+    ],
+    "found_modules": [
+      "fastjson2/core/src/main/java/com/alibaba/fastjson2/filter/ContextAutoTypeBeforeHandler.java::ContextAutoTypeBeforeHandler",
+      "fastjson2/core/src/main/java/com/alibaba/fastjson2/reader/ObjectReaderImplList.java::ObjectReaderImplList"
+    ],
+    "found_functions": [
+      "fastjson2/core/src/main/java/com/alibaba/fastjson2/reader/ObjectReaderImplList.java::ObjectReaderImplList.readJSONBObject"
+    ]
+  },
+  "alibaba__fastjson2-82": {
+    "found_files": [],
+    "found_modules": [],
+    "found_functions": []
+  },
+  "google__gson-1787": {
+    "found_files": [
+      "gson/gson/src/main/java/com/google/gson/internal/bind/TreeTypeAdapter.java",
+      "gson/gson/src/main/java/com/google/gson/internal/bind/TypeAdapterRuntimeTypeWrapper.java",
+      "gson/gson/src/main/java/com/google/gson/Gson.java"
+    ],
+    "found_modules": [
+      "gson/gson/src/main/java/com/google/gson/internal/bind/TypeAdapterRuntimeTypeWrapper.java::TypeAdapterRuntimeTypeWrapper",
+      "gson/gson/src/main/java/com/google/gson/internal/bind/TreeTypeAdapter.java::TreeTypeAdapter.GsonContextImpl",
+      "gson/gson/src/main/java/com/google/gson/Gson.java::FutureTypeAdapter",
+      "gson/gson/src/main/java/com/google/gson/Gson.java::Gson.FutureTypeAdapter",
+      "gson/gson/src/main/java/com/google/gson/internal/bind/TreeTypeAdapter.java::TreeTypeAdapter",
+      "gson/gson/src/main/java/com/google/gson/Gson.java::Gson"
+    ],
+    "found_functions": [
+      "gson/gson/src/main/java/com/google/gson/internal/bind/TypeAdapterRuntimeTypeWrapper.java::TypeAdapterRuntimeTypeWrapper.getRuntimeTypeIfMoreSpecific",
+      "gson/gson/src/main/java/com/google/gson/internal/bind/TypeAdapterRuntimeTypeWrapper.java::TypeAdapterRuntimeTypeWrapper.write",
+      "gson/gson/src/main/java/com/google/gson/Gson.java::FutureTypeAdapter.write",
+      "gson/gson/src/main/java/com/google/gson/Gson.java::Gson.toString",
+      "gson/gson/src/main/java/com/google/gson/Gson.java::FutureTypeAdapter.read"
+    ]
+  },
+  "google__gson-1703": {
+    "found_files": [
+      "gson/gson/src/main/java/com/google/gson/internal/Streams.java"
+    ],
+    "found_modules": [
+      "gson/gson/src/main/java/com/google/gson/internal/Streams.java::AppendableWriter",
+      "gson/gson/src/main/java/com/google/gson/internal/Streams.java::Streams",
+      "gson/gson/src/main/java/com/google/gson/internal/Streams.java::Streams.CurrentWrite"
+    ],
+    "found_functions": [
+      "gson/gson/src/main/java/com/google/gson/internal/Streams.java::AppendableWriter.length",
+      "gson/gson/src/main/java/com/google/gson/internal/Streams.java::AppendableWriter.write"
+    ]
+  },
+  "google__gson-1555": {
+    "found_files": [
+      "gson/gson/src/main/java/com/google/gson/internal/bind/TreeTypeAdapter.java",
+      "gson/gson/src/main/java/com/google/gson/internal/bind/JsonAdapterAnnotationTypeAdapterFactory.java"
+    ],
+    "found_modules": [
+      "gson/gson/src/main/java/com/google/gson/internal/bind/JsonAdapterAnnotationTypeAdapterFactory.java::JsonAdapterAnnotationTypeAdapterFactory",
+      "gson/gson/src/main/java/com/google/gson/internal/bind/TreeTypeAdapter.java::TreeTypeAdapter"
+    ],
+    "found_functions": [
+      "gson/gson/src/main/java/com/google/gson/internal/bind/TreeTypeAdapter.java::TreeTypeAdapter.write",
+      "gson/gson/src/main/java/com/google/gson/internal/bind/TreeTypeAdapter.java::TreeTypeAdapter.read",
+      "gson/gson/src/main/java/com/google/gson/internal/bind/JsonAdapterAnnotationTypeAdapterFactory.java::JsonAdapterAnnotationTypeAdapterFactory.getTypeAdapter"
+    ]
+  },
+  "google__gson-1391": {
+    "found_files": [
+      "gson/gson/src/main/java/com/google/gson/internal/$Gson$Types.java"
+    ],
+    "found_modules": [
+      "gson/gson/src/main/java/com/google/gson/internal/$Gson$Types.java::$Gson$Types"
+    ],
+    "found_functions": [
+      "gson/gson/src/main/java/com/google/gson/internal/$Gson$Types.java::$Gson$Types.resolve"
+    ]
+  },
+  "google__gson-1093": {
+    "found_files": [
+      "gson/gson/src/main/java/com/google/gson/stream/JsonWriter.java"
+    ],
+    "found_modules": [
+      "gson/gson/src/main/java/com/google/gson/stream/JsonWriter.java::JsonWriter"
+    ],
+    "found_functions": [
+      "gson/gson/src/main/java/com/google/gson/stream/JsonWriter.java::JsonWriter.value"
+    ]
+  },
+  "googlecontainertools__jib-4144": {
+    "found_files": [
+      "jib/jib-plugins-common/src/main/java/com/google/cloud/tools/jib/plugins/common/PluginConfigurationProcessor.java",
+      "jib/jib-cli/src/main/java/com/google/cloud/tools/jib/cli/jar/JarFiles.java"
+    ],
+    "found_modules": [
+      "jib/jib-plugins-common/src/main/java/com/google/cloud/tools/jib/plugins/common/PluginConfigurationProcessor.java::PluginConfigurationProcessor",
+      "jib/jib-cli/src/main/java/com/google/cloud/tools/jib/cli/jar/JarFiles.java::JarFiles"
+    ],
+    "found_functions": [
+      "jib/jib-plugins-common/src/main/java/com/google/cloud/tools/jib/plugins/common/PluginConfigurationProcessor.java::PluginConfigurationProcessor.getDefaultBaseImage",
+      "jib/jib-plugins-common/src/main/java/com/google/cloud/tools/jib/plugins/common/PluginConfigurationProcessor.java::PluginConfigurationProcessor.getJavaContainerBuilderWithBaseImage",
+      "jib/jib-cli/src/main/java/com/google/cloud/tools/jib/cli/jar/JarFiles.java::JarFiles.getDefaultBaseImage"
+    ]
+  },
+  "googlecontainertools__jib-4035": {
+    "found_files": [
+      "jib/jib-core/src/main/java/com/google/cloud/tools/jib/registry/RegistryAuthenticator.java"
+    ],
+    "found_modules": [
+      "jib/jib-core/src/main/java/com/google/cloud/tools/jib/registry/RegistryAuthenticator.java::RegistryAuthenticator"
+    ],
+    "found_functions": [
+      "jib/jib-core/src/main/java/com/google/cloud/tools/jib/registry/RegistryAuthenticator.java::RegistryAuthenticator.fromAuthenticationMethod"
+    ]
+  },
+  "googlecontainertools__jib-2542": {
+    "found_files": [
+      "jib/jib-core/src/main/java/com/google/cloud/tools/jib/registry/RegistryEndpointCaller.java"
+    ],
+    "found_modules": [
+      "jib/jib-core/src/main/java/com/google/cloud/tools/jib/registry/RegistryEndpointCaller.java::RegistryEndpointCaller"
+    ],
+    "found_functions": [
+      "jib/jib-core/src/main/java/com/google/cloud/tools/jib/registry/RegistryEndpointCaller.java::RegistryEndpointCaller.newRegistryErrorException"
+    ]
+  },
+  "googlecontainertools__jib-2536": {
+    "found_files": [
+      "jib/jib-core/src/main/java/com/google/cloud/tools/jib/registry/credentials/DockerConfigCredentialRetriever.java"
+    ],
+    "found_modules": [
+      "jib/jib-core/src/main/java/com/google/cloud/tools/jib/registry/credentials/DockerConfigCredentialRetriever.java::DockerConfigCredentialRetriever"
+    ],
+    "found_functions": [
+      "jib/jib-core/src/main/java/com/google/cloud/tools/jib/registry/credentials/DockerConfigCredentialRetriever.java::DockerConfigCredentialRetriever.retrieve"
+    ]
+  },
+  "googlecontainertools__jib-2688": {
+    "found_files": [
+      "jib/jib-maven-plugin/src/main/java/com/google/cloud/tools/jib/maven/MavenProjectProperties.java"
+    ],
+    "found_modules": [
+      "jib/jib-maven-plugin/src/main/java/com/google/cloud/tools/jib/maven/MavenProjectProperties.java::MavenProjectProperties"
+    ],
+    "found_functions": [
+      "jib/jib-maven-plugin/src/main/java/com/google/cloud/tools/jib/maven/MavenProjectProperties.java::MavenProjectProperties.getSpringBootRepackageConfiguration"
+    ]
+  },
+  "fasterxml__jackson-core-1309": {
+    "found_files": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/io/NumberInput.java"
+    ],
+    "found_modules": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/io/NumberInput.java::NumberInput"
+    ],
+    "found_functions": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/io/NumberInput.java::NumberInput.looksLikeValidNumber"
+    ]
+  },
+  "fasterxml__jackson-core-1263": {
+    "found_files": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/util/RecyclerPool.java"
+    ],
+    "found_modules": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/util/RecyclerPool.java::LockFreePoolBase.Node",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/util/RecyclerPool.java::BoundedPoolBase",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/util/RecyclerPool.java::NonRecyclingPoolBase",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/util/RecyclerPool.java::ConcurrentDequePoolBase",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/util/RecyclerPool.java::RecyclerPool",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/util/RecyclerPool.java::ThreadLocalPoolBase",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/util/RecyclerPool.java::LockFreePoolBase"
+    ],
+    "found_functions": []
+  },
+  "fasterxml__jackson-core-1208": {
+    "found_files": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/JsonFactory.java"
+    ],
+    "found_modules": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/JsonFactory.java::JsonFactory"
+    ],
+    "found_functions": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/JsonFactory.java::JsonFactory.setStreamReadConstraints"
+    ]
+  },
+  "fasterxml__jackson-core-1204": {
+    "found_files": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/util/RecyclerPool.java"
+    ],
+    "found_modules": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/util/RecyclerPool.java::BoundedPoolBase",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java::ReaderBasedJsonParser",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/util/RecyclerPool.java::NonRecyclingPoolBase",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/util/RecyclerPool.java::ConcurrentDequePoolBase",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/util/RecyclerPool.java::RecyclerPool",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/util/RecyclerPool.java::ThreadLocalPoolBase",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/util/RecyclerPool.java::LockFreePoolBase"
+    ],
+    "found_functions": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java::ReaderBasedJsonParser._loadMore"
+    ]
+  },
+  "fasterxml__jackson-core-1182": {
+    "found_files": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/util/JsonParserDelegate.java",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/JsonParser.java"
+    ],
+    "found_modules": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/JsonParser.java::JsonParser",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/util/JsonParserDelegate.java::JsonParserDelegate",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/JsonParser.java::JsonParser.NumberType"
+    ],
+    "found_functions": []
+  },
+  "fasterxml__jackson-core-1172": {
+    "found_files": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/JsonPointer.java"
+    ],
+    "found_modules": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/JsonPointer.java::JsonPointer"
+    ],
+    "found_functions": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/JsonPointer.java::JsonPointer.hashCode",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/JsonPointer.java::JsonPointer.append",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/JsonPointer.java::JsonPointer.appendIndex",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/JsonPointer.java::JsonPointer.equals",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/JsonPointer.java::JsonPointer.appendProperty",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/JsonPointer.java::JsonPointer.toString"
+    ]
+  },
+  "fasterxml__jackson-core-1142": {
+    "found_files": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/Version.java"
+    ],
+    "found_modules": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/Version.java::Version"
+    ],
+    "found_functions": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/Version.java::Version.toString",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/Version.java::Version.equals",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/Version.java::Version.hashCode",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/Version.java::Version.isSnapshot"
+    ]
+  },
+  "fasterxml__jackson-core-1053": {
+    "found_files": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/Version.java"
+    ],
+    "found_modules": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/Version.java::Version"
+    ],
+    "found_functions": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/Version.java::Version.hashCode",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/Version.java::Version.equals",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/Version.java::Version.compareTo"
+    ]
+  },
+  "fasterxml__jackson-core-1016": {
+    "found_files": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/json/UTF8DataInputJsonParser.java",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/json/async/NonBlockingJsonParserBase.java",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/JsonFactory.java"
+    ],
+    "found_modules": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/json/async/NonBlockingJsonParserBase.java::NonBlockingJsonParserBase",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/json/UTF8DataInputJsonParser.java::UTF8DataInputJsonParser",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/JsonFactory.java::JsonFactory"
+    ],
+    "found_functions": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/JsonFactory.java::JsonFactory.createNonBlockingByteArrayParser",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/JsonFactory.java::JsonFactory._createParser",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/JsonFactory.java::JsonFactory.createNonBlockingByteBufferParser",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/json/async/NonBlockingJsonParserBase.java::NonBlockingJsonParserBase._addName",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/json/UTF8DataInputJsonParser.java::UTF8DataInputJsonParser.addName"
+    ]
+  },
+  "fasterxml__jackson-core-964": {
+    "found_files": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/JsonFactory.java"
+    ],
+    "found_modules": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/JsonFactory.java::JsonFactory"
+    ],
+    "found_functions": []
+  },
+  "fasterxml__jackson-core-922": {
+    "found_files": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/json/UTF8DataInputJsonParser.java",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/json/UTF8StreamJsonParser.java"
+    ],
+    "found_modules": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/json/UTF8DataInputJsonParser.java::UTF8DataInputJsonParser",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/json/UTF8StreamJsonParser.java::UTF8StreamJsonParser",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java::ReaderBasedJsonParser"
+    ],
+    "found_functions": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/json/UTF8DataInputJsonParser.java::UTF8DataInputJsonParser._readBinary",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java::ReaderBasedJsonParser._readBinary",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/json/UTF8StreamJsonParser.java::UTF8StreamJsonParser._readBinary",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java::ReaderBasedJsonParser._decodeBase64",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/json/UTF8StreamJsonParser.java::UTF8StreamJsonParser._decodeBase64",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/json/UTF8DataInputJsonParser.java::UTF8DataInputJsonParser._decodeBase64"
+    ]
+  },
+  "fasterxml__jackson-core-891": {
+    "found_files": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/filter/FilteringGeneratorDelegate.java"
+    ],
+    "found_modules": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/filter/FilteringGeneratorDelegate.java::FilteringGeneratorDelegate"
+    ],
+    "found_functions": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/filter/FilteringGeneratorDelegate.java::FilteringGeneratorDelegate.writeStartObject"
+    ]
+  },
+  "fasterxml__jackson-core-729": {
+    "found_files": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/filter/TokenFilter.java",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/filter/TokenFilterContext.java",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/filter/FilteringParserDelegate.java"
+    ],
+    "found_modules": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/filter/TokenFilterContext.java::TokenFilterContext",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/filter/FilteringParserDelegate.java::FilteringParserDelegate",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/filter/TokenFilter.java::TokenFilter"
+    ],
+    "found_functions": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/filter/FilteringParserDelegate.java::FilteringParserDelegate.nextToken",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/filter/FilteringParserDelegate.java::FilteringParserDelegate._nextTokenWithBuffering",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/filter/FilteringParserDelegate.java::FilteringParserDelegate._nextToken2",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/filter/TokenFilterContext.java::TokenFilterContext.closeArray",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/filter/TokenFilterContext.java::TokenFilterContext.closeObject"
+    ]
+  },
+  "fasterxml__jackson-core-566": {
+    "found_files": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/JsonGenerator.java"
+    ],
+    "found_modules": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/JsonGenerator.java::JsonGenerator"
+    ],
+    "found_functions": []
+  },
+  "fasterxml__jackson-core-370": {
+    "found_files": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/json/UTF8DataInputJsonParser.java"
+    ],
+    "found_modules": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/json/UTF8DataInputJsonParser.java::UTF8DataInputJsonParser",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java::ReaderBasedJsonParser"
+    ],
+    "found_functions": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/json/UTF8DataInputJsonParser.java::UTF8DataInputJsonParser.nextFieldName",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java::ReaderBasedJsonParser.nextFieldName"
+    ]
+  },
+  "fasterxml__jackson-core-183": {
+    "found_files": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java"
+    ],
+    "found_modules": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java::TextBuffer"
+    ],
+    "found_functions": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java::TextBuffer.getTextBuffer"
+    ]
+  },
+  "fasterxml__jackson-core-174": {
+    "found_files": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/JsonPointer.java"
+    ],
+    "found_modules": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/JsonPointer.java::JsonPointer"
+    ],
+    "found_functions": []
+  },
+  "fasterxml__jackson-core-980": {
+    "found_files": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/base/ParserBase.java",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/StreamReadConstraints.java"
+    ],
+    "found_modules": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/base/ParserBase.java::ParserBase",
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/StreamReadConstraints.java::StreamReadConstraints"
+    ],
+    "found_functions": [
+      "jackson-core/src/main/java/com/fasterxml/jackson/core/base/ParserBase.java::ParserBase._convertBigDecimalToBigInteger"
+    ]
+  }
+}

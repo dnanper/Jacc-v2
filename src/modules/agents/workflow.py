@@ -18,6 +18,7 @@ from langgraph.graph import END, StateGraph
 from langgraph.prebuilt import ToolNode
 
 from .state import AgentState
+from src.utils.log import logger
 
 
 class BaseAgentWorkflow:
@@ -30,7 +31,11 @@ class BaseAgentWorkflow:
 
     def __init__(self, *, llm: Runnable, tools: Sequence[BaseTool]) -> None:
         self.tools = list(tools)
-        self.llm = llm.bind_tools(self.tools)
+        # bind_tools rebuilds from the underlying model, dropping any callbacks
+        # and metadata attached with with_config (e.g. Langfuse tracing).
+        config = getattr(llm, "config", None)
+        bound = llm.bind_tools(self.tools)
+        self.llm = bound.with_config(config) if config else bound
         self.graph = self._compile_graph()
 
     def invoke(self, state: AgentState) -> AgentState:
@@ -38,16 +43,20 @@ class BaseAgentWorkflow:
 
     def call_model(self, state: AgentState) -> AgentState:
         phase = _detect_phase(state)
+        iteration = state.get("iterations", 0) + 1
+        logger.info("agent node=call_model iteration=%d phase=%s", iteration, phase or "none")
         response = self.llm.invoke(_prepare_messages(state, phase=phase))
+        logger.info("agent node=call_model complete iteration=%d tool_calls=%d", iteration, len(getattr(response, "tool_calls", []) or []))
         return {
             "messages": [response],
             "iterations": state.get("iterations", 0) + 1,
-            "final_answer": response.content if not _has_tool_calls(response) else "",
+            "final_answer": _message_text(response) if not _has_tool_calls(response) else "",
             "status": "running",
             "phase": phase,
         }
 
     def finalize(self, state: AgentState) -> AgentState:
+        logger.info("agent node=finalize iterations=%d", state.get("iterations", 0))
         state = dict(state)
         state["status"] = "complete"
         last = state["messages"][-1] if state.get("messages") else None
@@ -66,7 +75,7 @@ class BaseAgentWorkflow:
         else:
             state["status"] = "complete"
         if not state.get("final_answer") and not isinstance(last, ToolMessage):
-            state["final_answer"] = getattr(last, "content", "") if last else ""
+            state["final_answer"] = _message_text(last) if last else ""
         return state
 
     def should_continue(self, state: AgentState) -> str:
@@ -101,6 +110,16 @@ class BaseAgentWorkflow:
 
 def _has_tool_calls(message: Any) -> bool:
     return isinstance(message, AIMessage) and bool(message.tool_calls)
+
+
+def _message_text(message: Any) -> str:
+    """Text of a message; Responses-API content is a block list, not a string."""
+
+    text = getattr(message, "text", None)
+    if isinstance(text, str):
+        return text
+    content = getattr(message, "content", "")
+    return content if isinstance(content, str) else ""
 
 
 def _prepare_messages(
@@ -205,25 +224,21 @@ def _contains_key(value: Any, target_key: str) -> bool:
 def _phase_hint(phase: str | None) -> str:
     if phase == "explore":
         return (
-            "PHASE: explore. Prefer CKG localization tools before bash. "
-            "Start with ckg_search using a focused issue-shaped query. "
-            "Do not run broad commands like ls -R, find over the repository, "
-            "or full-file sed dumps unless CKG is unavailable or weak."
+            "PHASE: explore. Start with ckg_search using a focused issue-shaped "
+            "query. Do not perform broad repository exploration."
         )
     if phase == "targeted":
         return (
-            "PHASE: targeted. CKG has identified likely files or symbols. "
-            "Stop repository-wide exploration. Prefer targeted bash reads like "
-            "nl -ba <file> | sed -n 'start,endp', ckg_symbol_context for a "
-            "known symbol, ckg_contract before editing signatures/callers, then "
-            "a Python file-edit script, git diff, and targeted verification. "
-            "Timeout values are seconds and must be <= 600."
+            "PHASE: targeted. CKG has identified likely files or symbols. Stop "
+            "repository-wide exploration. Use ckg_file_context or "
+            "ckg_symbol_context for local evidence, ckg_contract for callers, "
+            "callees, inheritance, and overrides, then ckg_crosscut or ckg_impact "
+            "only when needed. Finish with the required JSON once evidence is sufficient."
         )
     if phase == "recover":
         return (
-            "PHASE: recover. Recent targeted bash actions failed. Return to CKG "
-            "with one revised ckg_search or ckg_crosscut query, choose a better "
-            "file/symbol, then resume targeted bash reads. Do not repeat the "
-            "same failing command; timeout values are seconds and must be <= 600."
+            "PHASE: recover. Return to CKG with one focused ckg_search or "
+            "ckg_crosscut call. Do not repeat a weak query; return JSON if no "
+            "additional evidence is available."
         )
     return ""

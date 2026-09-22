@@ -242,3 +242,5 @@ test_repo/
 .codex/
 AGENTS.md
 CLAUDE.md
+
+.tmp/

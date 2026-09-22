@@ -16,6 +16,7 @@ except ImportError:  # pragma: no cover - exercised only without dependency
     OpenAIEmbeddings = None  # type: ignore[assignment]
 
 from modules.repo_explorer.graph.core.knowledge_graph import KnowledgeGraph
+from utils.llm_guard import guard
 
 from .text_generator import (
     EMBEDDABLE_LABELS,
@@ -75,6 +76,8 @@ def get_or_create_model(
 
     if _model_instance is not None and _model_config == key:
         return _model_instance
+
+    guard("embeddings")
 
     logger.info(
         "Initializing OpenAI embedding model %s with %d dimensions",

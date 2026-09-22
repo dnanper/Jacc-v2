@@ -11,6 +11,7 @@ dependencies = [
     "langchain-openai>=1.1.0",
     "langgraph>=0.2.0",
     "kuzu>=0.11.3",
+    "langfuse>=3.0.0",
     "leidenalg>=0.11.0",
     "numpy>=2.4.6",
     "openai>=1.0.0",

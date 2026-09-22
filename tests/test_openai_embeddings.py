@@ -43,11 +43,14 @@ class OpenAIEmbeddingsTest(unittest.TestCase):
         _FakeOpenAIEmbeddings.instances.clear()
 
     def test_get_or_create_model_uses_langchain_openai_embeddings(self) -> None:
-        with patch.object(
-            embedding_pipeline,
-            "OpenAIEmbeddings",
-            _FakeOpenAIEmbeddings,
-            create=True,
+        with (
+            patch.object(
+                embedding_pipeline,
+                "OpenAIEmbeddings",
+                _FakeOpenAIEmbeddings,
+                create=True,
+            ),
+            patch.object(embedding_pipeline, "guard"),
         ):
             model = embedding_pipeline.get_or_create_model()
             vectors = model.embed_documents(["alpha", "beta"])
