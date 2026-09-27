@@ -1,0 +1,11 @@
+# Read-only Ladybug Explorer for one indexed repo.
+#   REPO_DIR=../../src/modules/data/repos/<repo-dir> docker compose up
+# then open http://localhost:8000. Tag must match the real-ladybug version in uv.lock.
+services:
+  explorer:
+    image: ghcr.io/ladybugdb/explorer:0.15.3
+    ports: ["8000:8000"]
+    volumes: ["${REPO_DIR:?set REPO_DIR to a data/repos/<repo> directory}:/database"]
+    environment:
+      LBUG_FILE: lbug
+      MODE: READ_ONLY

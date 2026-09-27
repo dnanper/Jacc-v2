@@ -8,12 +8,14 @@ import logging
 import os
 import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator, TypedDict
 from uuid import uuid4
 
 from langchain_core.messages import AIMessage, BaseMessage, ToolMessage
+from langgraph.graph import END, START, StateGraph
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULES = ROOT / "src" / "modules"
@@ -23,6 +25,7 @@ if str(MODULES) not in os.sys.path:
     os.sys.path.insert(0, str(MODULES))
 
 from src.modules.agents import AgentConfig, BaseCodingAgent, build_ckg_tools
+from src.modules.issue_model import IssueModel, parse_issue, render_issue_model
 from src.modules.benchmarks import (
     BenchmarkSpec,
     LocalizationInstance,
@@ -44,22 +47,56 @@ from src.utils.observability import instrument_llm, start_observer
 DEFAULT_WORKSPACE = Path(".agent_runs") / "localization"
 DEFAULT_DATA_DIR = ROOT / "evaluation" / "localization"
 DEFAULT_MAX_STEPS = 20
+DEFAULT_CHECKPOINT_DB = "postgresql://jacc:jacc@localhost:5433/jacc"  # docker/postgres
 DEFAULT_CKG_EXCLUDE = frozenset({".cache", ".mypy_cache", ".pytest_cache", ".tox", "build", "coverage", "dist", "htmlcov", "node_modules", "site-packages"})
 
 
-def render_localization_issue(problem_statement: str) -> str:
+TOOL_INSTRUCTIONS = (
+    "Use only read-only CKG tools. Start with ckg_search, then retrieve "
+    "targeted evidence through CKG context, contract, crosscut, or impact. "
+    "Do not edit code, run tests, generate a patch, or use shell commands. "
+    "Return only the required JSON localization result."
+)
+
+
+def clean_issue_text(problem_statement: str) -> str:
+    """Strip HTML comments and a duplicated title block before issue parsing."""
     text = re.sub(r"<!--.*?-->", "", problem_statement, flags=re.DOTALL).strip()
     lines = text.splitlines()
     for length in range(1, (len(lines) // 2) + 1):
         if lines[:length] == lines[length : 2 * length]:
             lines = lines[:length] + lines[2 * length :]
             break
-    return "\n".join(lines).strip() + (
-        "\n\nUse only read-only CKG tools. Start with ckg_search, then retrieve "
-        "targeted evidence through CKG context, contract, crosscut, or impact. "
-        "Do not edit code, run tests, generate a patch, or use shell commands. "
-        "Return only the required JSON localization result."
-    )
+    return "\n".join(lines).strip()
+
+
+class PipelineState(TypedDict, total=False):
+    """Checkpointed per-instance state; plain JSON-able values only so Postgres rows stay auditable."""
+
+    task_id: str
+    problem_statement: str
+    issue_model: dict[str, Any] | None
+    agent_issue: str  # the only issue text localize sees: rendered IssueModel, or the cleaned raw issue
+    snapshot: dict[str, Any]
+    ckg: dict[str, Any]
+    messages: list[BaseMessage]
+    final_answer: str
+    status: str
+    errors: list[str]
+
+
+@contextmanager
+def open_checkpointer() -> Iterator[Any]:
+    """Postgres checkpointer from JACC_CHECKPOINT_DB; set it to an empty string to disable."""
+    url = os.getenv("JACC_CHECKPOINT_DB", DEFAULT_CHECKPOINT_DB)
+    if not url:
+        yield None
+        return
+    from langgraph.checkpoint.postgres import PostgresSaver
+
+    with PostgresSaver.from_conn_string(url) as saver:
+        saver.setup()
+        yield saver
 
 
 def prepare_ckg(snapshot_path: Path, *, force: bool = False, observer: Any = None) -> dict[str, Any]:
@@ -102,52 +139,86 @@ def run_instance(
     max_steps: int,
     workspace: Path,
     force: bool = False,
+    issue_model: bool = True,
 ) -> dict[str, Any]:
     run_dir = workspace / safe_name(instance.instance_id)
     log_path = make_log_path(run_dir, instance.instance_id)
     add_file_handler(log_path)
     observer = start_observer(instance.instance_id)
     observer.step(f"start benchmark={instance.language} repo={instance.repo}", style="bold cyan")
+    thread_id = f"{instance.instance_id}/{uuid4().hex[:8]}"
     try:
-        observer.step("acquiring Git snapshot", style="cyan")
-        snapshot = provider.get(instance, force=force)
-        observer.step(
-            f"snapshot ready reused_repo={snapshot.reused_repo} reused_snapshot={snapshot.reused_snapshot}",
-            style="green",
-        )
-        ckg = prepare_ckg(snapshot.path, force=force, observer=observer)
-        observer.step("building read-only CKG tools", style="cyan")
-        tools = build_ckg_tools(ckg["backend"], snapshot_root=ckg["snapshot_root"], container_root=str(snapshot.path))
-        llm, flush = instrument_llm(build_llm(model), task_id=instance.instance_id, benchmark=instance.language, model=model)
+        chat = build_llm(model)
+        llm, flush = instrument_llm(chat, task_id=instance.instance_id, benchmark=instance.language, model=model)
         observer.flush = flush
-        observer.step(f"starting localization agent max_steps={max_steps}", style="bold magenta")
-        agent = BaseCodingAgent(
-            llm=llm,
-            tools=tools,
-            config=AgentConfig(max_steps=max_steps, enable_ckg_phase_policy=True),
-        )
-        result = agent.solve({"task_id": instance.instance_id, "issue": render_localization_issue(instance.problem_statement), "repo_path": str(snapshot.path)})
+        live: dict[str, Any] = {}  # non-serializable handles (DB backend) kept out of checkpoints
+
+        def parse_issue_node(state: PipelineState) -> PipelineState:
+            observer.step("[issue] parsing issue into IssueModel", style="cyan")
+            parsed = load_or_parse_issue(run_dir, instance, chat, model)
+            observer.step("[issue] IssueModel ready", style="green")
+            return {"issue_model": parsed.model_dump(), "agent_issue": render_issue_model(parsed)}
+
+        def build_ckg_node(state: PipelineState) -> PipelineState:
+            observer.step("[ckg] acquiring Git snapshot", style="cyan")
+            snapshot = provider.get(instance, force=force)
+            observer.step(f"[ckg] snapshot ready reused_repo={snapshot.reused_repo} reused_snapshot={snapshot.reused_snapshot}", style="green")
+            ckg = prepare_ckg(snapshot.path, force=force, observer=observer)
+            live["backend"], live["snapshot_root"] = ckg["backend"], ckg["snapshot_root"]
+            return {
+                "snapshot": {"repo": instance.repo, "commit": instance.base_commit, "path": str(snapshot.path), "reused_repo": snapshot.reused_repo, "reused_snapshot": snapshot.reused_snapshot},
+                "ckg": {"db_path": str(ckg["db_path"]), "stats": ckg["stats"], "reused_graph": ckg["reused_graph"]},
+            }
+
+        def localize_node(state: PipelineState) -> PipelineState:
+            repo_path = state["snapshot"]["path"]
+            tools = build_ckg_tools(live["backend"], snapshot_root=live["snapshot_root"], container_root=repo_path)
+            observer.step(f"starting localization agent max_steps={max_steps}", style="bold magenta")
+            agent = BaseCodingAgent(llm=llm, tools=tools, config=AgentConfig(max_steps=max_steps, enable_ckg_phase_policy=True))
+            # Fresh agent: its input is agent_issue only, never earlier node output or messages.
+            solved = agent.solve({"task_id": state["task_id"], "issue": state["agent_issue"] + "\n\n" + TOOL_INSTRUCTIONS, "repo_path": repo_path})
+            return {"messages": solved.state.get("messages", []), "final_answer": solved.final_answer, "status": solved.status, "errors": list(solved.errors)}
+
+        graph = StateGraph(PipelineState)
+        graph.add_node("build_ckg", build_ckg_node)
+        graph.add_node("localize", localize_node)
+        graph.add_edge(START, "build_ckg")
+        if issue_model:
+            graph.add_node("parse_issue", parse_issue_node)
+            graph.add_edge(START, "parse_issue")
+            graph.add_edge(["parse_issue", "build_ckg"], "localize")
+        else:
+            graph.add_edge("build_ckg", "localize")
+        graph.add_edge("localize", END)
+        initial: PipelineState = {"task_id": instance.instance_id, "problem_statement": instance.problem_statement, "issue_model": None}
+        if not issue_model:
+            initial["agent_issue"] = clean_issue_text(instance.problem_statement)
+        with open_checkpointer() as checkpointer:
+            final = graph.compile(checkpointer=checkpointer).invoke(initial, {"configurable": {"thread_id": thread_id}})
         observer.step("agent finished; parsing localization JSON", style="magenta")
     except Exception:
         observer.step("failed", style="bold red")
         observer.close()
         raise
-    trajectory = serialize_agent_trajectory(result.state.get("messages", []))
-    errors = list(result.errors)
+    trajectory = serialize_agent_trajectory(final.get("messages", []))
+    errors = list(final.get("errors", []))
     localization: LocalizeResult | None = None
     try:
-        localization = parse_localize_result(result.final_answer)
+        localization = parse_localize_result(final.get("final_answer", ""))
     except ValueError as exc:
         errors.append(str(exc))
     output = {
         "instance_id": instance.instance_id,
         "benchmark": instance.language,
-        "status": result.status if not errors else "failed",
+        "status": final.get("status", "failed") if not errors else "failed",
         "localization": localization.to_dict() if localization else None,
-        "final_answer": result.final_answer,
+        "final_answer": final.get("final_answer", ""),
+        "issue_model_enabled": issue_model,
+        "issue_model": final.get("issue_model"),
+        "thread_id": thread_id,
         "errors": errors,
-        "snapshot": {"repo": instance.repo, "commit": instance.base_commit, "path": str(snapshot.path), "reused_repo": snapshot.reused_repo, "reused_snapshot": snapshot.reused_snapshot},
-        "ckg": {"db_path": str(ckg["db_path"]), "stats": ckg["stats"], "reused_graph": ckg["reused_graph"]},
+        "snapshot": final["snapshot"],
+        "ckg": final["ckg"],
         "trajectory": trajectory,
         "metrics": summarize_trajectory(trajectory),
         "log_path": str(log_path),
@@ -156,6 +227,18 @@ def run_instance(
     observer.step(f"output written: {run_dir / 'result.json'}", style="bold green")
     observer.close()
     return output
+
+
+def load_or_parse_issue(run_dir: Path, instance: LocalizationInstance, chat: Any, model: str) -> IssueModel:
+    """Parse once per instance and model; reruns reuse the cached file instead of paying again."""
+    path = run_dir / f"issue_model.{safe_name(model)}.json"
+    if path.exists():
+        return IssueModel.model_validate_json(path.read_text(encoding="utf-8"))
+    structured, _ = instrument_llm(chat.with_structured_output(IssueModel, method="json_schema", strict=True), task_id=instance.instance_id, benchmark=instance.language, model=model)
+    parsed = parse_issue(clean_issue_text(instance.problem_statement), structured)
+    run_dir.mkdir(parents=True, exist_ok=True)
+    path.write_text(parsed.model_dump_json(indent=2), encoding="utf-8")
+    return parsed
 
 
 def run_benchmark(
@@ -169,6 +252,7 @@ def run_benchmark(
     max_steps: int = DEFAULT_MAX_STEPS,
     workers: int = 1,
     force: bool = False,
+    issue_model: bool = True,
 ) -> dict[str, Any]:
     spec = get_benchmark(benchmark, data_dir)
     instances = list(iter_selected(load_instances(spec, data_dir), task_id))
@@ -176,7 +260,7 @@ def run_benchmark(
     results: list[dict[str, Any] | None] = [None] * len(instances)
     with ThreadPoolExecutor(max_workers=max(1, workers)) as pool:
         futures = {
-            pool.submit(run_instance, instance, provider=provider, model=model, max_steps=max_steps, workspace=workspace, force=force): index
+            pool.submit(run_instance, instance, provider=provider, model=model, max_steps=max_steps, workspace=workspace, force=force, issue_model=issue_model): index
             for index, instance in enumerate(instances)
         }
         for future in as_completed(futures):
@@ -258,8 +342,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-steps", type=int, default=DEFAULT_MAX_STEPS)
     parser.add_argument("--workers", type=int, default=1)
     parser.add_argument("--force", action="store_true")
+    parser.add_argument("--issue-model", action=argparse.BooleanOptionalAction, default=True, help="Parse the issue into an IssueModel before localizing (--no-issue-model feeds the raw issue instead).")
     args = parser.parse_args(argv)
-    summary = run_benchmark(args.benchmark, data_dir=args.data_dir, workspace=args.workspace, source_cache=args.source_cache, task_id=args.task_id, model=args.model, max_steps=args.max_steps, workers=args.workers, force=args.force)
+    summary = run_benchmark(args.benchmark, data_dir=args.data_dir, workspace=args.workspace, source_cache=args.source_cache, task_id=args.task_id, model=args.model, max_steps=args.max_steps, workers=args.workers, force=args.force, issue_model=args.issue_model)
     print(json.dumps(summary, indent=2))
     return 0 if summary["failed"] == 0 else 1
 

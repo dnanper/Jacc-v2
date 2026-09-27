@@ -11,7 +11,7 @@ import math
 import os
 import shutil
 
-import kuzu
+import real_ladybug as lb
 from ..core.knowledge_graph import KnowledgeGraph
 from ..schema.code_schema import (
     EMBEDDING_SCHEMA_QUERY,
@@ -63,8 +63,8 @@ class LadybugAdapter:
     def __init__(self, db_path: str, repo_source_path: str | None = None) -> None:
         self._db_path = db_path
         self.repo_source_path: str | None = repo_source_path
-        self._db: kuzu.Database | None = None
-        self._conn: kuzu.Connection | None = None
+        self._db: lb.Database | None = None
+        self._conn: lb.Connection | None = None
         self._name_cache: dict[tuple[str, int], list[dict]] = {}
         self._name_cache_max = 256
 
@@ -95,7 +95,7 @@ class LadybugAdapter:
 
         pool = KuzuPool.get()
         self._db = pool.get_database(self._db_path, read_only=read_only)
-        self._conn = kuzu.Connection(self._db)
+        self._conn = lb.Connection(self._db)
 
         mode = "read-only" if self.is_read_only else "read-write"
         logger.info("Connected to KuzuDB at %s (%s, via pool)", self._db_path, mode)

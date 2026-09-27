@@ -1,8 +1,13 @@
+import warnings
 from typing import Any
 
 from langchain_openai import ChatOpenAI
 
 from .llm_guard import guard
+
+# langchain-openai dumps parsed Responses objects, and pydantic warns once per union
+# member on every structured-output call. Output is unaffected.
+warnings.filterwarnings("ignore", message="Pydantic serializer warnings", category=UserWarning)
 
 
 def build_llm(model: str) -> ChatOpenAI:

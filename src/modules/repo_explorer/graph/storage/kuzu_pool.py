@@ -1,4 +1,4 @@
-"""Process-wide singleton managing one kuzu.Database per repo path.
+"""Process-wide singleton managing one lb.Database per repo path.
 
 Solves the Kuzu file-locking problem: multiple Database instances on the
 same path cause lock conflicts. This pool ensures exactly ONE Database
@@ -22,7 +22,7 @@ import threading
 import time
 from contextlib import contextmanager
 
-import kuzu
+import real_ladybug as lb
 
 from ..core.event_bus import EventBus
 
@@ -30,13 +30,13 @@ logger = logging.getLogger(__name__)
 
 
 class KuzuPool:
-    """Singleton pool managing shared kuzu.Database instances."""
+    """Singleton pool managing shared lb.Database instances."""
 
     _instance: KuzuPool | None = None
     _init_lock = threading.Lock()
 
     def __init__(self) -> None:
-        self._databases: dict[str, kuzu.Database] = {}
+        self._databases: dict[str, lb.Database] = {}
         self._db_lock = threading.Lock()
         self._write_locks: dict[str, threading.Lock] = {}
         self._read_only_paths: set[str] = set()
@@ -52,7 +52,7 @@ class KuzuPool:
                     logger.info("KuzuPool initialized")
         return cls._instance
 
-    def get_database(self, db_path: str, read_only: bool = False) -> kuzu.Database:
+    def get_database(self, db_path: str, read_only: bool = False) -> lb.Database:
         """Get or create the shared Database for a path.
 
         Args:
@@ -81,7 +81,7 @@ class KuzuPool:
 
         return self._create_database(db_path, read_only=read_only)
 
-    def _create_database(self, db_path: str, read_only: bool = False) -> kuzu.Database:
+    def _create_database(self, db_path: str, read_only: bool = False) -> lb.Database:
         """Create a new Database instance with extensions loaded."""
         with self._db_lock:
             # Double-check after acquiring lock
@@ -96,7 +96,7 @@ class KuzuPool:
                 os.rmdir(db_path)
 
             try:
-                db = kuzu.Database(db_path, read_only=read_only)
+                db = lb.Database(db_path, read_only=read_only)
             except (RuntimeError, OSError) as exc:
                 err_msg = str(exc).lower()
                 lock_keywords = ("lock", "locked", "busy", "permission")
@@ -107,14 +107,14 @@ class KuzuPool:
                         db_path,
                         exc,
                     )
-                    db = kuzu.Database(db_path, read_only=True)
+                    db = lb.Database(db_path, read_only=True)
                     self._read_only_paths.add(db_path)
                 else:
                     raise
 
             # Load extensions (only for read-write databases)
             if db_path not in self._read_only_paths:
-                conn = kuzu.Connection(db)
+                conn = lb.Connection(db)
                 for ext_cmd in (
                     "INSTALL fts; LOAD EXTENSION fts;",
                     "INSTALL VECTOR; LOAD EXTENSION VECTOR;",
@@ -131,10 +131,10 @@ class KuzuPool:
             logger.info("KuzuPool: opened database at %s (%s)", db_path, mode)
             return db
 
-    def get_connection(self, db_path: str, read_only: bool = False) -> kuzu.Connection:
+    def get_connection(self, db_path: str, read_only: bool = False) -> lb.Connection:
         """Get a new Connection from the shared Database."""
         db = self.get_database(db_path, read_only=read_only)
-        return kuzu.Connection(db)
+        return lb.Connection(db)
 
     def is_read_only(self, db_path: str) -> bool:
         """Check if a database was opened in read-only mode."""
@@ -157,7 +157,7 @@ class KuzuPool:
 
         write_lock = self._write_locks[db_path]
         write_lock.acquire()
-        conn = kuzu.Connection(db)
+        conn = lb.Connection(db)
         try:
             yield conn
         finally:

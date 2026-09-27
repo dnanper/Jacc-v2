@@ -1,0 +1,15 @@
+# LangGraph checkpoint store for localization runs (audit trail).
+#   docker compose up -d
+# URL: postgresql://jacc:jacc@localhost:5433/jacc  (override with JACC_CHECKPOINT_DB)
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: jacc
+      POSTGRES_PASSWORD: jacc
+      POSTGRES_DB: jacc
+    ports: ["127.0.0.1:5433:5432"]
+    volumes: [checkpoints:/var/lib/postgresql/data]
+
+volumes:
+  checkpoints:
