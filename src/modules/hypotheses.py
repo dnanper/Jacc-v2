@@ -90,6 +90,17 @@ class HypothesisSet(BaseModel):
     hypotheses: list[Hypothesis] = Field(description="2 to 7 hypotheses, the most likely edit sites first.")
 
 
+class LeanHypothesis(BaseModel):
+    """Design v3 amendment A6 (`--mode v6`): only what V6 reads; no basis, predictions, refute_if or explains."""
+    claim: str = Field(description="One sentence: what must change, where.")
+    mechanism: Hypothesis.model_fields["mechanism"].annotation  # type: ignore[valid-type]
+    anchors: list[Anchor] = Field(description="Every function the fix edits is a target, most important first.")
+
+
+class LeanHypothesisSet(BaseModel):
+    hypotheses: list[LeanHypothesis] = Field(description="2 to 7 hypotheses, the most likely edit sites first.")
+
+
 PROMPT = """You localize an issue in a code graph: find the functions a fix must edit. Write competing \
 hypotheses, each naming the edit sites as `target` anchors on the nodes below: the seeds a search \
 found, and the other functions of the files those seeds are in.
@@ -126,8 +137,20 @@ next to a seed (caller, callee, override, member), anchor that seed with the mat
 {links}"""
 
 
-def generate_hypotheses(issue: IssueModel, seeds: dict[str, Any], query: Query, llm: Runnable, *, samples: int = SAMPLES) -> dict[str, Any]:
-    """`llm` must be `chat.with_structured_output(HypothesisSet, strict=True)`.
+LEAN_PROMPT = """Find the functions a fix for this issue must edit. Write competing hypotheses; each names its edit \
+sites as `target` anchors on the nodes below (search hits and the other functions of their files).
+
+- A target is where the code changes, not where the symptom shows: when a caller passes data to a callee that \
+does the faulty work, the callee is the target, unless the caller calls the wrong function or passes the wrong value.
+- A fix that changes several functions (sibling overrides, every call site, a helper and its user) lists each as \
+a target of one hypothesis. For a feature, the target is where the new behaviour is added or wired in.
+- If the defect sits next to a node (caller, callee, override, member), anchor that node with the matching `via`.
+""" + PROMPT[PROMPT.index("<issue>"):]
+
+
+def generate_hypotheses(issue: IssueModel, seeds: dict[str, Any], query: Query, llm: Runnable, *, samples: int = SAMPLES, lean: bool = False) -> dict[str, Any]:
+    """`llm` must be `chat.with_structured_output(LeanHypothesisSet if lean else HypothesisSet, strict=True)`.
+    `lean` (amendment A6) asks only for claim, mechanism and anchors with a shorter prompt.
 
     The same prompt is sampled `samples` times in parallel and the sets are pooled: one sample
     often misses the hypothesis that matters. Duplicates (same targets + mechanism) merge in
@@ -142,7 +165,7 @@ def generate_hypotheses(issue: IssueModel, seeds: dict[str, Any], query: Query, 
     for node, _ in funcs:  # same alias space, so the checks and resolve_aliases need nothing new
         alias[f"S{len(alias) + 1}"] = node
     back = {node: name for name, node in alias.items()}
-    prompt = PROMPT.format(
+    prompt = (LEAN_PROMPT if lean else PROMPT).format(
         issue=_render_issue(issue),
         seeds=seed_text,
         file_funcs="\n".join(f"{back[node]} {text}" for node, text in funcs) or "(none)",
@@ -153,7 +176,7 @@ def generate_hypotheses(issue: IssueModel, seeds: dict[str, Any], query: Query, 
     # Interleave the samples so each one's top-ranked hypotheses come first; list order is the ranking.
     tagged = [[(k, h) for h in s] for k, s in enumerate(sets)]
     pooled = [x for rank in zip_longest(*tagged) for x in rank if x is not None]
-    kept, dropped = _check([h for _, h in pooled], alias, origin=[k for k, _ in pooled])
+    kept, dropped = _check([h for _, h in pooled], alias, origin=[k for k, _ in pooled], lean=lean)
     for h in kept:
         resolve_aliases(h, alias)
     index: dict[str, list[str]] = defaultdict(list)
@@ -171,11 +194,12 @@ def generate_hypotheses(issue: IssueModel, seeds: dict[str, Any], query: Query, 
         "dropped": dropped,
         "seed_index": dict(index),
         "reserve": [node for node in pool if node not in index],
-        "uncovered": [p for p, value in parts.items() if value and p not in explained],
+        "uncovered": [] if lean else [p for p, value in parts.items() if value and p not in explained],
         "low_diversity": len(kept) > 1 and len({h["mechanism"] for h in kept}) == 1,
         "prompt_chars": len(prompt),
         "samples": samples,
         "sampled": sum(len(x) for x in sets),
+        "lean": lean,
     }
 
 
@@ -191,18 +215,21 @@ def resolve_aliases(h: dict, alias: dict[str, str]) -> None:
 # --- output checks ---------------------------------------------------------------------
 
 
-def _check(raw: list[Hypothesis], alias: dict[str, str], basis_refs: frozenset[str] = frozenset(), origin: list[int] | None = None) -> tuple[list[dict], list[dict]]:
+def _check(raw: list[Hypothesis], alias: dict[str, str], basis_refs: frozenset[str] = frozenset(), origin: list[int] | None = None,
+           lean: bool = False) -> tuple[list[dict], list[dict]]:
     """Drop unknown aliases and incomplete hypotheses, merge duplicates, then number H1..Hn.
 
     `basis_refs` are extra ids a basis may cite (A5: anomalies O..); a basis is reasoning, not a node to read.
     `origin[n]` is the sample raw[n] came from; when given, each kept hypothesis lists the samples that
     proposed it, merged duplicates included (`sample_ids`), so sample agreement can be scored later.
+    `lean` hypotheses carry no basis, predictions, refute_if or explains: they get empty values and only the
+    target anchor is required.
     """
     kept: list[dict] = []
     dropped: list[dict] = []
     by_key: dict[tuple, dict] = {}
     for n, h in enumerate(raw, 1):
-        d = h.model_dump()
+        d = {"basis": [], "predictions": [], "refute_if": "", "explains": [], **h.model_dump()}
         for field in ("anchors", "basis", "predictions"):
             known = alias.keys() | basis_refs if field == "basis" else alias.keys()
             bad = [x["seed"] for x in d[field] if x["seed"] not in known]
@@ -218,8 +245,8 @@ def _check(raw: list[Hypothesis], alias: dict[str, str], basis_refs: frozenset[s
         missing = [
             what for what, ok in (
                 ("target anchor", any(a["role"] == "target" for a in d["anchors"])),
-                ("core prediction", any(p["kind"] == "core" for p in d["predictions"])),
-                ("refute_if", d["refute_if"].strip()),
+                ("core prediction", lean or any(p["kind"] == "core" for p in d["predictions"])),
+                ("refute_if", lean or d["refute_if"].strip()),
             ) if not ok
         ]
         if missing:

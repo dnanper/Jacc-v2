@@ -10,7 +10,7 @@ for path in (ROOT, ROOT / "src" / "modules"):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
-from src.modules.hypotheses import PROMPT, Anchor, _render_issue, Basis, Hypothesis, HypothesisSet, Prediction, generate_hypotheses
+from src.modules.hypotheses import PROMPT, Anchor, _render_issue, Basis, Hypothesis, HypothesisSet, LeanHypothesis, LeanHypothesisSet, Prediction, generate_hypotheses
 from src.modules.issue_model import IssueModel, Scenario
 
 DIOP = "Function:pkg/diophantine.py:diophantine"
@@ -165,6 +165,17 @@ class HypothesesTest(unittest.TestCase):
         self.assertEqual([p["node"] for p in out["hypotheses"][0]["predictions"]], [DIOP, MERGE])
         self.assertIn("merged into H1", [d["reason"] for d in out["dropped"]])
         self.assertEqual([h["sample_ids"] for h in out["hypotheses"]], [[0, 1], [0], [1]])  # H1 proposed by both samples
+
+    def test_lean_mode_asks_only_for_claim_mechanism_and_anchors(self) -> None:
+        lean = lambda target, mech="wrong_argument": LeanHypothesis(claim="c", mechanism=mech, anchors=[Anchor(seed=target, role="target", via="self")])
+        llm = Stub(LeanHypothesisSet(hypotheses=[lean("S1"), lean("S2", "wrong_mapping")]), LeanHypothesisSet(hypotheses=[lean("S1")]))
+        out = generate_hypotheses(ISSUE, SEEDS, fake_query, llm, lean=True)
+        self.assertTrue(out["lean"])
+        self.assertEqual([h["anchors"][0]["node"] for h in out["hypotheses"]], [DIOP, MERGE])  # kept without predictions or refute_if
+        self.assertEqual([h["sample_ids"] for h in out["hypotheses"]], [[0, 1], [0]])
+        self.assertEqual((out["hypotheses"][0]["predictions"], out["hypotheses"][0]["refute_if"], out["uncovered"]), ([], "", []))
+        self.assertNotIn("predictions", llm.prompt.split("<issue>")[0])
+        self.assertLess(len(llm.prompt.split("<issue>")[0]), len(PROMPT.split("<issue>")[0]))
 
     def test_relevant_function_without_matching_line_shows_its_first_lines(self) -> None:
         # Held-out 4: 5 of 11 wrong first targets were picked with no code line shown (no issue term in the body).

@@ -4,7 +4,8 @@ It sees the issue and the code of the top candidates of the Ranked-prior list, n
 them (so it cannot inherit A3's framing), in an order shuffled by the instance id (so it cannot read the prior
 rank from the position). It labels each candidate as edited / maybe / not_edited by the patch that resolves the
 issue, counting consistency edits in related functions, ranks up to five, and (v2) estimates how many functions the
-patch changes in total. Its output is evidence for the calibrator, not an answer. v1 showed the top 15, v2 the top 40.
+patch changes in total. Its output is evidence for the calibrator, not an answer. v1 showed the top 15, v2 the top 40,
+v3 (amendment A6) drops the per-candidate reason, which nothing reads.
 
 `complete` (amendment A5b) is v2's second call: given the function the verifier ranked first, it asks which of that
 function's class mates, file mates and same-named methods elsewhere the same patch also changes.
@@ -23,14 +24,13 @@ from src.modules.hypotheses import _words
 from src.modules.region_sites import MAX_PROMPT_CHARS, _view
 from src.modules.repo_profile import Query, _is_test, _loc
 
-VERIFIER_VERSION = 2
+VERIFIER_VERSION = 3
 MAX_SHOWN = 40  # v1: 15
 
 
 class Verdict(BaseModel):
     candidate: str = Field(description="Candidate alias, e.g. C3.")
     label: Literal["edited", "maybe", "not_edited"] = Field(description="Whether the patch that resolves the issue most likely changes this function.")
-    reason: str = Field(description="One sentence grounded in the shown code.")
 
 
 class Verification(BaseModel):

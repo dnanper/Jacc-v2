@@ -213,7 +213,8 @@ class SnapshotProviderTest(unittest.TestCase):
             seeds.write_text(json.dumps(SEEDS))
             state = {"artifacts": {"A2": str(seeds)}, "issue_model": PARSED.model_dump()}
             with patch.object(run_localize, "instrument_llm", return_value=(MagicMock(), None)), \
-                    patch.object(run_localize, "generate_hypotheses", side_effect=lambda *a, samples: {**HYPS, "samples": samples}) as gen:
-                for k in (2, 2, 5):
-                    run_localize.load_or_generate_hypotheses(run_dir, INSTANCE, MagicMock(), "m", state, None, samples=k)
-        self.assertEqual([c.kwargs["samples"] for c in gen.call_args_list], [2, 5])  # same count reuses, a new count regenerates
+                    patch.object(run_localize, "generate_hypotheses", side_effect=lambda *a, samples, lean: {**HYPS, "samples": samples, "lean": lean}) as gen:
+                for k, lean in ((2, False), (2, False), (5, False), (5, True), (5, True)):
+                    run_localize.load_or_generate_hypotheses(run_dir, INSTANCE, MagicMock(), "m", state, None, samples=k, lean=lean)
+        # same count and flag reuse; a new count or the lean flag regenerates
+        self.assertEqual([(c.kwargs["samples"], c.kwargs["lean"]) for c in gen.call_args_list], [(2, False), (5, False), (5, True)])

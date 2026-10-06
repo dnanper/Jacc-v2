@@ -39,13 +39,14 @@ SETS = ("SL", "REC", "PRE", "F1")
 def load_runs(runs: Path, a2_dir: Path | None, benchmark: str, data_dir: Path, verifier: str = "V_verify", keep: int | None = None,
               with_completion: bool = True) -> list[dict]:
     """`verifier`: artifact name prefix (V_verify = v1, V2_verify = v2, which also reads the A5b completion unless
-    `with_completion` is False); `keep`: rebuild A3 as if only that many samples ran."""
+    `with_completion` is False, A3V_verify = the `--mode v6` artifact, whose verifier output and graph candidates are
+    used); `keep`: rebuild A3 as if only that many samples ran."""
     spec = get_benchmark(benchmark, data_dir)
     gold, meta = load_ground_truth(spec, data_dir), {i.instance_id: i for i in load_instances(spec, data_dir)}
     out = []
     for d in sorted(p for p in runs.iterdir() if p.is_dir() and p.name in gold):
         a2s = sorted(d.glob("A2_seeds*.json")) or (sorted((a2_dir / d.name).glob("A2_seeds*.json")) if a2_dir else [])
-        a3s = sorted(d.glob("A3_*.json"))
+        a3s = sorted(d.glob("A3_hypotheses*.json") if verifier == "A3V_verify" else d.glob("A3_*.json"))
         funcs = gold_sets(gold[d.name], meta[d.name].repo)[0]
         a1 = next(iter(sorted(d.glob("issue_model*.json"))), None)
         a1 = json.loads(a1.read_text(encoding="utf-8")) if a1 else {}
@@ -54,6 +55,8 @@ def load_runs(runs: Path, a2_dir: Path | None, benchmark: str, data_dir: Path, v
         graph = json.loads(g.read_text(encoding="utf-8"))["candidates"] if g.exists() else None
         v = next(iter(sorted(d.glob(f"{verifier}*.json"))), None)
         checked = json.loads(v.read_text(encoding="utf-8")) if v else None
+        if checked and verifier == "A3V_verify":
+            checked, graph = checked["verifier"], checked["graph"]
         c = next(iter(sorted(d.glob("C2_complete*.json"))), None) if verifier == "V2_verify" and with_completion else None
         completion = json.loads(c.read_text(encoding="utf-8")) if c else None
         if not (a2s and a3s and funcs):
@@ -150,12 +153,12 @@ def main() -> None:
     ap.add_argument("--cv", action="store_true")
     ap.add_argument("--alpha", type=float, default=0.3)
     ap.add_argument("--features", choices=("v1", "v2", "v3", "v4", "v5", "v6"), default="v1")
-    ap.add_argument("--verifier", choices=("v1", "v2"), default="v1")
+    ap.add_argument("--verifier", choices=("v1", "v2", "a3v"), default="v1")
     ap.add_argument("--keep-samples", type=int, help="rebuild A3 as if only the first N samples ran (needs sample_ids)")
     ap.add_argument("--ranker", choices=("pointwise", "conditional"), default="pointwise")
     args = ap.parse_args()
     assert len(args.benchmark) == len(args.runs), "give one --benchmark per --runs"
-    prefix = {"v1": "V_verify", "v2": "V2_verify"}[args.verifier]
+    prefix = {"v1": "V_verify", "v2": "V2_verify", "a3v": "A3V_verify"}[args.verifier]
     runs = [r for b, d in zip(args.benchmark, args.runs) for r in load_runs(d, args.a2_dir, b, args.data_dir, prefix, args.keep_samples)]
     n_ids = len({r["id"] for r in runs})
     ceiling = mean(per_instance(runs, lambda r: len(r["gold"] & {x["loc"] for x in r["rows"]}) / len(r["gold"])).values())

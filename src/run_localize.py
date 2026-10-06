@@ -28,7 +28,7 @@ from src.modules.agents import AgentConfig, BaseCodingAgent, build_ckg_tools
 from src.modules.exploration import EXPLORATION_VERSION, _issue_terms, MAX_CALLS as EXPLORE_CALLS, MAX_READS as EXPLORE_READS, VARIANTS, ExplainCheck, NodeReview, explore
 from src.modules.edit_sites import EDIT_SITES_VERSION, EditSites, find_edit_sites
 from src.modules.region_sites import EDIT_REGIONS_VERSION, RegionSites, discover, find_region_sites, input_digest
-from src.modules.hypotheses import HYPOTHESES_VERSION, SAMPLES, HypothesisSet, _words, generate_hypotheses
+from src.modules.hypotheses import HYPOTHESES_VERSION, SAMPLES, HypothesisSet, LeanHypothesisSet, _words, generate_hypotheses
 from src.modules.issue_model import IssueModel, parse_issue
 from src.modules.benchmarks import (
     BenchmarkSpec,
@@ -229,7 +229,7 @@ def run_instance(
         else:
             steps = [
                 ("seeds", stage("seeds", "A2", load_or_find_seeds)),
-                ("hypotheses", stage("hypotheses", "A3", load_or_generate_hypotheses, samples=a3_samples)),
+                ("hypotheses", stage("hypotheses", "A3", load_or_generate_hypotheses, samples=a3_samples, lean=mode == "v6")),
                 *([("edit_sites", stage("edit_sites", "A3S", load_or_find_edit_sites))] if mode == "a3s" else []),
                 *([("region_sites", stage("region_sites", "A3R", load_or_find_region_sites))] if mode == "a3r" else []),
                 *([("verify", stage("verify", "A3V", load_or_verify))] if mode == "v6" else []),
@@ -322,17 +322,18 @@ def load_or_find_seeds(run_dir: Path, instance: LocalizationInstance, chat: Any,
     return path
 
 
-def load_or_generate_hypotheses(run_dir: Path, instance: LocalizationInstance, chat: Any, model: str, state: PipelineState, query: Any, *, force: bool = False, samples: int = SAMPLES) -> Path:
-    """Generate hypotheses once per instance and model; stale when the seeds were redone after them or the sample count differs."""
+def load_or_generate_hypotheses(run_dir: Path, instance: LocalizationInstance, chat: Any, model: str, state: PipelineState, query: Any, *, force: bool = False,
+                                samples: int = SAMPLES, lean: bool = False) -> Path:
+    """Generate hypotheses once per instance and model; stale when the seeds were redone after them or the sample count or lean flag differs."""
     path = run_dir / f"A3_hypotheses.{safe_name(model)}.json"
     seeds_path = Path(state["artifacts"]["A2"])
     fresh = path.exists() and path.stat().st_mtime >= seeds_path.stat().st_mtime
     cached = json.loads(path.read_text(encoding="utf-8")) if fresh else {}
-    if not force and cached.get("version") == HYPOTHESES_VERSION and cached.get("samples", SAMPLES) == samples:
+    if not force and cached.get("version") == HYPOTHESES_VERSION and cached.get("samples", SAMPLES) == samples and cached.get("lean", False) == lean:
         return path
-    structured, _ = instrument_llm(chat.with_structured_output(HypothesisSet, method="json_schema", strict=True), task_id=instance.instance_id, benchmark=instance.language, model=model)
+    structured, _ = instrument_llm(chat.with_structured_output(LeanHypothesisSet if lean else HypothesisSet, method="json_schema", strict=True), task_id=instance.instance_id, benchmark=instance.language, model=model)
     seeds = json.loads(seeds_path.read_text(encoding="utf-8"))
-    found = generate_hypotheses(IssueModel.model_validate(state["issue_model"]), seeds, query, structured, samples=samples)
+    found = generate_hypotheses(IssueModel.model_validate(state["issue_model"]), seeds, query, structured, samples=samples, lean=lean)
     write_json(path, {**found, "repo": instance.repo, "commit": instance.base_commit})
     return path
 
