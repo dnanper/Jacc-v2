@@ -83,6 +83,18 @@ class ExtractedAssignment:
 
 
 @dataclass
+class ExtractedException:
+    """One raise/throw, except/catch, or Java `throws` clause entry."""
+
+    file_path: str
+    source_id: str
+    kind: str  # "raise" | "catch" | "throws"
+    type_name: str  # last dotted segment; resolved by name like calls
+    line: int
+    message: str = ""  # leading string literal of the raise, for error-text matching
+
+
+@dataclass
 class ParseResult:
     """Aggregated results from parsing a batch of files."""
 
@@ -90,6 +102,7 @@ class ParseResult:
     calls: list[ExtractedCall] = field(default_factory=list)
     heritage: list[ExtractedHeritage] = field(default_factory=list)
     assignments: list[ExtractedAssignment] = field(default_factory=list)
+    exceptions: list[ExtractedException] = field(default_factory=list)
     type_envs: dict = field(default_factory=dict)
 
 
@@ -131,6 +144,7 @@ def _parse_single_file(file_info: dict) -> dict | None:
     calls = []
     heritage = []
     assignments = []
+    exceptions = []
 
     if is_mock:
         _extract_vb6_calls(calls, root, file_path, file_node_id)
@@ -141,6 +155,7 @@ def _parse_single_file(file_info: dict) -> dict | None:
         _extract_assignments(
             assignments, root, ts_lang, queries, file_path, file_node_id
         )
+        _extract_exceptions(exceptions, root, ts_lang, queries, file_path, file_node_id)
 
     type_env = None
     if not is_mock:
@@ -163,6 +178,7 @@ def _parse_single_file(file_info: dict) -> dict | None:
         "calls": calls,
         "heritage": heritage,
         "assignments": assignments,
+        "exceptions": exceptions,
         "type_env": type_env,
     }
 
@@ -240,10 +256,13 @@ def process_infile_information(
             parsed["lang"],
         )
 
+        _emit_module_docstring(graph, parsed)
+
         result.imports.extend(parsed["imports"])
         result.calls.extend(parsed["calls"])
         result.heritage.extend(parsed["heritage"])
         result.assignments.extend(parsed["assignments"])
+        result.exceptions.extend(parsed["exceptions"])
 
         if parsed["type_env"]:
             result.type_envs[file_path] = parsed["type_env"]
@@ -252,6 +271,47 @@ def process_infile_information(
         on_progress(total, total, "")
 
     return result
+
+
+def _emit_module_docstring(graph: KnowledgeGraph, parsed: dict) -> None:
+    """Python module docstring -> Section -DESCRIBES-> File (the file's own statement of purpose)."""
+    if parsed["lang"] != SupportedLanguages.PYTHON:
+        return
+    root = parsed["tree"].root_node
+    first = next((c for c in root.named_children if c.type != "comment"), None)
+    inner = first.named_children[0] if first is not None and first.type == "expression_statement" and first.named_children else None
+    if inner is None or inner.type != "string":
+        return
+    content = "".join(_node_text(c) for c in inner.named_children if c.type == "string_content").strip()
+    if len(content) < 20:
+        return
+    file_path = parsed["file_path"]
+    section_id = generate_id("Section", f"{file_path}:module:docstring")
+    graph.add_node(
+        GraphNode(
+            id=section_id,
+            label=NodeLabel.SECTION,
+            properties=NodeProperties(
+                name=f"{file_path} module docstring",
+                file_path=file_path,
+                start_line=inner.start_point[0] + 1,
+                end_line=inner.end_point[0] + 1,
+                content=content[:500],
+                description="docstring",
+                language=parsed["lang"].value,
+            ),
+        )
+    )
+    graph.add_relationship(
+        GraphRelationship(
+            id=generate_id("DESCRIBES", f"{section_id}->{parsed['file_node_id']}"),
+            source_id=section_id,
+            target_id=parsed["file_node_id"],
+            type=RelationshipType.DESCRIBES,
+            confidence=1.0,
+            reason="docstring-direct",
+        )
+    )
 
 
 def _node_text(node) -> str:
@@ -684,6 +744,60 @@ def _extract_assignments(
                 )
             )
             receiver_text = None
+
+
+_STRING_NODES = ("string", "string_literal")
+
+
+def _extract_exceptions(exc_list, root, ts_lang, queries, file_path, file_node_id):
+    """Extract raise/throw sites, except/catch clauses, and Java throws clauses."""
+    query_str = queries.get("exceptions")
+    if not query_str:
+        return
+
+    try:
+        captures = _run_query(ts_lang, query_str, root)
+    except Exception as exc:
+        logger.debug("Exception query failed for %s: %s", file_path, exc)
+        return
+
+    for node, capture_name in captures:
+        if capture_name != "exc.type":
+            continue
+        site = node.parent
+        while site is not None and site.type not in (
+            "raise_statement", "except_clause", "throw_statement", "catch_clause", "throws",
+        ):
+            site = site.parent
+        if site is None:
+            continue
+        kind = {"raise_statement": "raise", "throw_statement": "raise", "throws": "throws"}.get(site.type, "catch")
+        exc_list.append(
+            ExtractedException(
+                file_path=file_path,
+                source_id=_find_enclosing_function_id(node, file_path) or file_node_id,
+                kind=kind,
+                type_name=_node_text(node).split(".")[-1],
+                line=node.start_point[0] + 1,
+                message=_raise_message(node) if kind == "raise" else "",
+            )
+        )
+
+
+def _raise_message(type_node) -> str:
+    """First string literal among the constructor arguments, e.g. "bad %s" in raise E("bad %s" % x)."""
+    call = type_node.parent
+    args = call.child_by_field_name("arguments") if call is not None else None
+    if args is None:
+        return ""
+    stack = list(args.named_children)
+    while stack:
+        node = stack.pop(0)
+        if node.type in _STRING_NODES:
+            parts = [c for c in node.named_children if c.type in ("string_content", "string_fragment")]
+            return "".join(_node_text(c) for c in parts)[:160]
+        stack[:0] = node.named_children
+    return ""
 
 
 def _label_from_defn_capture(defn_node, lang) -> str | None:

@@ -289,6 +289,8 @@ class LadybugAdapter:
                     "reason": rel.reason or "",
                     "step": str(rel.step) if rel.step is not None else "",
                     "cyc": bool(rel.in_cycle) if rel.in_cycle is not None else False,
+                    "line": rel.line,
+                    "detail": rel.detail or "",
                 }
             )
 
@@ -298,7 +300,7 @@ class LadybugAdapter:
                 f"MATCH (s:{src_lbl} {{id: $s}}), (t:{tgt_lbl} {{id: $t}}) "
                 f"CREATE (s)-[:CodeRelation {{id: $id, type: $tp, "
                 f"confidence: $conf, reason: $reason, step: $step, "
-                f"inCycle: $cyc}}]->(t)"
+                f"inCycle: $cyc, line: $line, detail: $detail}}]->(t)"
             )
             try:
                 prepared = self._conn.prepare(cypher)

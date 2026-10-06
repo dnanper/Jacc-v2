@@ -62,6 +62,17 @@ PYTHON_ASSIGNMENTS = """
   right: (_)) @assignment
 """
 
+# Exception flow. @exc.type is the raised/caught class expression; a bare
+# `raise` / `throw e` re-raises a variable and is captured without a type.
+PYTHON_EXCEPTIONS = """
+(raise_statement (call function: [(identifier) (attribute)] @exc.type)) @exc.raise
+(raise_statement . [(identifier) (attribute)] @exc.type) @exc.raise
+(except_clause . [(identifier) (attribute)] @exc.type) @exc.catch
+(except_clause . (tuple [(identifier) (attribute)] @exc.type)) @exc.catch
+(except_clause . (as_pattern . [(identifier) (attribute)] @exc.type)) @exc.catch
+(except_clause . (as_pattern . (tuple [(identifier) (attribute)] @exc.type))) @exc.catch
+"""
+
 
 JAVASCRIPT_DEFINITIONS = """
 (class_declaration
@@ -201,6 +212,12 @@ JAVA_ASSIGNMENTS = """
     object: (_) @assignment.receiver
     field: (identifier) @assignment.property)
   right: (_)) @assignment
+"""
+
+JAVA_EXCEPTIONS = """
+(throw_statement (object_creation_expression type: [(type_identifier) (scoped_type_identifier)] @exc.type)) @exc.raise
+(catch_type [(type_identifier) (scoped_type_identifier)] @exc.type) @exc.catch
+(throws [(type_identifier) (scoped_type_identifier)] @exc.type) @exc.throws
 """
 
 JAVA_HERITAGE = """
@@ -979,6 +996,7 @@ _QUERIES: dict[SupportedLanguages, dict[str, str]] = {
         "calls": PYTHON_CALLS,
         "heritage": PYTHON_HERITAGE,
         "assignments": PYTHON_ASSIGNMENTS,
+        "exceptions": PYTHON_EXCEPTIONS,
     },
     SupportedLanguages.JAVASCRIPT: {
         "definitions": JAVASCRIPT_DEFINITIONS,
@@ -1000,6 +1018,7 @@ _QUERIES: dict[SupportedLanguages, dict[str, str]] = {
         "calls": JAVA_CALLS,
         "heritage": JAVA_HERITAGE,
         "assignments": JAVA_ASSIGNMENTS,
+        "exceptions": JAVA_EXCEPTIONS,
     },
     SupportedLanguages.GO: {
         "definitions": GO_DEFINITIONS,

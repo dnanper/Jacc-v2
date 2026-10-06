@@ -19,6 +19,7 @@ from .community_processor import run_community_detection_phase
 from .cross_file_propagation import run_cross_file_propagation_phase
 from .extraction.import_resolvers.utils import SuffixIndex
 from .extraction.language_config import load_import_configs
+from .exception_processor import process_exceptions
 from .heritage_processor import process_heritage
 from .import_processor import process_imports
 from .index_loader import create_lbug_indexes
@@ -136,6 +137,7 @@ def parse_infile(state: PipelineState) -> dict:
         "imports": parse_result.imports,
         "calls": parse_result.calls,
         "heritage": parse_result.heritage,
+        "exceptions": parse_result.exceptions,
         "type_envs": parse_result.type_envs,
         "progress": _progress(
             state,
@@ -225,19 +227,23 @@ def propagate_cross_file(state: PipelineState) -> dict:
 
 
 def resolve_heritage(state: PipelineState) -> dict:
-    """Phase 7: resolve EXTENDS/IMPLEMENTS relationships."""
+    """Phase 7: resolve EXTENDS/IMPLEMENTS, then RAISES/CATCHES/THROWS to the same classes."""
     check_cancelled(state)
     process_heritage(
         graph=state["knowledge_graph"],
         heritage_records=state.get("heritage", []),
         ctx=state["resolution_context"],
     )
+    exception_stats = process_exceptions(
+        state["knowledge_graph"], state.get("exceptions", []), state["resolution_context"]
+    )
     return {
+        "exception_stats": exception_stats,
         "progress": _progress(
             state,
             "resolve_heritage",
             7,
-            f"Resolved {len(state.get('heritage', []))} heritage records",
+            f"Resolved {len(state.get('heritage', []))} heritage records, exception sites {exception_stats}",
         ),
     }
 

@@ -11,6 +11,7 @@ from ..graph.core.knowledge_graph import KnowledgeGraph
 from .community_processor import CommunityMembership, CommunityNode
 from .infile_processor import (
     ExtractedCall,
+    ExtractedException,
     ExtractedHeritage,
     ExtractedImport,
     ParseResult,
@@ -69,6 +70,8 @@ class PipelineState(TypedDict, total=False):
     imports: list[ExtractedImport]
     calls: list[ExtractedCall]
     heritage: list[ExtractedHeritage]
+    exceptions: list[ExtractedException]
+    exception_stats: dict[str, int]
     type_envs: dict
 
     resolution_context: ResolutionContext

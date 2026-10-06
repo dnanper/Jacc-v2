@@ -26,6 +26,8 @@ class GraphRelationship:
     reason: str = ""
     step: int | None = None
     in_cycle: bool | None = None
+    line: int | None = None  # source line of the evidence (RAISES/CATCHES/THROWS site)
+    detail: str = ""  # site payload, e.g. the raise message literal
 
 
 @dataclass

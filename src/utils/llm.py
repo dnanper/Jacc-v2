@@ -10,11 +10,11 @@ from .llm_guard import guard
 warnings.filterwarnings("ignore", message="Pydantic serializer warnings", category=UserWarning)
 
 
-def build_llm(model: str) -> ChatOpenAI:
-    """Build the LangChain OpenAI chat model used by SWE-Bench runs."""
+def build_llm(model: str, callbacks: list | None = None) -> ChatOpenAI:
+    """Build the LangChain OpenAI chat model used by SWE-Bench runs. `callbacks` see every call (e.g. token usage)."""
 
     guard("chat")
-    kwargs: dict[str, Any] = {"model": model}
+    kwargs: dict[str, Any] = {"model": model, "callbacks": callbacks}
     if model.startswith("gpt-5"):
         # gpt-5 reasoning models reject function tools on /v1/chat/completions.
         kwargs["use_responses_api"] = True

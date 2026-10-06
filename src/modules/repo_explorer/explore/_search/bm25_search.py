@@ -9,6 +9,7 @@ and merges results by filePath, summing scores for the same file.
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import dataclass
 
 from .tokenizer import split_identifier
@@ -106,13 +107,14 @@ _COMPOUND_SPLITS: dict[str, list[str]] = {
 
 
 def _escape_fts_query(query: str) -> str:
-    """Escape a query string for safe use as a literal in FTS CALL statements.
+    """Reduce a query to word tokens for safe use as a literal in FTS CALL statements.
 
-    KuzuDB CALL procedures do not support parameter binding ($query),
-    so the query must be inlined as a string literal.  Single quotes
-    are doubled and backslashes are escaped.
+    KuzuDB CALL procedures do not support parameter binding ($query), so the query is
+    inlined. Only word characters survive: that removes quotes, and '*' after a digit
+    ('2**4') segfaults or hangs the FTS extension. The index tokenizer drops punctuation
+    anyway, so matching is unchanged.
     """
-    return query.replace("\\", "\\\\").replace("'", "''")
+    return " ".join(re.findall(r"\w+", query))
 
 
 def _preprocess_query(query: str) -> str:

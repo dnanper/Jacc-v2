@@ -105,7 +105,7 @@ _SECTION_COLS = (
     "description",
 )
 
-_REL_COLS = ("from", "to", "id", "type", "confidence", "reason", "step", "inCycle")
+_REL_COLS = ("from", "to", "id", "type", "confidence", "reason", "step", "inCycle", "line", "detail")
 
 _CODE_SYMBOL_LABELS = frozenset(
     {
@@ -356,6 +356,8 @@ def generate_csvs(
                 escape_csv_field(rel.reason),
                 escape_csv_field(rel.step),
                 escape_csv_field(rel.in_cycle),
+                escape_csv_field(rel.line),
+                escape_csv_field(rel.detail),
             ]
             fh.write(",".join(row_values) + "\n")
             rel_count += 1

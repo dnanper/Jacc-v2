@@ -28,6 +28,12 @@ from ..core.event_bus import EventBus
 
 logger = logging.getLogger(__name__)
 
+# Address space each Database reserves with mmap (Ladybug's default is 8 TB). The pool keeps every
+# Database open for the process's life, and a 48-bit CPU gives a process 128 TB, so the 16th graph
+# opened in one run failed ("Mmap for size 8796093022208 failed"). 128 GB is far above the largest
+# graph (~0.5 GB). ponytail: fixed cap; close idle databases instead if a graph ever nears it.
+MAX_DB_SIZE = 1 << 37
+
 
 class KuzuPool:
     """Singleton pool managing shared lb.Database instances."""
@@ -96,7 +102,7 @@ class KuzuPool:
                 os.rmdir(db_path)
 
             try:
-                db = lb.Database(db_path, read_only=read_only)
+                db = lb.Database(db_path, read_only=read_only, max_db_size=MAX_DB_SIZE)
             except (RuntimeError, OSError) as exc:
                 err_msg = str(exc).lower()
                 lock_keywords = ("lock", "locked", "busy", "permission")
@@ -107,7 +113,7 @@ class KuzuPool:
                         db_path,
                         exc,
                     )
-                    db = lb.Database(db_path, read_only=True)
+                    db = lb.Database(db_path, read_only=True, max_db_size=MAX_DB_SIZE)
                     self._read_only_paths.add(db_path)
                 else:
                     raise

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import asdict, dataclass
 from statistics import mean
 from typing import Any
@@ -79,6 +80,23 @@ def evaluate_localizations(
     return results
 
 
+def evaluate_repeated_localizations(predictions: dict[str, list[dict[str, Any]]],
+                                    ground_truth: dict[str, dict[str, Any]]) -> dict[str, dict[str, float]]:
+    """Average repetitions inside an instance, then instances. Missing/failed predictions are {},
+    not silently excluded; callers must distinguish still-pending runs before declaring results final."""
+    result = {}
+    for level in _LEVELS:
+        instances = []
+        for task, gold in ground_truth.items():
+            repeats = predictions.get(task) or [{}]
+            scores = [s for pred in repeats if (s := _score(pred, gold, level)) is not None]
+            if scores:
+                instances.append({m: mean(s[m] for s in scores) for m in scores[0]})
+        result[level] = {m: mean(s[m] for s in instances) if instances else 0.0
+                         for m in ("success_location", "recall", "precision", "f1")}
+    return result
+
+
 def _score(
     prediction: dict[str, Any], gold: dict[str, Any], level: str, *, repo: str | None = None
 ) -> dict[str, float] | None:
@@ -104,6 +122,8 @@ def _score(
 
 def _normalize(value: str) -> str:
     value = value.strip().replace("\\", "/")
+    # Two SWE-bench Lite gold entries write 'path.py:Name' instead of 'path.py::Name'.
+    value = re.sub(r"(\.\w+):(?!:)", r"\1::", value, count=1)
     return value.removeprefix("/testbed/")
 
 

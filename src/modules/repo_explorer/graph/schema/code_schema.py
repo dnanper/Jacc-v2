@@ -9,6 +9,7 @@ full-text-search index definitions, and helper utilities.
 from __future__ import annotations
 
 
+A0_STORAGE_CONTRACT_VERSION = 2  # docstring endpoint coverage and declaration-bound heritage sources
 EMBEDDING_DIMS: int = 768
 
 
@@ -177,6 +178,7 @@ _REL_FROM_TO_PAIRS: list[tuple[str, str]] = [
     ("Method", "Class"),
     ("Method", "Constructor"),
     ("Constructor", "Function"),
+    ("Constructor", "Class"),
     ("Constructor", "Method"),
     ("File", "Function"),
     ("File", "Method"),
@@ -192,6 +194,9 @@ _REL_FROM_TO_PAIRS: list[tuple[str, str]] = [
     ("Struct", "Interface"),
     ("Impl", "Trait"),
     ("Class", "Method"),
+    ("Class", "Constructor"),
+    ("Enum", "Constructor"),
+    ("Record", "Constructor"),
     ("Struct", "Method"),
     ("Interface", "Method"),
     ("Trait", "Method"),
@@ -241,6 +246,17 @@ _REL_FROM_TO_PAIRS: list[tuple[str, str]] = [
 ]
 
 
+# The definition extractor can attach a docstring Section to any code-symbol definition.
+# Keep the storage contract aligned with that rule, not with a list of observed benchmark failures.
+_REL_FROM_TO_PAIRS += [("Section", label) for label in sorted(_CODE_SYMBOL_TABLES | {"Method"})]
+# Heritage links any two declared types (TS interface->class, Java enum->interface, ...); Module->Class is
+# not a declaration source and stays excluded. Constructors chain (Java this(...)/super(...)).
+_TYPE_TABLES = ("Class", "Interface", "Struct", "Trait", "Record", "Enum")
+_REL_FROM_TO_PAIRS += [(a, b) for a in _TYPE_TABLES for b in _TYPE_TABLES]
+_REL_FROM_TO_PAIRS.append(("Constructor", "Constructor"))
+_REL_FROM_TO_PAIRS.append(("Constructor", "Process"))  # any callable can be a process step
+
+
 def _build_rel_schema_query() -> str:
     """Build the CREATE REL TABLE statement for CodeRelation.
 
@@ -265,7 +281,7 @@ def _build_rel_schema_query() -> str:
         f"CREATE REL TABLE CodeRelation ("
         f"{from_to_clause}, "
         f"id STRING, type STRING, confidence DOUBLE, reason STRING, step STRING, "
-        f"inCycle BOOLEAN"
+        f"inCycle BOOLEAN, line INT64, detail STRING"
         f")"
     )
 

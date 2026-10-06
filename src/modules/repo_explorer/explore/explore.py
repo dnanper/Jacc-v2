@@ -102,8 +102,10 @@ class ExploreMixin:
                         f"MATCH (n:{escaped})-[r:CodeRelation]->(c:Community) "
                         f"WHERE r.type = 'MEMBER_OF' AND c.heuristicLabel IN $labels "
                         f"RETURN c.heuristicLabel AS community, n.name AS name, "
-                        f"n.fanIn AS fanIn, n.entryPointScore AS eps "
-                        f"ORDER BY (COALESCE(n.fanIn, 0) * 0.6 + COALESCE(n.entryPointScore, 0) * 40) DESC",
+                        # entryPointScore is computed at ingestion but never persisted; querying it
+                        # raised a binder error that left every topMembers list empty.
+                        f"n.fanIn AS fanIn "
+                        f"ORDER BY COALESCE(n.fanIn, 0) DESC",
                         {"labels": labels},
                     )
                     for row in rows:

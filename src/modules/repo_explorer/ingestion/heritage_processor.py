@@ -14,6 +14,7 @@ C#/Java, protocol-first for Swift).
 
 from __future__ import annotations
 
+import logging
 import math
 import re
 
@@ -30,7 +31,9 @@ from ..parsing.ast_helpers import generate_id
 from .infile_processor import ExtractedHeritage
 from .support.resolution_context import TIER_CONFIDENCE, ResolutionContext
 
+logger = logging.getLogger(__name__)
 _INTERFACE_NAME_RE = re.compile(r"^I[A-Z]")
+_TYPE_LABELS = frozenset({"Class", "Interface", "Struct", "Trait", "Record", "Enum"})
 
 
 def _resolve_extends_type(
@@ -45,8 +48,9 @@ def _resolve_extends_type(
     ("IMPLEMENTS", "Interface").
     """
     resolved = ctx.resolve(parent_name, file_path)
-    if resolved and resolved.candidates:
-        is_interface = resolved.candidates[0].type == "Interface"
+    types = [c for c in resolved.candidates if c.type in _TYPE_LABELS] if resolved else []
+    if types:
+        is_interface = types[0].type == "Interface"
         if is_interface:
             return "IMPLEMENTS", "Interface"
         return "EXTENDS", "Class"
@@ -66,24 +70,44 @@ def _resolve_heritage_id(
     ctx: ResolutionContext,
     fallback_label: str,
     fallback_key: str | None = None,
+    types_only: bool = False,
 ) -> tuple[str, float]:
     """Resolve a symbol ID for heritage, with fallback to generated ID.
 
-    Returns (id, confidence).
+    Returns (id, confidence). With `types_only` (a base class/interface), a name that resolves only to
+    non-type symbols (a function call base, a module, an assignment) returns ("", 0.0): the edge is
+    dropped rather than linked to the wrong kind of node or to an invented stub.
     """
     resolved = ctx.resolve(name, file_path)
-    if resolved and resolved.candidates:
-        if resolved.tier == "global" and len(resolved.candidates) > 1:
+    candidates = list(resolved.candidates) if resolved else []
+    if types_only and candidates:
+        candidates = [c for c in candidates if c.type in _TYPE_LABELS]
+        if not candidates:
+            logger.debug("Heritage parent %s in %s resolves only to non-type symbols", name, file_path)
+            return "", 0.0
+    if candidates:
+        if resolved.tier == "global" and len(candidates) > 1:
             return (
                 generate_id(fallback_label, fallback_key or name),
                 TIER_CONFIDENCE["global"],
             )
-        return resolved.candidates[0].node_id, TIER_CONFIDENCE[resolved.tier]
+        return candidates[0].node_id, TIER_CONFIDENCE[resolved.tier]
 
     return (
         generate_id(fallback_label, fallback_key or name),
         TIER_CONFIDENCE["global"],
     )
+
+
+def _declared_source_id(graph: KnowledgeGraph, name: str, file_path: str) -> tuple[str, float]:
+    """A heritage source is the declaration in this file, not an import/assignment sharing its name.
+    Never create a placeholder child or select an ambiguous declaration."""
+    ids = [generate_id(label, f"{file_path}:{name}") for label in sorted(_TYPE_LABELS)]
+    present = [node_id for node_id in ids if graph.get_node(node_id) is not None]
+    if len(present) == 1:
+        return present[0], 1.0
+    logger.debug("Unresolved/ambiguous heritage source %s in %s", name, file_path)
+    return "", 0.0
 
 
 def _ensure_external_parent_node(
@@ -138,18 +162,13 @@ def process_heritage(
             rel_type, id_prefix = _resolve_extends_type(
                 h.parent_name, h.file_path, ctx, language
             )
-            child_id, child_conf = _resolve_heritage_id(
-                h.class_name,
-                h.file_path,
-                ctx,
-                "Class",
-                f"{h.file_path}:{h.class_name}",
-            )
+            child_id, child_conf = _declared_source_id(graph, h.class_name, h.file_path)
             parent_id, parent_conf = _resolve_heritage_id(
                 h.parent_name,
                 h.file_path,
                 ctx,
                 id_prefix,
+                types_only=True,
             )
 
             if parent_id:
@@ -174,18 +193,13 @@ def process_heritage(
                 )
 
         elif h.kind == "implements":
-            cls_id, cls_conf = _resolve_heritage_id(
-                h.class_name,
-                h.file_path,
-                ctx,
-                "Class",
-                f"{h.file_path}:{h.class_name}",
-            )
+            cls_id, cls_conf = _declared_source_id(graph, h.class_name, h.file_path)
             iface_id, iface_conf = _resolve_heritage_id(
                 h.parent_name,
                 h.file_path,
                 ctx,
                 "Interface",
+                types_only=True,
             )
 
             if iface_id:
