@@ -207,7 +207,7 @@ def process_infile_information(
         ParseResult with all extracted records.
     """
     import os
-    from concurrent.futures import ThreadPoolExecutor, as_completed
+    from concurrent.futures import ThreadPoolExecutor
 
     result = ParseResult()
     total = len(files)
@@ -225,14 +225,12 @@ def process_infile_information(
     else:
         if on_progress:
             on_progress(0, total, "parallel parsing...")
+        # map, not as_completed: merging in file order keeps the symbol table, hence call resolution,
+        # identical across builds of the same source.
         with ThreadPoolExecutor(max_workers=workers) as pool:
-            futures = {pool.submit(_parse_single_file, f): f for f in files}
-            done_count = 0
-            for future in as_completed(futures):
-                done_count += 1
+            for done_count, parsed in enumerate(pool.map(_parse_single_file, files), 1):
                 if on_progress and done_count % 50 == 0:
                     on_progress(done_count, total, f"parsed {done_count}/{total}")
-                parsed = future.result()
                 if parsed:
                     parsed_files.append(parsed)
 

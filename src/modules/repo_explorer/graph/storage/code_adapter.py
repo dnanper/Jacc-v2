@@ -6,6 +6,7 @@ stored centrally under data/repos/{repo-name}-{hash}/lbug.
 
 from __future__ import annotations
 
+import csv
 import logging
 import math
 import os
@@ -137,6 +138,24 @@ class LadybugAdapter:
             len(NODE_TABLES),
         )
 
+    def _copy_rels(self, src_lbl: str, tgt_lbl: str, rows: list[dict], csv_dir: str) -> bool:
+        """Bulk-load one label pair of CodeRelation; False (nothing loaded) when the COPY fails."""
+        path = os.path.join(csv_dir, f"rel_{src_lbl.strip('`')}_{tgt_lbl.strip('`')}.csv")
+        with open(path, "w", newline="", encoding="utf-8") as f:
+            w = csv.writer(f)
+            for r in rows:
+                w.writerow([r["s"], r["t"], r["id"], r["tp"], r["conf"], r["reason"], r["step"],
+                            "true" if r["cyc"] else "false", "" if r["line"] is None else r["line"], r["detail"]])
+        try:
+            self._conn.execute(
+                f"COPY CodeRelation FROM '{path.replace(chr(92), '/')}' (from='{src_lbl.strip('`')}', to='{tgt_lbl.strip('`')}', "
+                f"HEADER=false, ESCAPE='\"', DELIM=',', QUOTE='\"', auto_detect=false, PARALLEL=false)"
+            )
+            return True
+        except Exception as exc:
+            logger.debug("Rel COPY failed (%s->%s), falling back to row inserts: %s", src_lbl, tgt_lbl, exc)
+            return False
+
     def create_fts_indexes(self) -> None:
         """Create full-text search indexes defined in ``lbug_schema``."""
         if not self._conn:
@@ -256,9 +275,10 @@ class LadybugAdapter:
                 names,
             )
 
-        # KuzuDB multi-pair rel tables don't support COPY — use
-        # prepared statements grouped by (src_label, tgt_label) to avoid
-        # re-parsing Cypher for every relationship.
+        # One COPY per (src_label, tgt_label) pair of the multi-pair rel table (from/to options).
+        # COPY stores an empty reason/step/detail as NULL (row inserts stored ''); every reader treats both alike.
+        # A pair whose COPY fails (e.g. an endpoint missing from its node table) falls back to
+        # one prepared MATCH ... CREATE per relationship, which skips such rows as before.
         from collections import defaultdict
 
         rel_loaded = 0
@@ -294,8 +314,10 @@ class LadybugAdapter:
                 }
             )
 
-        # Prepare one statement per (src_label, tgt_label) pair and batch-execute.
         for (src_lbl, tgt_lbl), params_list in groups.items():
+            if self._copy_rels(src_lbl, tgt_lbl, params_list, csv_dir):
+                rel_loaded += len(params_list)
+                continue
             cypher = (
                 f"MATCH (s:{src_lbl} {{id: $s}}), (t:{tgt_lbl} {{id: $t}}) "
                 f"CREATE (s)-[:CodeRelation {{id: $id, type: $tp, "
