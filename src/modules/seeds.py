@@ -32,7 +32,7 @@ from src.modules.repo_explorer.explore._search.bm25_search import _escape_fts_qu
 from src.modules.repo_explorer.graph.schema.code_schema import FTS_INDEXES
 from src.modules.repo_profile import Query, _docs, _first_sentence, _is_test, _loc, _name_of, _out_of_scope, _path_of, render_repo_profile
 
-SEEDS_VERSION = 6
+SEEDS_VERSION = 7
 TOP_K, MAX_ROUNDS, MAX_CODE_QUERIES, MAX_NEW_QUERIES = 30, 3, 25, 8
 # RRF constant. The usual k=60 assumes a few long lists; A2 fuses ~50 lists of <=20, where k=60 flattens
 # rank so much that a node hit at rank 5 by three generic queries beats one each query ranks first.
@@ -236,6 +236,8 @@ def search(query: Query, text: str) -> list[str]:
         exact = query("MATCH (n) WHERE n.name IN $names RETURN n.id AS id, n.filePath AS path, n.fanIn AS fan_in", {"names": sorted(names)})
     except RuntimeError:  # the driver reads a list-looking string ('[2]') as a list literal; no name can match it
         exact = []
+    # v7: test and non-code rows are dropped before the MAX_EXACT and PER_TABLE caps, so they cannot use up the slots.
+    exact = [r for r in exact if r["id"].split(":", 1)[0] in _CODE_LABELS and not _is_test(r["path"] or "")]
     exact.sort(key=lambda r: (len(parts) > 1 and not ("." + r["id"].rsplit(":", 1)[-1]).endswith(tail), -(r["fan_in"] or 0)))
     owned = [r for r in exact if len(parts) > 1 and ("." + r["id"].rsplit(":", 1)[-1]).endswith(tail)]
     exact = owned or exact[:MAX_EXACT]  # a qualified match is specific; a bare name keeps only its best few
@@ -247,15 +249,14 @@ def search(query: Query, text: str) -> list[str]:
         try:
             rows = query(
                 f"CALL QUERY_FTS_INDEX('{table}', '{index}', '{fts}', conjunctive := false){describes} "
-                f"RETURN {target}.id AS id, {target}.filePath AS path, score ORDER BY score DESC LIMIT {PER_TABLE}",
+                f"RETURN {target}.id AS id, {target}.filePath AS path, score ORDER BY score DESC LIMIT {5 * PER_TABLE}",
                 None,
             )
         except Exception:  # tables empty for this language have no index
             continue
-        for row in rows:
-            if not _is_test(row["path"] or ""):
-                scored[row["id"]] = max(scored.get(row["id"], 0.0), row["score"])
-    ids = files + [r["id"] for r in exact if r["id"].split(":", 1)[0] in _CODE_LABELS and not _is_test(r["path"] or "")]
+        for row in [r for r in rows if not _is_test(r["path"] or "")][:PER_TABLE]:
+            scored[row["id"]] = max(scored.get(row["id"], 0.0), row["score"])
+    ids = files + [r["id"] for r in exact]
     ids += sorted(scored, key=lambda i: -scored[i])
     # Script dirs (examples/, benchmarks/, docs/) rank after library code instead of being dropped: 7 Loc-Bench
     # instances have all their gold there. Tests stay out (no gold on the three benchmarks is a test file).
