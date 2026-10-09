@@ -40,6 +40,14 @@ class ExportTest(unittest.TestCase):
         self.assertEqual(out["recall_answer"]["found_functions"], ["src/app/bp.py::Blueprint.__init__", "src/app/util.py::helper"])
         self.assertEqual(out["recall_answer"]["found_files"], ["src/app/bp.py", "src/app/state.py", "src/app/util.py"])
 
+    def test_recall_answer_keeps_every_node_over_the_threshold_and_at_least_one(self) -> None:
+        many = {"answer": [METHOD], "ranked": [{"node": METHOD, "p": 0.6}, {"node": FUNC, "p": 0.04},
+                                               {"node": "Function:src/app/a.py:x", "p": 0.033}, {"node": "Function:src/app/b.py:y", "p": 0.03}]}
+        self.assertEqual(export_ranked(many, query)["recall_answer"]["found_functions"],
+                         ["src/app/bp.py::Blueprint.__init__", "src/app/util.py::helper", "src/app/a.py::x"])  # 3 kept, 0.03 cut
+        low = {"answer": [FUNC], "ranked": [{"node": FUNC, "p": 0.01}, {"node": METHOD, "p": 0.005}]}
+        self.assertEqual(export_ranked(low, query)["recall_answer"]["found_functions"], ["src/app/util.py::helper"])
+
     def test_three_levels_with_class_from_the_graph(self) -> None:
         out = export(a4(METHOD, FUNC, CLASS), None, query)
         self.assertEqual(out["found_functions"], ["src/app/bp.py::Blueprint.__init__", "src/app/util.py::helper"])
