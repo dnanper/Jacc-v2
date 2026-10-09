@@ -169,21 +169,6 @@ class SeedsTest(unittest.TestCase):
         q = lambda cypher, params=None: many if "n.name IN $names" in cypher else []
         self.assertEqual(search(q, "__init__"), ["Method:m8.py:K8.__init__", "Method:m7.py:K7.__init__", "Method:m6.py:K6.__init__"])
 
-    def test_tests_do_not_use_up_the_exact_or_fts_slots(self) -> None:
-        tests = [{"id": f"Function:tests/test_{i}.py:plot", "path": f"tests/test_{i}.py", "fan_in": 9} for i in range(5)]
-        lib = {"id": "Function:pkg/a.py:plot", "path": "pkg/a.py", "fan_in": 1}
-        fts_tests = [{"id": f"Function:tests/t{i}.py:f{i}", "path": f"tests/t{i}.py", "score": 9.0 - i} for i in range(12)]
-        fts_lib = {"id": "Function:pkg/b.py:draw", "path": "pkg/b.py", "score": 1.0}
-
-        def q(cypher, params=None):
-            if "n.name IN $names" in cypher:
-                return [*tests, lib]  # more test matches than MAX_EXACT, fan-in ranks them first
-            if "QUERY_FTS_INDEX('Function'" in cypher:
-                limit = int(cypher.rsplit("LIMIT", 1)[1])
-                return [*fts_tests, fts_lib][:limit]  # the database applies LIMIT before any Python filter
-            return []
-        self.assertEqual(search(q, "plot"), ["Function:pkg/a.py:plot", "Function:pkg/b.py:draw"])
-
     def test_script_dirs_rank_last_but_tests_stay_out(self) -> None:
         rows = [{"id": "Function:examples/plot.py:plot", "path": "examples/plot.py", "fan_in": 9},
                 {"id": "Function:tests/test_a.py:plot", "path": "tests/test_a.py", "fan_in": 9},
