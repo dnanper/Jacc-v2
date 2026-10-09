@@ -37,6 +37,8 @@ class ExportTest(unittest.TestCase):
         self.assertEqual((out["source"], out["found_functions"], out["found_modules"], out["found_files"]),
                          ("A3V", ["src/app/bp.py::Blueprint.__init__"], ["src/app/bp.py::Blueprint"], ["src/app/bp.py"]))
         self.assertEqual(out["ranked_functions"], ["src/app/bp.py::Blueprint.__init__", "src/app/util.py::helper"])
+        self.assertEqual(out["recall_answer"]["found_functions"], ["src/app/bp.py::Blueprint.__init__", "src/app/util.py::helper"])
+        self.assertEqual(out["recall_answer"]["found_files"], ["src/app/bp.py", "src/app/state.py", "src/app/util.py"])
 
     def test_three_levels_with_class_from_the_graph(self) -> None:
         out = export(a4(METHOD, FUNC, CLASS), None, query)

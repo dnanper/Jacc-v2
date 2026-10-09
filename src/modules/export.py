@@ -24,8 +24,10 @@ from src.modules.exploration import fallback, finalize, sites
 from src.modules.localization import LocalizeResult
 from src.modules.repo_profile import Query, _loc
 
-EXPORT_VERSION = 4
+EXPORT_VERSION = 5
 _FUNCTION_KINDS = ("Function:", "Method:", "Constructor:")
+# Recall operating point of V6 (amendment A7): largest k whose train out-of-fold mean precision stays >= 30%.
+RECALL_K = 3
 
 
 def export(a4: dict[str, Any], a5: dict[str, Any] | None, query: Query, *, top_k: int | None = None) -> dict[str, Any]:
@@ -52,10 +54,13 @@ def export_a3(a3: dict[str, Any], query: Query, a3s: dict[str, Any] | None = Non
 
 def export_ranked(a3v: dict[str, Any], query: Query) -> dict[str, Any]:
     """V6 answer (design v3): the expected-F1 prefix of the calibrated ranking. `ranked_functions` keeps the whole
-    order, so rank-aware metrics (MAP@10, Acc@k) can be computed from the same artifact."""
+    order, so rank-aware metrics (MAP@10, Acc@k) can be computed from the same artifact. `recall_answer` is the
+    secondary, recall-oriented operating point (top RECALL_K nodes, amendment A7); the main answer is unchanged."""
     result = localize_nodes(a3v["answer"], query)
     ranked = [_loc(r["node"]) for r in a3v["ranked"] if r["node"].startswith(_FUNCTION_KINDS)]
-    return {"artifact": "A6", "version": EXPORT_VERSION, "source": "A3V", "candidates": a3v["answer"], **result.to_dict(), "ranked_functions": ranked}
+    recall = localize_nodes([r["node"] for r in a3v["ranked"][:RECALL_K]], query)
+    return {"artifact": "A6", "version": EXPORT_VERSION, "source": "A3V", "candidates": a3v["answer"], **result.to_dict(),
+            "ranked_functions": ranked, "recall_answer": recall.to_dict()}
 
 
 def localize_nodes(nodes: list[str], query: Query | None = None) -> LocalizeResult:
