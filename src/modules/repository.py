@@ -45,7 +45,11 @@ class GitSnapshotProvider:
         if not reused_snapshot:
             archive = snapshot.with_suffix(".tar")
             _run(["git", "-C", str(repository), "fetch", "--quiet", "--all", "--tags"])
-            _run(["git", "-C", str(repository), "cat-file", "-e", f"{instance.base_commit}^{{commit}}"])
+            try:
+                _run(["git", "-C", str(repository), "cat-file", "-e", f"{instance.base_commit}^{{commit}}"])
+            except subprocess.CalledProcessError:  # base commit on no branch any more (deleted/force-pushed): fetch it by SHA
+                _run(["git", "-C", str(repository), "fetch", "--quiet", "origin", instance.base_commit])
+                _run(["git", "-C", str(repository), "cat-file", "-e", f"{instance.base_commit}^{{commit}}"])
             snapshot_tmp = snapshot.with_name(snapshot.name + ".tmp")
             _remove_tree(snapshot_tmp)
             snapshot_tmp.mkdir(parents=True)
