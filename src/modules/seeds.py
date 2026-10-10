@@ -68,7 +68,7 @@ class Review(BaseModel):
     judgements: list[Judgement]
     new_queries: list[str] = Field(
         description=(
-            f"Up to {MAX_NEW_QUERIES} code terms seen in relevant or maybe candidates (callee, parameter, "
+            f"4 to {MAX_NEW_QUERIES} code terms seen in relevant or maybe candidates (callee, parameter, "
             "or class names) that could lead to more involved code and are not in the searched list."
         )
     )
@@ -163,9 +163,7 @@ def find_seeds(
                 break
             learned = _fresh(out.new_queries, list(lists))[:MAX_NEW_QUERIES]
             asked[f"round{round_no + 1}"] = learned
-            pending = submit(learned)
-            if not pending:
-                break
+            pending = submit(learned)  # no new query: the next round still reviews the next fused window
     final_scores = rrf_scores(lists.values())
     for node, seed in judged.items():
         seed["review_score"] = seed["score"]

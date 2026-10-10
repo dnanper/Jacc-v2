@@ -58,6 +58,18 @@ urgency, template checklists). Verbatim fields stay as written; everything else 
 </issue>"""
 
 _BACKTICK = re.compile(r"`([^`\n]{1,120})`")
+_FENCE = re.compile(r"```[^\n]*\n(.*?)```", re.S)
+_FRAME = re.compile(r'File "[^"]*?(\w+)\.\w+", line \d+, in (\w+)')
+_IDENT = re.compile(r"\b(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*\b|\b[a-z]+_[a-z_0-9]+\b|\b[A-Z][a-z0-9]+[A-Z]\w*\b")
+_NOISE = frozenset({"self", "cls", "None", "True", "False"})
+
+
+def raw_code_refs(text: str) -> list[str]:
+    """Code names written in the raw issue, without the model: traceback frames (module, function) and dotted,
+    snake_case or CamelCase identifiers inside fenced code. A small model drops many of these (exp/gpt-4o-mini)."""
+    frames = [name for pair in _FRAME.findall(text) for name in pair]
+    idents = [i for block in _FENCE.findall(text) for i in _IDENT.findall(block) if i not in _NOISE]
+    return list(dict.fromkeys(frames + idents))
 
 
 def parse_issue(problem_statement: str, llm: Runnable) -> IssueModel:
@@ -66,6 +78,7 @@ def parse_issue(problem_statement: str, llm: Runnable) -> IssueModel:
     # Drop invented refs, then add any inline-code span the LLM missed.
     refs = [ref for ref in model.explicit_code_refs if ref and ref in problem_statement]
     refs += [span.strip() for span in _BACKTICK.findall(problem_statement)]
+    refs += raw_code_refs(problem_statement)
     # Refs of 1-2 chars (x, y, f) substring-match anything and carry no search signal.
     model.explicit_code_refs = list(dict.fromkeys(ref for ref in refs if len(ref) > 2))
     return model

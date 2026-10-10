@@ -87,7 +87,7 @@ class Hypothesis(BaseModel):
 
 
 class HypothesisSet(BaseModel):
-    hypotheses: list[Hypothesis] = Field(description="2 to 7 hypotheses, the most likely edit sites first.")
+    hypotheses: list[Hypothesis] = Field(description="4 to 7 hypotheses, the most likely edit sites first.")
 
 
 PROMPT = """You localize an issue in a code graph: find the functions a fix must edit. Write competing \
@@ -106,6 +106,8 @@ lists each as a target in one hypothesis.
 - One seed may anchor several hypotheses and one hypothesis several seeds. If the defect sits \
 next to a seed (caller, callee, override, member), anchor that seed with the matching `via`.
 - Every hypothesis needs a `target` anchor, a `core` prediction, and `refute_if`, or it is discarded.
+- Write at least 4 hypotheses about different code. In each, list every function the fix plausibly edits as a \
+target, not only the most likely one.
 - Leave out seeds no hypothesis needs.
 
 <issue>

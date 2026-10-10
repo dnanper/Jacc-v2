@@ -322,6 +322,9 @@ def load_or_find_seeds(run_dir: Path, instance: LocalizationInstance, chat: Any,
     return path
 
 
+A3_TEMPERATURE = 0.7
+
+
 def load_or_generate_hypotheses(run_dir: Path, instance: LocalizationInstance, chat: Any, model: str, state: PipelineState, query: Any, *, force: bool = False, samples: int = SAMPLES) -> Path:
     """Generate hypotheses once per instance and model; stale when the seeds were redone after them or the sample count differs."""
     path = run_dir / f"A3_hypotheses.{safe_name(model)}.json"
@@ -330,7 +333,9 @@ def load_or_generate_hypotheses(run_dir: Path, instance: LocalizationInstance, c
     cached = json.loads(path.read_text(encoding="utf-8")) if fresh else {}
     if not force and cached.get("version") == HYPOTHESES_VERSION and cached.get("samples", SAMPLES) == samples:
         return path
-    structured, _ = instrument_llm(chat.with_structured_output(HypothesisSet, method="json_schema", strict=True), task_id=instance.instance_id, benchmark=instance.language, model=model)
+    # exp/gpt-4o-mini: a model built at temperature 0 repeats itself, so several A3 samples sample at A3_TEMPERATURE.
+    a3_chat = chat.model_copy(update={"temperature": A3_TEMPERATURE}) if samples > 1 and getattr(chat, "temperature", None) == 0.0 else chat
+    structured, _ = instrument_llm(a3_chat.with_structured_output(HypothesisSet, method="json_schema", strict=True), task_id=instance.instance_id, benchmark=instance.language, model=model)
     seeds = json.loads(seeds_path.read_text(encoding="utf-8"))
     found = generate_hypotheses(IssueModel.model_validate(state["issue_model"]), seeds, query, structured, samples=samples)
     write_json(path, {**found, "repo": instance.repo, "commit": instance.base_commit})

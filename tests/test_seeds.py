@@ -133,6 +133,12 @@ class SeedsTest(unittest.TestCase):
         self.assertNotIn("diophantine.py::diophantine", review.prompts[2].split("<candidates>")[1])
         self.assertEqual(out["calls"], 5)  # propose + (review + re-ask) x 2 rounds
 
+    def test_rounds_go_on_with_the_next_window_when_no_query_is_learned(self) -> None:
+        review = Reviewer(*[Review(judgements=[], new_queries=[]) for _ in range(6)])
+        out = find_seeds(issue(), None, fake_query, Stub(SeedQueries(queries=[])), review, top_k=1, rounds=3)
+        self.assertEqual(len(out["rounds"]), 3)  # v6 stopped after round 1 when the model learned nothing
+        self.assertEqual(len({n for r in out["rounds"] for n in r["reviewed"]}), 3)  # each round a new window
+
     def test_review_is_matched_by_alias_and_missing_labels_are_asked_once_more(self) -> None:
         # v3 matched the model's copy of each full id: 37% of seeds came back unmatched and stayed unlabelled.
         review = Reviewer(
