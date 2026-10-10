@@ -9,6 +9,7 @@ from __future__ import annotations
 import ast
 import hashlib
 import json
+import re
 from collections import defaultdict
 from itertools import zip_longest
 from pathlib import Path
@@ -306,6 +307,26 @@ def _candidates(regions: list[dict], hyps: list[dict], query: Query, terms: set[
                 for key in ("sources", "groups"):
                     chosen[n][key] = list(dict.fromkeys([*chosen[n][key], *item[key]]))
     return list(chosen.values()), drops
+
+
+MAX_FILE_MATES, MATE_FILES = 20, 15
+
+
+def file_mates(issue: IssueModel, seeds: dict[str, Any], query: Query, exclude: set[str], k: int = MAX_FILE_MATES) -> list[str]:
+    """exp/gpt-4o-mini (A16): functions of the files holding A2 seeds, without the model, ranked by issue words in the
+    name (x3) and the body; tests and nodes already listed are left out. 35 of 55 gold missing from gpt-4o-mini's candidates
+    sat in such files; the top 20 by this score held 12 of them (held-out 6, offline)."""
+    files = list(dict.fromkeys(s["id"].split(":")[1] for s in seeds.get("seeds", [])))[:MATE_FILES]
+    if not files:
+        return []
+    split = lambda t: {w.lower() for w in re.findall(r"[A-Za-z]{3,}", re.sub(r"([a-z])([A-Z])", r"\1 \2", t or ""))}
+    want = split(" ".join([issue.title, issue.summary, issue.observed, issue.expected, *issue.key_concepts, *issue.explicit_code_refs]))
+    rows = query("MATCH (n) WHERE n.filePath IN $f AND (label(n) = 'Function' OR label(n) = 'Method') RETURN n.id AS id, n.name AS name, n.content AS code",
+                 {"f": files})
+    order = {f: i for i, f in enumerate(files)}
+    rows = [r for r in rows if r["id"] not in exclude and not _is_test(r["id"].split(":")[1])]
+    rows.sort(key=lambda r: (-(3 * len(split(r["name"]) & want) + len(split(r["code"]) & want)), order[r["id"].split(":")[1]], r["id"]))
+    return [r["id"] for r in rows[:k]]
 
 
 def _calls(node, fetch, group):

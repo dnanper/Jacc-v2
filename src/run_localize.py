@@ -27,7 +27,7 @@ if str(MODULES) not in os.sys.path:
 from src.modules.agents import AgentConfig, BaseCodingAgent, build_ckg_tools
 from src.modules.exploration import EXPLORATION_VERSION, _issue_terms, MAX_CALLS as EXPLORE_CALLS, MAX_READS as EXPLORE_READS, VARIANTS, ExplainCheck, NodeReview, explore
 from src.modules.edit_sites import EDIT_SITES_VERSION, EditSites, find_edit_sites
-from src.modules.region_sites import EDIT_REGIONS_VERSION, RegionSites, discover, find_region_sites, input_digest
+from src.modules.region_sites import EDIT_REGIONS_VERSION, RegionSites, discover, file_mates, find_region_sites, input_digest
 from src.modules.hypotheses import HYPOTHESES_VERSION, SAMPLES, HypothesisSet, _words, generate_hypotheses
 from src.modules.issue_model import IssueModel, parse_issue
 from src.modules.benchmarks import (
@@ -386,8 +386,14 @@ def load_or_verify(run_dir: Path, instance: LocalizationInstance, chat: Any, mod
     trace = "\n".join([issue.stack_trace or "", *issue.error_messages])
     rows = candidates(hyps, seeds, issue=instance.problem_statement, trace=trace, graph=graph)
     structured, _ = instrument_llm(chat.with_structured_output(Verification, method="json_schema", strict=True), task_id=instance.instance_id, benchmark=instance.language, model=model)
-    checked = verify(clean_issue_text(instance.problem_statement), [r["node"] for r in rows], query, _issue_terms(issue) | _words(issue.summary),
-                     Path(state["snapshot"]["path"]), structured, seed=instance.instance_id)
+    # exp/gpt-4o-mini (A16): the verifier sees the 40 prior candidates plus up to 20 file mates of the A2 seeds; the
+    # mates join the candidate rows as graph nodes, so the calibrator scores them with the verifier's labels.
+    prior = [r["node"] for r in rows]
+    mates = file_mates(issue, seeds, query, set(prior))
+    graph = graph + [{"node": n, "sources": ["seed file mate"], "groups": []} for n in mates]
+    checked = verify(clean_issue_text(instance.problem_statement), prior[:40] + mates, query, _issue_terms(issue) | _words(issue.summary),
+                     Path(state["snapshot"]["path"]), structured, seed=instance.instance_id, max_shown=60)
+    checked["file_mates"] = mates
     ranked, k = decide(candidates(hyps, seeds, issue=instance.problem_statement, trace=trace, graph=graph, verifier=checked), calibrator)
     write_json(path, {"artifact": "A3V", "version": key[0], "calibrator": key[1], "input_hash": key[2], "verifier": checked, "graph": graph,
                       "ranked": [{"node": n, "p": round(q, 6)} for n, q in ranked], "answer": [n for n, _ in ranked[:k]],

@@ -194,3 +194,17 @@ class RegionSitesTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FileMatesTest(unittest.TestCase):
+    def test_file_mates_rank_by_issue_words_and_skip_listed_and_tests(self):
+        from src.modules.region_sites import file_mates
+        funcs = [{"id": "Function:pkg/doc.py:render_overloads", "name": "render_overloads", "code": "def render_overloads(): pass"},
+                 {"id": "Function:pkg/doc.py:helper", "name": "helper", "code": "def helper():\n    return overloads"},
+                 {"id": "Function:pkg/doc.py:unrelated", "name": "unrelated", "code": "def unrelated(): pass"},
+                 {"id": H1, "name": "render", "code": "def render(): overloads"},
+                 {"id": "Function:tests/test_doc.py:test_overloads", "name": "test_overloads", "code": "overloads"}]
+        q = lambda cypher, params=None: [r for r in funcs if r["id"].split(":")[1] in params["f"]]
+        seeds = {"seeds": [{"id": H1, "verdict": "relevant"}, {"id": "Function:tests/test_doc.py:test_overloads", "verdict": "maybe"}]}
+        out = file_mates(ISSUE, seeds, q, exclude={H1}, k=2)
+        self.assertEqual(out, ["Function:pkg/doc.py:render_overloads", "Function:pkg/doc.py:helper"])  # name x3 beats body; listed and tests left out
