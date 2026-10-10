@@ -43,7 +43,7 @@ from src.modules.ranking import candidates, decide, load_calibrator
 from src.modules.verifier import VERIFIER_VERSION, Verification, verify
 from src.modules.revise import REVISE_VERSION, Revision, revise
 from src.modules.repo_profile import load_or_build_repo_profile, write_json
-from src.modules.seeds import SEEDS_VERSION, Review, SeedQueries, find_seeds
+from src.modules.seeds import SEEDS_VERSION, LearnedQueries, Review, SeedQueries, find_seeds
 from src.modules.repo_explorer.explore import Backend
 from src.modules.repo_explorer.graph.storage.code_adapter import LadybugAdapter
 from src.modules.repo_explorer.ingestion.pipeline import run_ingestion_pipeline
@@ -309,7 +309,9 @@ def load_or_export(run_dir: Path, state: PipelineState, query: Any) -> Path:
 def load_or_find_seeds(run_dir: Path, instance: LocalizationInstance, chat: Any, model: str, state: PipelineState, query: Any, *, force: bool = False) -> Path:
     """Find seeds once per instance and model; a forced graph rebuild finds them again."""
     path = run_dir / f"A2_seeds.{safe_name(model)}.json"
-    if not force and path.exists() and json.loads(path.read_text(encoding="utf-8")).get("version") == SEEDS_VERSION:
+    query_model = os.getenv("JACC_QUERY_MODEL") or None  # exp/gpt-4o-mini (A17): stronger model for learned queries only
+    cached = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    if not force and cached.get("version") == SEEDS_VERSION and cached.get("query_model") == query_model:
         return path
     profile_path = state.get("artifacts", {}).get("A0.5")
     profile = json.loads(Path(profile_path).read_text(encoding="utf-8")) if profile_path else None
@@ -317,8 +319,10 @@ def load_or_find_seeds(run_dir: Path, instance: LocalizationInstance, chat: Any,
         instrument_llm(chat.with_structured_output(schema, method="json_schema", strict=True), task_id=instance.instance_id, benchmark=instance.language, model=model)[0]
         for schema in (SeedQueries, Review)
     ]
-    found = find_seeds(IssueModel.model_validate(state["issue_model"]), profile, query, *structured)
-    write_json(path, {**found, "repo": instance.repo, "commit": instance.base_commit})
+    learner = instrument_llm(build_llm(query_model, callbacks=chat.callbacks).with_structured_output(LearnedQueries, method="json_schema", strict=True),
+                             task_id=instance.instance_id, benchmark=instance.language, model=query_model)[0] if query_model else None
+    found = find_seeds(IssueModel.model_validate(state["issue_model"]), profile, query, *structured, learner=learner)
+    write_json(path, {**found, "query_model": query_model, "repo": instance.repo, "commit": instance.base_commit})
     return path
 
 

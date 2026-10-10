@@ -83,6 +83,33 @@ to every later step.
 
 {issue}"""
 
+class LearnedQueries(BaseModel):
+    queries: list[str] = Field(description=f"Up to {MAX_NEW_QUERIES} new searches of 1-3 words, not already searched.")
+
+
+# exp/gpt-4o-mini (A17): a stronger query model learns the next round's searches from a short prompt; the cheap model
+# keeps the labelling. Only relevant/maybe candidates of the round are shown, as signature and callees.
+LEARN_PROMPT = """Suggest new code searches for this issue. A keyword search over function and class names, code and \
+docstrings already ran; the candidates below were judged relevant or maybe. Propose searches (callee, parameter, \
+attribute or class names seen below, or terms the code likely uses) that would reach other code the fix involves.
+
+<issue>
+{issue}
+</issue>
+
+Searched: {searched}
+
+<candidates>
+{candidates}
+</candidates>"""
+
+
+def _short_issue(issue: IssueModel) -> str:
+    parts = [issue.title, issue.summary, f"Observed: {issue.observed}", f"Expected: {issue.expected}",
+             "Code refs: " + ", ".join(issue.explicit_code_refs[:20]), *issue.error_messages[:3]]
+    return "\n".join(p for p in parts if p and not p.endswith(": "))
+
+
 REVIEW_PROMPT = """Label every candidate against the issue. Candidates come from keyword search, so \
 many share only words with it. Keep recall high: say 'maybe' when unsure, 'irrelevant' only when \
 the node cannot be involved.
@@ -102,6 +129,7 @@ def find_seeds(
     query: Query,
     propose: Runnable,
     review: Runnable,
+    learner: Runnable | None = None,
     *,
     top_k: int = TOP_K,
     rounds: int = MAX_ROUNDS,
@@ -111,6 +139,7 @@ def find_seeds(
     lists: dict[str, list[str]] = {}  # query -> ranked node ids
     judged: dict[str, dict[str, Any]] = {}
     calls = 1  # the propose call
+    learn_calls = 0
     traces = []
     asked: dict[str, list[str]] = {"code": code_queries(issue)}
     with ThreadPoolExecutor(WORKERS) as pool:
@@ -161,7 +190,13 @@ def find_seeds(
                 }
             if round_no == rounds:
                 break
-            learned = _fresh(out.new_queries, list(lists))[:MAX_NEW_QUERIES]
+            learned_by = []
+            if learner is not None:
+                kept = [n for n in ranked if judged[n]["verdict"] in ("relevant", "maybe")]
+                cands = _render_candidates(query, {f"R{i + 1}": n for i, n in enumerate(kept)}, {}).replace(" | hit by: ", "")
+                learned_by = learner.invoke(LEARN_PROMPT.format(issue=_short_issue(issue), searched=", ".join(lists), candidates=cands)).queries
+                learn_calls += 1
+            learned = _fresh([*learned_by, *out.new_queries], list(lists))[:MAX_NEW_QUERIES]
             asked[f"round{round_no + 1}"] = learned
             pending = submit(learned)  # no new query: the next round still reviews the next fused window
     final_scores = rrf_scores(lists.values())
@@ -181,6 +216,7 @@ def find_seeds(
         "version": SEEDS_VERSION,
         "queries": asked,
         "calls": calls,
+        "learn_calls": learn_calls,
         "rounds": traces,
         "seeds": seeds,
         "rejected": [s["id"] for s in judged.values() if s["verdict"] == "irrelevant"],

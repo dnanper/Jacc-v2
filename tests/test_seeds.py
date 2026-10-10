@@ -139,6 +139,19 @@ class SeedsTest(unittest.TestCase):
         self.assertEqual(len(out["rounds"]), 3)  # v6 stopped after round 1 when the model learned nothing
         self.assertEqual(len({n for r in out["rounds"] for n in r["reviewed"]}), 3)  # each round a new window
 
+    def test_learner_model_writes_the_next_rounds_queries_from_a_short_prompt(self) -> None:
+        from src.modules.seeds import LearnedQueries
+        review = Reviewer(Review(judgements=[j(DIOP, "relevant", "permute=True"), j(PERM, "irrelevant")], new_queries=["Permute"]),
+                          *[Review(judgements=[], new_queries=[]) for _ in range(3)])
+        learner = Stub(LearnedQueries(queries=["permute_signs", "Permute"]))
+        out = find_seeds(issue(), None, fake_query, Stub(SeedQueries(queries=[])), review, learner, rounds=2)
+        self.assertEqual(out["queries"]["round2"], ["permute_signs"])  # learner first; searched or duplicate terms dropped
+        self.assertEqual(out["learn_calls"], 1)                        # once, between the two rounds
+        prompt = learner.prompts[0]
+        self.assertIn("diophantine", prompt)                           # the relevant candidate is shown
+        self.assertNotIn("perm.py::Permutation", prompt.split("<candidates>")[1])  # the irrelevant one is not
+        self.assertNotIn('"issue_type"', prompt)                       # short issue, not the issue-model JSON
+
     def test_review_is_matched_by_alias_and_missing_labels_are_asked_once_more(self) -> None:
         # v3 matched the model's copy of each full id: 37% of seeds came back unmatched and stayed unlabelled.
         review = Reviewer(
