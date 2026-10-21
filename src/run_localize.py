@@ -38,7 +38,7 @@ from src.modules.benchmarks import (
     load_instances,
 )
 from src.modules.localization import LocalizeResult, parse_localize_result
-from src.modules.export import export, export_a3, export_ranked
+from src.modules.export import RECALL_P, export, export_a3, export_ranked
 from src.modules.ranking import candidates, decide, load_calibrator
 from src.modules.verifier import VERIFIER_VERSION, Verification, verify
 from src.modules.revise import REVISE_VERSION, Revision, revise
@@ -386,6 +386,7 @@ def load_or_verify(run_dir: Path, instance: LocalizationInstance, chat: Any, mod
     ranked, k = decide(candidates(hyps, seeds, issue=instance.problem_statement, trace=trace, graph=graph, verifier=checked), calibrator)
     write_json(path, {"artifact": "A3V", "version": key[0], "calibrator": key[1], "input_hash": key[2], "verifier": checked, "graph": graph,
                       "ranked": [{"node": n, "p": round(q, 6)} for n, q in ranked], "answer": [n for n, _ in ranked[:k]],
+                      "recall_p": calibrator.get("recall_p", RECALL_P),
                       "repo": instance.repo, "commit": key[3]})
     return path
 

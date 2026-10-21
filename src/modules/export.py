@@ -59,7 +59,8 @@ def export_ranked(a3v: dict[str, Any], query: Query) -> dict[str, Any]:
     recall-oriented operating point (p >= RECALL_P, amendment A10); the expected-F1 answer is unchanged."""
     result = localize_nodes(a3v["answer"], query)
     ranked = [_loc(r["node"]) for r in a3v["ranked"] if r["node"].startswith(_FUNCTION_KINDS)]
-    recall = localize_nodes([r["node"] for r in a3v["ranked"] if r["p"] >= RECALL_P] or [r["node"] for r in a3v["ranked"][:1]], query)
+    t = a3v.get("recall_p", RECALL_P)  # the calibrator's own threshold when it has one (swetrain: 0.045)
+    recall = localize_nodes([r["node"] for r in a3v["ranked"] if r["p"] >= t] or [r["node"] for r in a3v["ranked"][:1]], query)
     return {"artifact": "A6", "version": EXPORT_VERSION, "source": "A3V", "candidates": a3v["answer"], **result.to_dict(),
             "ranked_functions": ranked, "recall_answer": recall.to_dict()}
 

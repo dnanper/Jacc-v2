@@ -47,6 +47,8 @@ class ExportTest(unittest.TestCase):
                          ["src/app/bp.py::Blueprint.__init__", "src/app/util.py::helper", "src/app/a.py::x"])  # 3 kept, 0.03 cut
         low = {"answer": [FUNC], "ranked": [{"node": FUNC, "p": 0.01}, {"node": METHOD, "p": 0.005}]}
         self.assertEqual(export_ranked(low, query)["recall_answer"]["found_functions"], ["src/app/util.py::helper"])
+        swetrain = {**many, "recall_p": 0.045}  # an A3V written under calibrator_swetrain carries its own threshold
+        self.assertEqual(export_ranked(swetrain, query)["recall_answer"]["found_functions"], ["src/app/bp.py::Blueprint.__init__"])
 
     def test_three_levels_with_class_from_the_graph(self) -> None:
         out = export(a4(METHOD, FUNC, CLASS), None, query)

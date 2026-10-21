@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import re
 from collections import Counter
 from pathlib import Path
@@ -277,7 +278,9 @@ def ece(p: np.ndarray, y: np.ndarray, bins: int = 10) -> float:
     return float(sum(abs(p[idx == b].mean() - y[idx == b].mean()) * (idx == b).mean() for b in range(bins) if (idx == b).any()))
 
 
-def load_calibrator(path: Path = CALIBRATOR) -> dict[str, Any]:
+def load_calibrator(path: Path | None = None) -> dict[str, Any]:
+    """`JACC_CALIBRATOR` overrides the default file, e.g. src/modules/data/calibrator_swetrain.json (final tables)."""
+    path = path or Path(os.environ.get("JACC_CALIBRATOR") or CALIBRATOR)
     return json.loads(path.read_text(encoding="utf-8"))
 
 
