@@ -21,6 +21,8 @@ See research/codekg-survey/HYPOTHESES_A3.vn.md.
 from __future__ import annotations
 
 import json
+import os
+import random
 import re
 from collections import defaultdict
 from itertools import zip_longest
@@ -133,23 +135,37 @@ def generate_hypotheses(issue: IssueModel, seeds: dict[str, Any], query: Query, 
     often misses the hypothesis that matters. Duplicates (same targets + mechanism) merge in
     `_check`. Sampling only diversifies on a model that samples (temperature > 0).
     """
+    # Experiment knobs (exp/4omini-a3x, DEEP_DIVE.md): unset, the prompt is exactly the frozen one.
+    cap = int(os.environ.get("JACC_A3_FILE_FUNCS") or MAX_FILE_FUNCS)
+    shuffle = os.environ.get("JACC_A3_SHUFFLE") == "1"
     pool = [s["id"] for s in seeds["seeds"]][:MAX_SEEDS]
-    alias = {f"S{i + 1}": node for i, node in enumerate(pool)}
     by_id = {s["id"]: s for s in seeds["seeds"]}
     terms = _terms(issue, seeds)
-    seed_text = _render_seeds(query, alias, by_id, terms)
-    funcs = _file_functions(query, [n for n in pool if by_id[n]["verdict"] == "relevant"], set(pool), terms)
-    for node, _ in funcs:  # same alias space, so the checks and resolve_aliases need nothing new
-        alias[f"S{len(alias) + 1}"] = node
-    back = {node: name for name, node in alias.items()}
-    prompt = PROMPT.format(
-        issue=_render_issue(issue),
-        seeds=seed_text,
-        file_funcs="\n".join(f"{back[node]} {text}" for node, text in funcs) or "(none)",
-        edges=_render_edges(query, alias) or "(none)",
-        links=("\n<repo_facts>\n" + "\n".join(seeds["profile_links"]) + "\n</repo_facts>") if seeds.get("profile_links") else "",
-    )
-    sets = [out.hypotheses for out in llm.batch([prompt] * samples)]
+    funcs = _file_functions(query, [n for n in pool if by_id[n]["verdict"] == "relevant"], set(pool), terms, cap)
+
+    def build(order: list[str]) -> tuple[str, dict[str, str]]:
+        """The prompt for one seed order; aliases S1..Sn follow that order, file functions come after the seeds."""
+        alias = {f"S{i + 1}": node for i, node in enumerate([*order, *(node for node, _ in funcs)])}
+        back = {node: name for name, node in alias.items()}
+        prompt = PROMPT.format(
+            issue=_render_issue(issue),
+            seeds=_render_seeds(query, {back[n]: n for n in order}, by_id, terms),
+            file_funcs="\n".join(f"{back[node]} {text}" for node, text in funcs) or "(none)",
+            edges=_render_edges(query, alias) or "(none)",
+            links=("\n<repo_facts>\n" + "\n".join(seeds["profile_links"]) + "\n</repo_facts>") if seeds.get("profile_links") else "",
+        )
+        return prompt, alias
+
+    prompt, alias = build(pool)  # the canonical alias space: checks and resolve_aliases use it
+    if shuffle:  # sample 0 keeps the A2 order; the others see the seeds reordered, against position bias
+        key = issue.title + issue.summary
+        orders = [pool, *(random.Random(f"{key}:{k}").sample(pool, len(pool)) for k in range(1, samples))]
+        built = [build(o) for o in orders]
+        sets = [out.hypotheses for out in llm.batch([b[0] for b in built])]
+        canon = {node: name for name, node in alias.items()}
+        sets = [[_realias(h, {name: canon[node] for name, node in a.items()}) for h in s] for s, (_, a) in zip(sets, built)]
+    else:
+        sets = [out.hypotheses for out in llm.batch([prompt] * samples)]
     # Interleave the samples so each one's top-ranked hypotheses come first; list order is the ranking.
     tagged = [[(k, h) for h in s] for k, s in enumerate(sets)]
     pooled = [x for rank in zip_longest(*tagged) for x in rank if x is not None]
@@ -176,7 +192,23 @@ def generate_hypotheses(issue: IssueModel, seeds: dict[str, Any], query: Query, 
         "prompt_chars": len(prompt),
         "samples": samples,
         "sampled": sum(len(x) for x in sets),
+        **({"file_funcs_cap": cap} if cap != MAX_FILE_FUNCS else {}), **({"shuffled": True} if shuffle else {}),
     }
+
+
+def _realias(h: Hypothesis, to: dict[str, str]) -> Hypothesis:
+    """One shuffled sample's aliases mapped onto the canonical ones, in seed fields and free text alike;
+    an alias it invented stays as is, so _check drops it as for any sample."""
+    d = h.model_dump()
+    swap = lambda text: re.sub(r"\b[A-Z]\d+\b", lambda m: to.get(m.group(0), m.group(0)), text)
+    d["claim"], d["refute_if"] = swap(d["claim"]), swap(d["refute_if"])
+    for field in ("anchors", "basis", "predictions"):
+        for x in d[field]:
+            x["seed"] = to.get(x["seed"], x["seed"])
+            for k in ("fact", "text"):
+                if k in x:
+                    x[k] = swap(x[k])
+    return Hypothesis.model_validate(d)
 
 
 def resolve_aliases(h: dict, alias: dict[str, str]) -> None:
@@ -303,7 +335,7 @@ def _matching_lines(code: str, start: int, terms: set[str], first: bool = False)
     return sorted((n, t) for _, n, t in sorted(out, key=lambda r: -r[0])[:MAX_LINES]) or body[: MAX_LINES * first]
 
 
-def _file_functions(query: Query, relevant: list[str], seen: set[str], terms: set[str]) -> list[tuple[str, str]]:
+def _file_functions(query: Query, relevant: list[str], seen: set[str], terms: set[str], cap: int = MAX_FILE_FUNCS) -> list[tuple[str, str]]:
     """(node, 'path::name(params)') for the functions of files holding a relevant seed, not already seeds.
 
     A file with more than MAX_FILE_FUNCS functions keeps the names sharing the most words with the
@@ -319,7 +351,7 @@ def _file_functions(query: Query, relevant: list[str], seen: set[str], terms: se
     out = []
     for path in files:
         mine = [r for r in rows if r["path"] == path and r["id"] not in seen]
-        mine = sorted(mine, key=lambda r: (-len(_words(_loc(r["id"]).split("::")[-1]) & want), r["start"] or 0))[:MAX_FILE_FUNCS]
+        mine = sorted(mine, key=lambda r: (-len(_words(_loc(r["id"]).split("::")[-1]) & want), r["start"] or 0))[:cap]
         for r in sorted(mine, key=lambda r: r["start"] or 0):
             sig = " ".join((r["sig"] or "").split())
             out.append((r["id"], f"{_loc(r['id'])}{sig[sig.find('('):][:100] if '(' in sig else ''}"))

@@ -196,6 +196,37 @@ class HypothesesTest(unittest.TestCase):
         out = generate_hypotheses(ISSUE, SEEDS, fake_query, Stub(HypothesisSet(hypotheses=[h])), samples=1)
         self.assertEqual(out["hypotheses"][0]["explains"], ["observed"])
 
+    def test_shuffled_samples_map_back_to_one_alias_space(self) -> None:
+        class Reader:
+            """Targets MERGE in every sample, under whatever alias that sample's prompt gives it."""
+            def __init__(self): self.prompts = []
+            def batch(self, prompts):
+                self.prompts = prompts
+                out = []
+                for p in prompts:
+                    a = next(l.split()[0] for l in p.splitlines() if "merge_solution [maybe]" in l)
+                    d = next(l.split()[0] for l in p.splitlines() if "diophantine [relevant]" in l)
+                    out.append(HypothesisSet(hypotheses=[hyp(target=a, entry=d, seed=d)]))
+                return out
+        llm = Reader()
+        with patch.dict("os.environ", {"JACC_A3_SHUFFLE": "1"}):
+            out = generate_hypotheses(ISSUE, SEEDS, fake_query, llm, samples=3)
+        self.assertGreater(len(set(llm.prompts)), 1)  # reordered (3 seeds: a shuffle may repeat an order)
+        self.assertIn("S1 pkg/diophantine.py::diophantine [relevant]", llm.prompts[0])  # sample 0 keeps A2 order
+        self.assertEqual(len(out["hypotheses"]), 1)  # same target + mechanism: merged across samples
+        h = out["hypotheses"][0]
+        self.assertEqual([a["node"] for a in h["anchors"] if a["role"] == "target"], [MERGE])
+        self.assertEqual(sorted(h["sample_ids"]), [0, 1, 2])
+        self.assertTrue(out["shuffled"])
+
+    def test_file_function_cap(self) -> None:
+        llm = Stub(HypothesisSet(hypotheses=[hyp()]))
+        with patch.dict("os.environ", {"JACC_A3_FILE_FUNCS": "1"}):
+            out = generate_hypotheses(ISSUE, SEEDS, fake_query, llm, samples=1)
+        listed = llm.prompt.split("<functions_in_seed_files>")[1].split("</functions_in_seed_files>")[0].strip().splitlines()
+        self.assertEqual(len(listed), 1)
+        self.assertEqual(out["file_funcs_cap"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()
