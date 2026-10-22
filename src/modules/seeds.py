@@ -83,6 +83,20 @@ to every later step.
 
 {issue}"""
 
+class QueryPlan(BaseModel):
+    analysis: str = Field(description="Two to four sentences, written before new_queries: which part of the issue's code path the relevant candidates do not cover yet, and which names shown in the candidates lead there.")
+    new_queries: list[str] = Field(description=f"Exactly {MAX_NEW_QUERIES} identifiers copied from the candidates.")
+
+
+# Query planner (JACC_A2_PLAN=1; DEEP_DIVE.md prompt replay, variant V4): after each review, a separate call picks the
+# next round's queries from the candidates the reviewer kept, reasoning first, with two worked examples. On
+# gpt-4o-mini's round 1 it reached as much new gold as luna under the review prompt (7 vs 0 for the review's own queries).
+PLAN_RULES = 'Then propose the next searches in new_queries:\n- Exactly 8 queries. Each is an identifier copied verbatim from the candidates above: a function, method, class, callee, or parameter name. Never a phrase of English words.\n- Choose names that lead to code the issue involves but no candidate shows yet: callees of relevant candidates, the class that owns a relevant method, a sibling or override of a relevant function.\n- Never repeat a name from "Already searched".'
+
+PLAN_EXAMPLES = '\nTwo worked examples from other repositories (candidates shortened to their names):\n<example 1>\nIssue: diffsettings raises misleading exception message if using settings.configure(). Calling diffsettings after configuring Django with settings.configure(...) can fail because diffsettings unconditionally calls settings._setup(). The resulting ImproperlyConfigured message misleadingly instructs the caller to configure settings even though settings.configure() was already used.\nRelevant candidates: django/conf/__init__.py::LazySettings; django/conf/__init__.py::LazySettings._setup; django/conf/__init__.py::LazySettings.configured; django/conf/__init__.py::LazySettings.configure; django/core/exceptions.py::ImproperlyConfigured; django/conf/__init__.py::UserSettingsHolder; django/conf/__init__.py::UserSettingsHolder.__init__; File:django/core/management/commands/diffsettings.py; File:docs/topics/settings.txt; File:docs/ref/settings.txt\nnew_queries: ["Command.handle", "settings._wrapped", "UserSettingsHolder", "default_settings", "settings_available", "get_commands", "find_commands"]\n</example 1>\n<example 2>\nIssue: Dabase creation backend should use base_manager to serialize database. Database serialization uses the model\'s default manager instead of its base manager. When a custom default manager filters records, serialize_db_to_string omits records needed to serialize the database and causes TransactionTestCase tests with serialized rollback to fail.\nRelevant candidates: django/db/backends/base/creation.py::BaseDatabaseCreation; File:django/db/models/manager.py; django/db/models/options.py::Options.base_manager; django/db/backends/base/creation.py::BaseDatabaseCreation.serialize_db_to_string; django/db/backends/base/creation.py::BaseDatabaseCreation.deserialize_db_from_string; django/db/backends/postgresql/creation.py::DatabaseCreation; File:django/db/migrations/migration.py; django/core/management/commands/loaddata.py::Command.load_label; django/db/migrations/operations/special.py::RunPython; django/core/management/__init__.py::call_command\nnew_queries: ["get_objects", "serializers.serialize", "Options.base_manager", "_base_manager", "connection.creation", "ManagerDescriptor", "default_manager_name"]\n</example 2>\n'  # luna on swe_train django__django-10316 / -13665; no eval data
+
+PLAN_PROMPT = 'You map a bug report onto a code graph. Only names, code, and docstrings are searchable by keyword. These candidates, found by the searches so far, were judged relevant or maybe to the issue.\n\n{issue}\n\nAlready searched: {searched}\n{examples}\n<candidates>\n{candidates}\n</candidates>\n\n{rules}'
+
 REVIEW_PROMPT = """Label every candidate against the issue. Candidates come from keyword search, so \
 many share only words with it. Keep recall high: say 'maybe' when unsure, 'irrelevant' only when \
 the node cannot be involved.
@@ -105,8 +119,10 @@ def find_seeds(
     *,
     top_k: int = TOP_K,
     rounds: int = MAX_ROUNDS,
+    plan: Runnable | None = None,
 ) -> dict[str, Any]:
-    """`propose`/`review` are `chat.with_structured_output(SeedQueries|Review, strict=True)`."""
+    """`propose`/`review` are `chat.with_structured_output(SeedQueries|Review, strict=True)`; `plan`, when given,
+    is the same for QueryPlan and replaces the review's own new_queries."""
     issue_text = render_issue_model(issue)
     lists: dict[str, list[str]] = {}  # query -> ranked node ids
     judged: dict[str, dict[str, Any]] = {}
@@ -135,9 +151,8 @@ def find_seeds(
             if not ranked:
                 break
             alias = {f"C{i + 1}": node for i, node in enumerate(ranked)}
-            out = review.invoke(
-                REVIEW_PROMPT.format(issue=issue_text, searched=", ".join(lists), candidates=_render_candidates(query, alias, lists))
-            )
+            block = _render_candidates(query, alias, lists)
+            out = review.invoke(REVIEW_PROMPT.format(issue=issue_text, searched=", ".join(lists), candidates=block))
             calls += 1
             verdicts = {alias[j.id.strip()]: j for j in out.judgements if j.id.strip() in alias}
             # v3 asked for full ids and matched them exactly: 37% of seeds came back unmatched and stayed
@@ -161,7 +176,15 @@ def find_seeds(
                 }
             if round_no == rounds:
                 break
-            learned = _fresh(out.new_queries, list(lists))[:MAX_NEW_QUERIES]
+            proposed = out.new_queries
+            if plan is not None:  # labels as kept above: a node skipped twice counts as maybe
+                kept = [l for l in block.split("\n") if l.startswith("- C") and judged[alias[l.split()[1]]]["verdict"] != "irrelevant"]
+                planned = plan.invoke(PLAN_PROMPT.format(issue=issue_text, searched=", ".join(lists), examples=PLAN_EXAMPLES,
+                                                         candidates="\n".join(kept), rules=PLAN_RULES))
+                calls += 1
+                proposed = planned.new_queries
+                traces[-1]["plan"] = planned.analysis
+            learned = _fresh(proposed, list(lists))[:MAX_NEW_QUERIES]
             asked[f"round{round_no + 1}"] = learned
             pending = submit(learned)
             if not pending:
@@ -181,6 +204,7 @@ def find_seeds(
     return {
         "artifact": "A2",
         "version": SEEDS_VERSION,
+        **({"planner": True} if plan is not None else {}),
         "queries": asked,
         "calls": calls,
         "rounds": traces,

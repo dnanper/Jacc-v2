@@ -13,7 +13,7 @@ for path in (ROOT, ROOT / "src" / "modules"):
 from src.modules.issue_model import IssueModel, Scenario
 from src.modules.repo_profile import _loc
 from src.modules.repo_explorer.explore._search.bm25_search import _escape_fts_query
-from src.modules.seeds import Judgement, Review, SeedQueries, code_queries, find_seeds, render_seeds, rrf, search
+from src.modules.seeds import Judgement, QueryPlan, Review, SeedQueries, code_queries, find_seeds, render_seeds, rrf, search
 
 DIOP = "Function:pkg/solvers/diophantine.py:diophantine"
 SIGNS = "Function:pkg/utils/iterables.py:permute_signs"
@@ -132,6 +132,25 @@ class SeedsTest(unittest.TestCase):
         # round 2 only shows nodes not judged in round 1
         self.assertNotIn("diophantine.py::diophantine", review.prompts[2].split("<candidates>")[1])
         self.assertEqual(out["calls"], 5)  # propose + (review + re-ask) x 2 rounds
+
+    def test_planner_replaces_the_review_queries_and_sees_only_kept_candidates(self) -> None:
+        propose = Stub(SeedQueries(queries=["sign combination"]))
+        review = Reviewer(
+            Review(judgements=[j(DIOP, "relevant", "permute=True"), j(PERM, "irrelevant")], new_queries=["Permutation"]),
+            Review(judgements=[], new_queries=[]),
+            Review(judgements=[], new_queries=[]),
+            Review(judgements=[], new_queries=[]),
+        )
+        plan = Stub(QueryPlan(analysis="the sign step is unseen", new_queries=["permute_signs", "diophantine", "a phrase"]))
+        out = find_seeds(issue(), None, fake_query, propose, review, rounds=2, plan=plan)
+        self.assertEqual(out["queries"]["round2"], ["permute_signs", "a phrase"])  # planner's, minus already searched
+        shown = plan.prompts[0].split("<candidates>")[1]
+        self.assertIn("diophantine.py::diophantine", shown)
+        self.assertNotIn("perm.py::Permutation", shown)  # labelled irrelevant
+        self.assertIn("<example 1>", plan.prompts[0])
+        self.assertEqual(out["rounds"][0]["plan"], "the sign step is unseen")
+        self.assertTrue(out["planner"])
+        self.assertEqual(out["calls"], 6)  # propose + 2 x (review + re-ask) + 1 plan (none after the last round)
 
     def test_review_is_matched_by_alias_and_missing_labels_are_asked_once_more(self) -> None:
         # v3 matched the model's copy of each full id: 37% of seeds came back unmatched and stayed unlabelled.
