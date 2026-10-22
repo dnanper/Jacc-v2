@@ -92,6 +92,19 @@ class HypothesisSet(BaseModel):
     hypotheses: list[Hypothesis] = Field(description="2 to 7 hypotheses, the most likely edit sites first.")
 
 
+class HypothesisSetCoT(BaseModel):
+    """JACC_A3_PROMPT=c4: the same hypotheses, after a free-text trace of the scenario (reasoning first)."""
+    analysis: str = Field(description="Written before the hypotheses: trace the issue's scenario through the code shown, one step per line ('step -> alias that performs it'), then name the aliases where the wrong or missing behaviour is produced. Consider seeds and functions_in_seed_files alike.")
+    hypotheses: list[Hypothesis] = Field(description="2 to 7 hypotheses, the most likely edit sites first.")
+
+
+# Prompt variant C4 (JACC_A3_PROMPT=c4; DEEP_DIVE.md A3 prompt replay): rules against position bias and for file
+# functions, the analysis field above, and two worked examples from luna's swe_train runs. On gpt-4o-mini's held-out-6
+# A3 inputs it targeted 26 gold functions vs 19 for the frozen prompt, at the same output size.
+C4_RULES = 'Before you write the hypotheses:\n- Read every seed and every function in <functions_in_seed_files>. Their order is not a ranking: the edit site is as likely to be listed last as first.\n- The function a fix edits is often not a seed but a sibling in <functions_in_seed_files>; name it as a target directly by its alias.\n- Write at least 4 hypotheses about different functions, and list every function the fix changes as a target.'
+
+C4_EXAMPLES = "\nTwo worked examples from other repositories (luna's first hypothesis, shortened):\n<example 1>\nIssue: Deprecation message crashes when using a query expression in Model.ordering.. In Django 2.2, the deprecation warning for Meta.ordering being ignored from Django 3.1 onwards crashes when Meta.ordering contains a query expression. The warning construction assumes every item in _meta_ordering is a string, but query expressions produce OrderBy objects.\nHypothesis: Change SQLCompiler.as_sql() to format each Meta.ordering item with repr() when constructing the deprecation warning, avoiding the TypeError while using the expression's Python representation.\nTargets: django/db/models/sql/compiler.py::SQLCompiler.as_sql (the first is listed in <functions_in_seed_files>, not a seed)\n</example 1>\n<example 2>\nIssue: Aggregating when grouping on an ExpressionWrapper omits the expression from the group by. When a Django query groups by an `ExpressionWrapper` containing a `Q` expression, the generated PostgreSQL SQL omits the wrapped `IS NULL` expression from the `GROUP BY` clause. The query selects the expression as `bob_id__is_null` but groups only by the underlying `bob_id` column.\nHypothesis: ExpressionWrapper.get_group_by_cols() must return the wrapper expression itself for a non-aggregate Q-derived condition, because delegating to the wrapped WhereNode reduces the selected IS NULL expression to its bob_id column.\nTargets: django/db/models/expressions.py::ExpressionWrapper.get_group_by_cols (the first is seed S14 of 40)\n</example 2>"  # luna on swe_train django__django-11377 / -13689; no eval data
+
 PROMPT = """You localize an issue in a code graph: find the functions a fix must edit. Write competing \
 hypotheses, each naming the edit sites as `target` anchors on the nodes below: the seeds a search \
 found, and the other functions of the files those seeds are in.
@@ -157,6 +170,9 @@ def generate_hypotheses(issue: IssueModel, seeds: dict[str, Any], query: Query, 
         return prompt, alias
 
     prompt, alias = build(pool)  # the canonical alias space: checks and resolve_aliases use it
+    c4 = os.environ.get("JACC_A3_PROMPT") == "c4"
+    if c4:  # the C4 replay prompt exactly: frozen prompt, examples, rules
+        prompt = prompt + "\n" + C4_EXAMPLES + "\n\n" + C4_RULES
     if shuffle:  # sample 0 keeps the A2 order; the others see the seeds reordered, against position bias
         key = issue.title + issue.summary
         orders = [pool, *(random.Random(f"{key}:{k}").sample(pool, len(pool)) for k in range(1, samples))]
@@ -165,7 +181,9 @@ def generate_hypotheses(issue: IssueModel, seeds: dict[str, Any], query: Query, 
         canon = {node: name for name, node in alias.items()}
         sets = [[_realias(h, {name: canon[node] for name, node in a.items()}) for h in s] for s, (_, a) in zip(sets, built)]
     else:
-        sets = [out.hypotheses for out in llm.batch([prompt] * samples)]
+        outs = llm.batch([prompt] * samples)
+        sets = [out.hypotheses for out in outs]
+        analyses = [getattr(out, "analysis", None) for out in outs]
     # Interleave the samples so each one's top-ranked hypotheses come first; list order is the ranking.
     tagged = [[(k, h) for h in s] for k, s in enumerate(sets)]
     pooled = [x for rank in zip_longest(*tagged) for x in rank if x is not None]
@@ -193,6 +211,7 @@ def generate_hypotheses(issue: IssueModel, seeds: dict[str, Any], query: Query, 
         "samples": samples,
         "sampled": sum(len(x) for x in sets),
         **({"file_funcs_cap": cap} if cap != MAX_FILE_FUNCS else {}), **({"shuffled": True} if shuffle else {}),
+        **({"prompt": "c4", "analysis": [a for a in analyses if a]} if c4 and not shuffle else {}),
     }
 
 

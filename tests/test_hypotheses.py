@@ -10,7 +10,7 @@ for path in (ROOT, ROOT / "src" / "modules"):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
-from src.modules.hypotheses import PROMPT, Anchor, _render_issue, Basis, Hypothesis, HypothesisSet, Prediction, generate_hypotheses
+from src.modules.hypotheses import C4_RULES, HypothesisSetCoT, PROMPT, Anchor, _render_issue, Basis, Hypothesis, HypothesisSet, Prediction, generate_hypotheses
 from src.modules.issue_model import IssueModel, Scenario
 
 DIOP = "Function:pkg/diophantine.py:diophantine"
@@ -218,6 +218,18 @@ class HypothesesTest(unittest.TestCase):
         self.assertEqual([a["node"] for a in h["anchors"] if a["role"] == "target"], [MERGE])
         self.assertEqual(sorted(h["sample_ids"]), [0, 1, 2])
         self.assertTrue(out["shuffled"])
+
+    def test_c4_prompt_adds_examples_rules_and_keeps_the_analysis(self) -> None:
+        out_set = HypothesisSetCoT(analysis="step -> S1", hypotheses=[hyp()])
+        llm = Stub(out_set)
+        with patch.dict("os.environ", {"JACC_A3_PROMPT": "c4"}):
+            out = generate_hypotheses(ISSUE, SEEDS, fake_query, llm, samples=1)
+        self.assertIn("<example 1>", llm.prompt)
+        self.assertTrue(llm.prompt.endswith(C4_RULES))
+        self.assertEqual(out["analysis"], ["step -> S1"])
+        self.assertEqual(out["prompt"], "c4")
+        self.assertEqual(out["prompt_chars"], len(llm.prompt))
+        self.assertEqual(len(out["hypotheses"]), 1)
 
     def test_file_function_cap(self) -> None:
         llm = Stub(HypothesisSet(hypotheses=[hyp()]))
