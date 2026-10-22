@@ -152,6 +152,13 @@ class SeedsTest(unittest.TestCase):
         self.assertTrue(out["planner"])
         self.assertEqual(out["calls"], 6)  # propose + 2 x (review + re-ask) + 1 plan (none after the last round)
 
+    def test_planner_drops_names_copied_from_its_examples(self) -> None:
+        propose = Stub(SeedQueries(queries=["sign combination"]))
+        review = Reviewer(Review(judgements=[j(DIOP, "relevant")], new_queries=[]), *[Review(judgements=[], new_queries=[])] * 3)
+        plan = Stub(QueryPlan(analysis="", new_queries=["BaseDatabaseCreation.serialize_db_to_string", "permute_signs"]))
+        out = find_seeds(issue(), None, fake_query, propose, review, rounds=2, plan=plan)
+        self.assertEqual(out["queries"]["round2"], ["permute_signs"])
+
     def test_review_is_matched_by_alias_and_missing_labels_are_asked_once_more(self) -> None:
         # v3 matched the model's copy of each full id: 37% of seeds came back unmatched and stayed unlabelled.
         review = Reviewer(

@@ -182,7 +182,8 @@ def find_seeds(
                 planned = plan.invoke(PLAN_PROMPT.format(issue=issue_text, searched=", ".join(lists), examples=PLAN_EXAMPLES,
                                                          candidates="\n".join(kept), rules=PLAN_RULES))
                 calls += 1
-                proposed = planned.new_queries
+                # A name copied from the worked examples (other repositories) is dropped unless the candidates show it too.
+                proposed = [x for x in planned.new_queries if x.strip() not in _EXAMPLE_NAMES or x.strip().split(".")[-1] in block]
                 traces[-1]["plan"] = planned.analysis
             learned = _fresh(proposed, list(lists))[:MAX_NEW_QUERIES]
             asked[f"round{round_no + 1}"] = learned
@@ -218,6 +219,7 @@ def find_seeds(
 # --- queries ------------------------------------------------------------------------
 
 _IDENT = re.compile(r"[A-Za-z_][\w.]*\w")
+_EXAMPLE_NAMES = frozenset(_IDENT.findall(PLAN_EXAMPLES))
 _FRAME = re.compile(r'File "[^"]*?(\w+)\.\w+", line \d+, in (\w+)|at ([\w$.]+)\(')
 _NOISE = frozenset(keyword.kwlist) | frozenset(dir(builtins)) | {"self", "cls", "Out", "In"}
 
