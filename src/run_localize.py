@@ -26,6 +26,7 @@ if str(MODULES) not in os.sys.path:
 
 from src.modules.agents import AgentConfig, BaseCodingAgent, build_ckg_tools
 from src.modules.exploration import EXPLORATION_VERSION, _issue_terms, MAX_CALLS as EXPLORE_CALLS, MAX_READS as EXPLORE_READS, VARIANTS, ExplainCheck, NodeReview, explore
+from src.modules.embed import Embedder, add_dense, issue_queries, node_texts
 from src.modules.edit_sites import EDIT_SITES_VERSION, EditSites, find_edit_sites
 from src.modules.region_sites import EDIT_REGIONS_VERSION, RegionSites, discover, find_region_sites, input_digest
 from src.modules.hypotheses import HYPOTHESES_VERSION, SAMPLES, HypothesisSet, HypothesisSetCoT, _words, generate_hypotheses
@@ -387,8 +388,15 @@ def load_or_verify(run_dir: Path, instance: LocalizationInstance, chat: Any, mod
     structured, _ = instrument_llm(chat.with_structured_output(Verification, method="json_schema", strict=True), task_id=instance.instance_id, benchmark=instance.language, model=model)
     checked = verify(clean_issue_text(instance.problem_statement), [r["node"] for r in rows], query, _issue_terms(issue) | _words(issue.summary),
                      Path(state["snapshot"]["path"]), structured, seed=instance.instance_id)
-    ranked, k = decide(candidates(hyps, seeds, issue=instance.problem_statement, trace=trace, graph=graph, verifier=checked), calibrator)
+    rows = candidates(hyps, seeds, issue=instance.problem_statement, trace=trace, graph=graph, verifier=checked)
+    embedded = None
+    if "dense_sim" in calibrator["features"]:  # e.g. calibrator_mini_dense.json; docs/compare-4omini-luna/EMBEDDING_DESIGN.md
+        e = Embedder()  # embeds only these candidates; guard() runs before any API call
+        add_dense(rows, issue_queries(clean_issue_text(instance.problem_statement), issue), node_texts(query, [r["node"] for r in rows]), e)
+        embedded = {"model": e.model, "calls": e.calls, "tokens": e.tokens}
+    ranked, k = decide(rows, calibrator)
     write_json(path, {"artifact": "A3V", "version": key[0], "calibrator": key[1], "input_hash": key[2], "verifier": checked, "graph": graph,
+                      "embed": embedded,
                       "ranked": [{"node": n, "p": round(q, 6)} for n, q in ranked], "answer": [n for n, _ in ranked[:k]],
                       "recall_p": calibrator.get("recall_p", RECALL_P),
                       "repo": instance.repo, "commit": key[3]})
