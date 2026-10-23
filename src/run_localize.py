@@ -197,10 +197,12 @@ def run_instance(
             observer.step(f"[issue] A1 IssueModel ready: {path}", style="green")
             return {"issue_model": parsed.model_dump(), "artifacts": {"A1": str(path)}}
 
-        def stage(name: str, tag: str, loader: Callable[..., Path], **kw: Any) -> Callable[[PipelineState], PipelineState]:
+        def stage(name: str, tag: str, loader: Callable[..., Path], *, step_model: str | None = None, **kw: Any) -> Callable[[PipelineState], PipelineState]:
+            """`step_model`: this step alone calls another model (its artifact is named after that model)."""
+            step_chat = build_llm(step_model, callbacks=[usage]) if step_model and step_model != model else chat
             def node(state: PipelineState) -> PipelineState:
                 observer.step(f"[{name}] building {tag}", style="cyan")
-                path = loader(run_dir, instance, chat, model, state, live["backend"]._query, force=force, **kw)
+                path = loader(run_dir, instance, step_chat, step_model or model, state, live["backend"]._query, force=force, **kw)
                 observer.step(f"[{name}] {tag} ready: {path}", style="green")
                 return {"artifacts": {tag: str(path)}}
             return node
@@ -230,7 +232,8 @@ def run_instance(
         else:
             steps = [
                 ("seeds", stage("seeds", "A2", load_or_find_seeds)),
-                ("hypotheses", stage("hypotheses", "A3", load_or_generate_hypotheses, samples=a3_samples)),
+                # JACC_A3_MODEL: experiment, A3 on another model than the rest (e.g. gpt-4o-mini pipeline, luna A3)
+                ("hypotheses", stage("hypotheses", "A3", load_or_generate_hypotheses, step_model=os.environ.get("JACC_A3_MODEL") or None, samples=a3_samples)),
                 *([("edit_sites", stage("edit_sites", "A3S", load_or_find_edit_sites))] if mode == "a3s" else []),
                 *([("region_sites", stage("region_sites", "A3R", load_or_find_region_sites))] if mode == "a3r" else []),
                 *([("verify", stage("verify", "A3V", load_or_verify))] if mode == "v6" else []),

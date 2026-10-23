@@ -101,6 +101,19 @@ class RunLocalizeTest(unittest.TestCase):
         self.assertIsNone(export_a3.call_args.args[2])
         self.assertEqual(set(result["artifacts"]), {"A0", "A0.5", "A1", "A2", "A3", "A6"})
 
+    def test_a3_model_override_moves_only_the_a3_step(self) -> None:
+        chats = {}
+        build = MagicMock(side_effect=lambda m, callbacks=None: chats.setdefault(m, MagicMock(name=m)))
+        with tempfile.TemporaryDirectory() as workspace, patch.dict("os.environ", {"JACC_A3_MODEL": "luna-x"}):
+            result = self._run(Path(workspace), mode="a3", export_a3=MagicMock(return_value=EXPORT), build_llm=build)
+        self.assertEqual(set(chats), {"gpt-5-mini", "luna-x"})
+        self.assertIn("luna-x", Path(result["artifacts"]["A3"]).name)
+        self.assertIn("gpt-5-mini", Path(result["artifacts"]["A2"]).name)
+        schemas = lambda m: {c.args[0] for c in chats[m].with_structured_output.call_args_list}
+        self.assertEqual(schemas("luna-x"), {run_localize.HypothesisSet})  # only A3 runs on the override
+        self.assertNotIn(run_localize.HypothesisSet, schemas("gpt-5-mini"))
+        self.assertIn(run_localize.SeedQueries, schemas("gpt-5-mini"))  # A2 stays on --model
+
     def test_mode_a3s_adds_one_edit_sites_step_and_exports_with_it(self) -> None:
         export_a3 = MagicMock(return_value=EXPORT)
         with tempfile.TemporaryDirectory() as workspace:
