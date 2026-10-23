@@ -264,3 +264,51 @@ Không lỗi nào ảnh hưởng số liệu đã báo: không lần chạy nào
   - `embed_eval.py` dùng một `add_dense` cũ (theo `_loc`, phá hòa khác). Chỉ ảnh hưởng dòng "E4 calibrator" của giai đoạn 1; giai đoạn 2 dùng bản đúng.
   - Số "answer (mini dense cal.)" trên swe_train trong `a2_window_dense.txt` là trong mẫu, vì calibrator fit trên swe_train.
   - Ngưỡng 3 000 node của vùng explore phụ thuộc thứ tự graph trả về, nên số E2 không hoàn toàn tái lập được.
+
+## Verifier mini: context (2026-10-23)
+
+### Đo hiện trạng (`.tmp/audit_v6/verifier_context_audit.py` → `verifier_context_audit.txt`)
+
+Offline. Prompt dựng lại khớp độ dài prompt đã lưu ở 150/150 instance.
+
+| | swe_train | held-out 6 |
+|---|---|---|
+| tỉ lệ gold trong 40 node verifier xem | 2.8% | 3.0% |
+| mini gán `edited` (tỉ lệ trên số node xem) | 13.7% | 10.7% |
+| recall gold, mini | 77.0% | 63.3% |
+| precision, mini | 15.9% | 17.8% |
+| nếu gán ngẫu nhiên cùng tỉ lệ: recall / precision | 13.7% / 2.8% | 10.7% / 3.0% |
+| lift so với ngẫu nhiên | 5.6× | 5.9× |
+| AUC gold so với phần còn lại trong 40 node: nhãn mini | 0.837 | 0.847 |
+| AUC gold so với phần còn lại trong 40 node: cosine embedding | 0.810 | **0.896** |
+
+**Mini không đoán mò:** nó tốt hơn ngẫu nhiên khoảng 6 lần. Điểm yếu là gán `edited` quá tay: 9–12% số node không phải gold bị gán `edited`, nên precision chỉ khoảng 17%.
+
+**Verifier chỉ thấy một phần nhỏ của hàm:**
+- `region_sites._view` hiện dòng `def` cùng tối đa 6 dòng chứa từ khóa của issue (±1 dòng), hoặc 6 dòng đầu nếu không dòng nào khớp.
+- Trung vị: hiện 6–7 dòng trên tổng 15–18 dòng; chỉ khoảng 22% số candidate được hiện toàn bộ thân hàm.
+- **Dòng mà fix sửa không nằm trong phần hiện ở 36–38% số gold** (theo `fix_patch`).
+- Với những gold đó, recall của mini trên swe_train giảm từ 84% xuống 67%; luna trên held-out 6 giảm từ 63% xuống 48%.
+
+**Thiên lệch theo vị trí** (held-out 6): recall là 85% / 77% ở vị trí 1–20, nhưng 47% / 53% ở vị trí 21–40. Không rõ trên swe_train.
+
+**Ngân sách nếu đổi cách hiện:**
+- Hiện thân hàm tới 60 dòng: dòng sửa lộ ra ở 104/112 (swe_train) và 53/59 (held-out 6) gold.
+- Trong 40 node, lấy top 20 theo embedding giữ được 95/113 và 56/60 gold.
+
+### Thiết kế (chốt trước khi chạy; `.tmp/audit_v6/verifier_view_replay.py`, `verifier_view_score.py`, `.tmp/run_verifier_view.sh`)
+
+Giữ nguyên: lần chạy mini đã lưu, 40 candidate, prompt `verifier.PROMPT`, mini, temperature 0, mỗi biến thể 1 lời gọi. Chỉ thay phần được hiện:
+- **V1 full:** dòng `def` + 60 dòng code đầu tiên (bỏ docstring và dòng trống, cùng cách tách docstring như view hiện tại) + các dòng mà view hiện tại vẫn hiện.
+- **V2 d20:** chỉ 20 node có cosine Qmax cao nhất trong 40, view như V1, thứ tự xáo theo id instance.
+- **V3 dord:** 40 node, view như V1, xếp theo cosine giảm dần thay vì xáo.
+
+Đối chứng là nhãn đã lưu (W0 đo trước đây: chạy lại trùng 82% nhãn).
+
+**Chấm:**
+- Ở bước verifier: recall gold (gold không được hiện tính là bỏ sót), precision, hạng 1.
+- Ở đáp án cuối: fit lại calibrator M (FEATURES_V5) cho từng biến thể trên swe_train, cùng quy trình như `fit_mini_calibrator.py`; áp lên held-out 6; bootstrap ghép cặp với nhãn đã lưu. Báo kèm kết quả khi dùng calibrator luna không đổi.
+
+**Luật chọn:** biến thể có SL out-of-fold tốt nhất trên swe_train trong số các biến thể có F1 không thấp hơn đối chứng. Chỉ giữ nếu held-out 6 đi cùng chiều.
+
+**Đã kiểm với model giả, 14 instance:** đường chạy đúng, nhãn đã lưu dựng lại đúng đáp án đã lưu. Kích thước prompt: V1 / V3 khoảng 2.1 lần hiện tại, V2 khoảng 1.3 lần.
