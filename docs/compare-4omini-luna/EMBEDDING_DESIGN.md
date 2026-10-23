@@ -167,3 +167,71 @@ Theo từng benchmark, so dense với M:
 - Calibrator dense **kém** pointwise về precision (20.8 so với 25.1).
 - Lợi thế thấy trên held-out 6 không lặp lại.
 - Cùng với E1–E4 (giai đoạn 1–2), embedding chưa cho cải thiện nào đứng vững. Không đưa embedding vào cấu hình cuối.
+
+## Vì sao embedding xếp gold tốt mà đáp án cuối không tốt lên (2026-10-23)
+
+Script và output:
+- `.tmp/audit_v6/gold_similarity.py` → `gold_similarity.txt`
+- `.tmp/audit_v6/a2_window_dense.py` → `a2_window_dense.txt`
+
+Chạy offline, chỉ đọc vector từ cache.
+
+**Kiểm tra tính đúng của dữ liệu:**
+- Không thiếu vector nào: 0 trên 177 197 (swe_train), 0 trên 82 659 (held-out 6).
+- Mọi vector đều có độ dài 1, sai lệch tối đa 0.0002.
+- 100% văn bản của gold có thân hàm.
+- Luật cửa sổ A2 dựng lại khớp đúng tập node đã duyệt: 299/299 và 150/150 vòng.
+- **Đối chứng âm:** chấm gold bằng issue của một instance khác cho AUC 0.499 / 0.506, đúng như kỳ vọng là không có tín hiệu.
+- **Độ dài văn bản:** riêng độ dài cho AUC 0.69, nên một phần tín hiệu đến từ việc gold là hàm dài hơn. Cosine (0.90) vượt xa mức đó.
+- Helper (AUC, BM25, thứ tự, `_loc`) có self-check.
+
+**1. Embedding xếp gold rất tốt trong mọi vùng.**
+
+AUC gold so với non-gold, và số gold trong top 10 / 60:
+
+| Vùng | Bộ xếp | swe_train | held-out 6 |
+|---|---|---|---|
+| A2 đã tìm ra | **cosine Qmax** | **0.892**, 84 / 121 | **0.910**, 37 / 65 |
+| | BM25 trên cùng văn bản | 0.876, 67 / 122 | 0.842, 27 / 60 |
+| | RRF (A2 đang dùng) | 0.838, 65 / 105 | 0.813, 33 / 58 |
+| | seed (max cosine tới seed) | 0.810, 32 / 114 | 0.751, 11 / 59 |
+| Explore | **cosine Qmax** | **0.904**, 90 / 130 | **0.929**, 36 / 66 |
+| | BM25 | 0.912, 64 / 118 | 0.917, 32 / 61 |
+
+Với gold chưa từng thành candidate:
+- Cosine vẫn có AUC 0.82–0.85.
+- Trong vùng A2 (swe_train), RRF gần như ngẫu nhiên (AUC 0.597; top 60: 6 gold, so với 22 của cosine).
+- So với BM25 trên cùng văn bản, cosine thắng rõ ở top 10, gần bằng ở AUC.
+- Độ giống với seed yếu hơn độ giống với issue.
+
+**2. Gold rơi ở đâu** (số hàm gold):
+
+| Bước | swe_train | held-out 6 |
+|---|---|---|
+| gold | 229 | 114 |
+| nằm trong một vùng (A2, explore hoặc candidate) | 220 | 94 |
+| A2 tìm ra | 148 | 75 |
+| vào cửa sổ duyệt A2 | 109 | 56 |
+| seed | 104 | 53 |
+| candidate | 131 | 69 |
+| verifier xem (40) | 113 | 60 |
+| verifier gán `edited` | 87 | **38** |
+| đáp án (calibrator luna / calibrator dense) | 91 / 84 | 41 / 38 |
+
+**3. Đổi cửa sổ duyệt A2 sang cosine:**
+
+| Cửa sổ | swe_train: gold thấy được (mới) | held-out 6: gold thấy được (mới) |
+|---|---|---|
+| RRF (hiện tại) | 109 (4) | 56 (0) |
+| cosine | 107 (18) | 56 (4) |
+| xen kẽ | 120 (20) | 56 (1) |
+
+Trên held-out 6, cosine chỉ đổi gold nào được thấy, không tăng tổng số.
+
+**Kết luận:**
+- Embedding **có** cải thiện xếp hạng khi retrieve và explore. Tín hiệu là thật, theo cả đối chứng âm lẫn so với RRF.
+- Nhưng chỗ nghẽn của mini nằm sau bước tìm kiếm:
+  - Verifier mini bác bỏ 37% số gold nó được xem trên held-out 6 (60 gold được xem, 38 được gán `edited`; trên swe_train 113 → 87).
+  - Phần gold ở top của vùng explore mà chưa là candidate rất loãng: trên held-out 6, top 60 cosine chứa 10 / 23 gold như vậy, nằm giữa khoảng 3 000 node thêm vào. Mật độ đó thấp hơn mật độ gold ở cuối danh sách verifier đang xem, nên thêm vào là đẩy gold khác ra.
+  - 20 / 114 gold trên held-out 6 không nằm trong vùng nào; embedding trong vùng đã khoanh không chạm tới được.
+- Đòn bẩy lớn nhất còn lại là **khả năng phán đoán của verifier** (gold xem được nhưng không giữ), không phải xếp hạng khi tìm kiếm.
