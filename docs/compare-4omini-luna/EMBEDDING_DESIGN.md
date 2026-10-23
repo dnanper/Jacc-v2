@@ -312,3 +312,44 @@ Giữ nguyên: lần chạy mini đã lưu, 40 candidate, prompt `verifier.PROMP
 **Luật chọn:** biến thể có SL out-of-fold tốt nhất trên swe_train trong số các biến thể có F1 không thấp hơn đối chứng. Chỉ giữ nếu held-out 6 đi cùng chiều.
 
 **Đã kiểm với model giả, 14 instance:** đường chạy đúng, nhãn đã lưu dựng lại đúng đáp án đã lưu. Kích thước prompt: V1 / V3 khoảng 2.1 lần hiện tại, V2 khoảng 1.3 lần.
+
+### Kết quả (2026-10-23; `.tmp/audit_v6/verifier_view_score.txt`; mini $0.86; 150/150 instance, không lời gọi nào lỗi)
+
+**Ở bước verifier** (40 candidate đã lưu; gold không được hiện tính là bỏ sót):
+
+| Biến thể | swe_train: recall / precision / hạng 1 là gold | held-out 6: recall / precision / hạng 1 là gold | tỉ lệ node có nhãn (train / h6) |
+|---|---|---|---|
+| nhãn đã lưu | 77.0% / 15.9% / 35 | 63.3% / 17.8% / 15 | 95% / 98% |
+| V1 full | 75.2% / 15.4% / 32 | 68.3% / 16.7% / 12 | 97% / 98% |
+| V2 d20 | 65.5% / 17.4% / 25 | 53.3% / 18.5% / 13 | 98% / 98% |
+| V3 dord | 59.3% / 21.5% / 38 | 58.3% / **27.6%** / **22** | 90% / 93% |
+
+**Đáp án cuối** (calibrator M fit lại cho từng biến thể; out-of-fold trên swe_train, SL / REC / PRE / F1):
+
+| Biến thể | swe_train out-of-fold |
+|---|---|
+| nhãn đã lưu | 38.0 / 46.9 / 23.2 / 27.5 |
+| V1 | 36.0 / 44.6 / 21.7 / 25.9 |
+| V2 | 29.0 / 35.9 / 26.8 / 25.8 |
+| V3 | 35.0 / 43.6 / 26.0 / 28.7 |
+
+Luật chọn lấy **V3** (biến thể duy nhất có F1 ≥ đối chứng). Nhưng held-out 6 đi **ngược chiều**:
+- Lite: SL −4, F1 −1.2.
+- LocBench: PRE −5.4, F1 −3.2.
+- V1 làm PRE ở Lite giảm có ý nghĩa: −6.4, KTC [−12.5, −1.6].
+
+Theo luật, **không giữ biến thể nào**.
+
+**Lộ dòng sửa không giúp mini** (cùng các gold đó, `edited` trước → sau V1):
+
+| Dòng sửa ở view cũ | swe_train | held-out 6 |
+|---|---|---|
+| lộ | 84% → 81% | 63% → 66% |
+| ẩn | 67% → 67% | 67% → 71% |
+
+Khi dòng sửa đã lộ ra, mini vẫn quyết định như trước. Khác biệt "lộ / ẩn" đo ở bước trước là do gây nhiễu: hàm có dòng sửa bị ẩn thường dài hơn. Vậy giới hạn của verifier mini là **khả năng suy luận, không phải lượng context**.
+
+**Xếp theo embedding (V3):**
+- Tăng precision của nhãn (h6: 27.6% so với 17.8%; hạng 1 đúng 22 so với 15).
+- Đổi lại recall giảm, và mini hay bỏ dở nhãn ở cuối danh sách: 12 / 4 instance có dưới 90% node được gán nhãn.
+- Calibrator M chỉ có thứ hạng verifier làm đặc trưng, nên phần precision tăng thêm không đổi thành đáp án tốt hơn.
