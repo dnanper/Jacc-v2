@@ -235,3 +235,32 @@ Trên held-out 6, cosine chỉ đổi gold nào được thấy, không tăng t�
   - Phần gold ở top của vùng explore mà chưa là candidate rất loãng: trên held-out 6, top 60 cosine chứa 10 / 23 gold như vậy, nằm giữa khoảng 3 000 node thêm vào. Mật độ đó thấp hơn mật độ gold ở cuối danh sách verifier đang xem, nên thêm vào là đẩy gold khác ra.
   - 20 / 114 gold trên held-out 6 không nằm trong vùng nào; embedding trong vùng đã khoanh không chạm tới được.
 - Đòn bẩy lớn nhất còn lại là **khả năng phán đoán của verifier** (gold xem được nhưng không giữ), không phải xếp hạng khi tìm kiếm.
+
+## Audit code embedding (2026-10-23)
+
+Audit gồm tự đọc lại code và một reviewer độc lập chỉ đọc, không gọi API, không mở graph.
+
+**Đã kiểm và đúng:**
+- **Số chiều:** 121 058 vector trong cache, tất cả 1536 chiều (float16, 3072 byte); chuẩn ≈ 1. "Độ dài 1" ở mục trước là chuẩn (norm), không phải số chiều.
+- **Đủ vector:** reviewer tính lại khóa sha256 cho mọi văn bản trong 150 file `embed_texts`: thiếu 0/300 query, 0/9 543 candidate, 0/250 313 node khác. Không kết quả offline nào bị vector 0 làm sai.
+- **Văn bản khớp nhau:** văn bản lúc thu thập (`embed_collect.py`) giống từng byte với văn bản pipeline tạo ra (`node_texts`, `issue_queries`). Cắt `MAX_CHARS` trước khi băm ở cả hai đường. Vector mới gọi API được làm tròn float16 như vector lấy từ cache.
+- **Đặc trưng lúc fit khớp lúc chạy:** cùng tập dòng, xếp hạng trong toàn bộ dòng, max của Q1 và Q2.
+- **Không rò dữ liệu khi fit:** fold theo instance, ngưỡng chọn trên p out-of-fold, held-out 6 không dùng để fit.
+- **Metric:** AUC tính hòa bằng một nửa; CI bootstrap lấy phân vị 2.5 / 97.5.
+
+**Lỗi đã sửa** (`src/modules/embed.py`, `src/run_localize.py`; 4 test mới fail trên code cũ, pass trên code mới; 194 test pass):
+1. Phản hồi API thiếu vector thì vector thiếu bị điền 0 mà không báo. Giờ ghép theo `index` và báo lỗi nếu thiếu.
+2. Chạy offline với cache trống trả vector 1 chiều. Giờ dùng `DIM = 1536`.
+3. Embedding chạy sau lời gọi verifier, nên embedding lỗi thì mất tiền verifier. Giờ embedding chạy trước verifier (tập candidate không đổi qua verifier; có assert), rồi đặc trưng dense được gắn lại vào các dòng.
+
+Không lỗi nào ảnh hưởng số liệu đã báo: không lần chạy nào gặp phản hồi thiếu, cache trống, hay embedding lỗi.
+
+**Lệch quy trình cần nêu rõ:**
+- **Held-out 7 đã bị chạm:** 50 id h7s50 nằm trong held-out 7 (25/150 Lite, 25/150 LocBench). Quyết định bỏ embedding dựa trên chúng. Đánh giá cuối phải loại 50 id này (còn 250 id) hoặc nêu rõ.
+- **Không theo đúng luật chọn đặt trước:** giai đoạn 1 ghi calibrator dense "không đạt" (+3–5%), nhưng giai đoạn 2 vẫn giữ và tích hợp, dựa trên held-out 6 (tập đã dùng để kiểm ở giai đoạn 1). h7s50 sau đó đảo lại quyết định này, nên kết quả ròng là không thay đổi gì.
+- **Ablation không embedding phải chấm lại offline** trên A3V đã lưu, như h7s50 đã làm. Đổi `JACC_CALIBRATOR` sẽ làm verifier chạy lại vì khóa cache có phiên bản calibrator: tốn tiền, và nhãn mới làm lẫn hiệu ứng của embedding với độ dao động của verifier.
+- **Chi phí:** `Embedder.tokens` chỉ đếm văn bản chưa có trong cache. Cache đã được làm nóng trong lúc phát triển, nên con số trên h7s50 ($0.0064) thấp hơn chi phí khi cache trống, khoảng $0.0025 mỗi issue (giai đoạn 1).
+- **Nhỏ:**
+  - `embed_eval.py` dùng một `add_dense` cũ (theo `_loc`, phá hòa khác). Chỉ ảnh hưởng dòng "E4 calibrator" của giai đoạn 1; giai đoạn 2 dùng bản đúng.
+  - Số "answer (mini dense cal.)" trên swe_train trong `a2_window_dense.txt` là trong mẫu, vì calibrator fit trên swe_train.
+  - Ngưỡng 3 000 node của vùng explore phụ thuộc thứ tự graph trả về, nên số E2 không hoàn toàn tái lập được.

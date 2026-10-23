@@ -17,6 +17,7 @@ from typing import Any, Iterable
 import numpy as np
 
 MODEL = "text-embedding-3-small"
+DIM = 1536                # MODEL's vector size; only used to shape zero rows when nothing is cached (offline)
 CACHE = Path(".agent_runs/embed_cache.sqlite")
 BATCH = 256
 MAX_CHARS = 6000          # one input; text-embedding-3 accepts 8191 tokens
@@ -73,8 +74,11 @@ class Embedder:
                 res = self.client.embeddings.create(model=self.model, input=batch)
                 self.calls += 1
                 self.tokens += getattr(getattr(res, "usage", None), "prompt_tokens", 0) or 0
+                data = sorted(res.data, key=lambda d: getattr(d, "index", 0))  # one item per input, tagged with its position
+                if len(data) != len(batch):
+                    raise RuntimeError(f"embedding API returned {len(data)} vectors for {len(batch)} inputs")
                 rows = []
-                for t, d in zip(batch, res.data):
+                for t, d in zip(batch, data):
                     v = np.asarray(d.embedding, dtype=np.float32)
                     v /= np.linalg.norm(v) or 1.0
                     v = v.astype(np.float16).astype(np.float32)  # as stored, so a fresh and a cached vector score the same
@@ -82,7 +86,7 @@ class Embedder:
                     rows.append((_key(self.model, t), len(v), v.astype(np.float16).tobytes()))
                 self.db.executemany("INSERT OR REPLACE INTO vec VALUES (?, ?, ?)", rows)
                 self.db.commit()
-        dim = next((len(v) for v in have.values()), 1)
+        dim = next((len(v) for v in have.values()), DIM)
         return np.vstack([have.get(t, np.zeros(dim, dtype=np.float32)) for t in texts]) if texts else np.zeros((0, dim))
 
 
