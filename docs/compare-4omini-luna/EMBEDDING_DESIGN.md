@@ -142,3 +142,28 @@ Pointwise cần khoảng 64 lời gọi mini mỗi instance (khoảng $0.01); de
 **Bước tiếp:**
 - h7s50 (chỉ chẩn đoán): `bash .tmp/run_dense_h7s50.sh`. Chỉ tốn tiền embedding, khoảng $0.15; có thêm ablation không embedding (calibrator M).
 - Sau đó là đánh giá cuối trên held-out 7.
+
+## h7s50 (50 id mới, chỉ chẩn đoán; 2026-10-23, `.tmp/run_dense_h7s50.sh`)
+
+- Pilot 2 id đạt; 50/50 instance chạy xong, không lỗi; RAM tối đa khoảng 0.47 GB mỗi process.
+- Embedding: 320 nghìn token, **$0.0064** (phần lớn văn bản đã có trong cache).
+
+Mức function, gộp 50 id, SL / REC / PRE / F1:
+
+| Cấu hình | SL | REC | PRE | F1 |
+|---|---|---|---|---|
+| mini + calibrator dense (embedding) | 58.0 | 61.0 | 20.8 | 29.0 |
+| mini + calibrator M (không embedding) | 58.0 | 60.6 | 20.8 | 28.6 |
+| mini + calibrator pointwise | 58.0 | 61.0 | 25.1 | 33.4 |
+| mini + calibrator luna | 64.0 | 66.6 | 16.9 | 25.0 |
+| GraphLocator gpt-4o | 60.0 | 64.4 | 29.0 | 33.6 |
+
+Theo từng benchmark, so dense với M:
+- Lite: SL / F1 64.0 / 27.6 so với 64.0 / 28.4.
+- LocBench: SL / F1 52.0 / 30.3 so với 52.0 / 28.8.
+
+**Kết luận:**
+- Trên dữ liệu mới, đặc trưng dense **gần như không thêm gì** so với calibrator không embedding (F1 +0.4, SL bằng nhau).
+- Calibrator dense **kém** pointwise về precision (20.8 so với 25.1).
+- Lợi thế thấy trên held-out 6 không lặp lại.
+- Cùng với E1–E4 (giai đoạn 1–2), embedding chưa cho cải thiện nào đứng vững. Không đưa embedding vào cấu hình cuối.
