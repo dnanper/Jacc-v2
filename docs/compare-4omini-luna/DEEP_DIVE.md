@@ -1057,3 +1057,35 @@ Hiệu ghép cặp của mini + A3 luna (KTC 95%):
 - **Precision không đổi** (khoảng 21–22%) và gold hiếm khi đứng hạng 1 (11%, so với 32% của luna đầy đủ): verifier mini vẫn gán `edited` quá tay.
 - Phần chênh còn lại so với luna đầy đủ nằm ở A2 (seed 46.5 so với 57.0) và ở verifier, xếp hạng.
 - Phép đo này làm trên held-out 6, tập đã dùng khi phát triển. Cần xác nhận trên id chưa dùng.
+
+## A3 luna: cô lập hiệu ứng (thiết kế chốt trước khi chạy, 2026-10-24)
+
+So sánh ở mục trên (mini a2p_c4 so với mini + A3 luna) thay đổi cùng lúc 4 yếu tố:
+1. model ở A3;
+2. prompt A3: C4 so với frozen;
+3. số lần lấy mẫu: 1 so với 2;
+4. lần gọi verifier: nhãn cũ đã lưu so với nhãn mới (gọi lại cùng prompt chỉ trùng khoảng 82% nhãn).
+
+Script: `.tmp/audit_v6/a3_isolation.py`, `a3_isolation_score.py`, `.tmp/run_a3_isolation.sh`.
+
+Mọi nhánh dùng chung A1/A2 đã lưu và cùng code discover / candidates / prompt verifier / calibrator_swetrain / export như `load_or_verify`. Mỗi nhánh gọi verifier mini 3 lần; chỉ số của mỗi instance là trung bình 3 lần.
+
+| Nhánh | A3 |
+|---|---|
+| M_c4 | mini, prompt C4, 1 mẫu (đã lưu) |
+| M_fz | mini, prompt frozen, 1 mẫu (gọi mới) |
+| L_fz1 | luna, prompt frozen, chỉ mẫu 0 (`restrict_samples`, không gọi) |
+| L_fz2 | luna, prompt frozen, 2 mẫu (đã lưu) |
+
+Các hiệu ứng đo được (bootstrap ghép cặp theo instance):
+- **model** = L_fz1 − M_fz: cùng prompt, cùng số mẫu;
+- **số mẫu** = L_fz2 − L_fz1;
+- **prompt** = M_c4 − M_fz;
+- **tổng** = L_fz2 − M_c4;
+- kèm độ lệch chuẩn giữa các lần gọi verifier, và so L_fz2 với GraphLocator gpt-4o.
+
+**Phép kiểm ghi vào kết quả:** discover tái lập graph đã lưu; danh sách verifier xem và độ dài prompt khớp; nhãn đã lưu dựng lại đúng đáp án đã lưu. Đã chạy thử với model giả trên 4 instance: mọi phép kiểm đạt.
+
+Ghi chú về so sánh trước với GraphLocator gpt-4o (n = 25 mỗi benchmark):
+- Lite: SL +12, khoảng tin cậy [−8, +32]; F1 +0.7, [−11.9, +13.1]. Chưa phân biệt được.
+- LocBench: REC +13.6, [+4.2, +23.4], có ý nghĩa; F1 +5.8, [−3.9, +15.3], chưa phân biệt được.
