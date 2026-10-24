@@ -1089,3 +1089,26 @@ Các hiệu ứng đo được (bootstrap ghép cặp theo instance):
 Ghi chú về so sánh trước với GraphLocator gpt-4o (n = 25 mỗi benchmark):
 - Lite: SL +12, khoảng tin cậy [−8, +32]; F1 +0.7, [−11.9, +13.1]. Chưa phân biệt được.
 - LocBench: REC +13.6, [+4.2, +23.4], có ý nghĩa; F1 +5.8, [−3.9, +15.3], chưa phân biệt được.
+
+## Kết hợp offline: lần chạy A3 luna với các calibrator fit cho mini (2026-10-24, $0)
+
+Lần chạy `heldout6_4omini_a2p_a3luna` được chấm lại offline bằng các calibrator đã fit cho mini trên swe_train:
+- **M:** 20 đặc trưng;
+- **M+pw:** thêm điểm pointwise. Điểm pointwise lấy từ lần chạy `a2p_c4`; nó có cho 91% số node verifier xem trong lần chạy A3 luna, node thiếu nhận p = 0.
+
+Cả hai calibrator được fit trên output của mini có A3 **mini**, nên chưa khớp với cấu hình A3 luna. Đây chỉ là phép ước lượng hướng đi, trên held-out 6 (tập phát triển).
+
+Mức function, SL / REC / PRE / F1 | số hàm:
+
+| | Lite | LocBench |
+|---|---|---|
+| A3 luna + calibrator luna (đã chạy) | 60.0 / 66.7 / 21.4 / 29.3 \| 7.4 | 36.0 / 50.3 / 22.1 / 27.3 \| 6.7 |
+| A3 luna + calibrator M | 56.0 / 64.7 / 28.2 / **35.4** \| 4.6 | 32.0 / 40.5 / 27.1 / 27.2 \| 4.2 |
+| A3 luna + calibrator M+pw (p cũ) | 48.0 / 58.7 / **31.2 / 37.6** \| 3.5 | 32.0 / 41.9 / 25.5 / 28.6 \| 3.2 |
+| A3 mini (a2p_c4) + calibrator M+pw | 36.0 / 46.7 / 24.1 / 29.4 \| 3.4 | 32.0 / 42.2 / 31.3 / 31.8 \| 2.9 |
+| GraphLocator gpt-4o | 48.0 / 55.3 / 24.5 / 28.6 | 28.0 / 36.7 / 20.9 / 21.5 |
+
+**Đọc kết quả:**
+- Ở Lite, calibrator mini tăng PRE và F1 (F1 +6 đến +8), đổi lại SL giảm 4–12.
+- Ở LocBench không có lợi.
+- Muốn dùng đúng cách cần fit lại M+pw trên swe_train với output của cấu hình A3 luna.
