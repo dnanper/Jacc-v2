@@ -6,6 +6,8 @@ Hướng đi đã chốt cho Jacc-v2. Tài liệu khảo sát và nghiên cứu 
 |---|---|
 | `graph-schema.md` | Schema đồ thị mục tiêu: node, edge, hợp đồng metadata, ranh giới suy luận |
 | `roadmap.md` | Khoảng cách giữa mã hiện tại và schema, chia P0 / P1 / P2 |
+| [jacc_v6_pipeline.html](jacc_v6_pipeline.html) | Sơ đồ pipeline v6-threshold (gpt-5.6-luna), giải thích từng bước |
+| [jacc_v6_mini_a3luna.html](jacc_v6_mini_a3luna.html) | Sơ đồ cấu hình gpt-4o-mini đã chốt (A2 planner + A3 luna + calibrator luna), so với bản luna |
 | [agent-workflow.md](agent-workflow.md) | Non-graph agent workflow: chiến thuật rộng/sâu, parameter có kiểm tra, bộ nhớ bằng chứng, chọn vị trí sửa, roadmap W0–W3 và đánh giá tách graph/workflow |
 
 `agent-workflow.md` là thiết kế đề xuất, chưa triển khai. Roadmap W0–W3 của workflow độc lập P0–P2 của đồ thị; giữ graph chỉ đọc và không chạy mã repo đích.
