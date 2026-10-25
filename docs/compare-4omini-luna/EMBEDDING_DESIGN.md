@@ -1,5 +1,7 @@
 # Thiết kế dùng embedding trong pipeline (ghi trước khi đo, 2026-10-23)
 
+> **Trạng thái (2026-10-25):** cấu hình gpt-4o-mini đã chốt (A2 planner + A3 luna + calibrator luna, xem `README.md`) **không dùng embedding**. Không cách dùng nào trong tài liệu này cải thiện được kết quả trên dữ liệu mới. Code embedding vẫn nằm trên branch `exp/embed` và chỉ chạy khi chọn calibrator dense.
+
 ## Mục tiêu và điều kiện của claim
 
 **Claim:** với gpt-4o-mini, pipeline đạt độ chính xác ít nhất ngang GraphLocator gpt-4o, mà **rẻ hơn và nhanh hơn**, kể cả khi đã tính chi phí embedding.

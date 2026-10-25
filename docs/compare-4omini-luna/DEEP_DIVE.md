@@ -1112,3 +1112,23 @@ Mức function, SL / REC / PRE / F1 | số hàm:
 - Ở Lite, calibrator mini tăng PRE và F1 (F1 +6 đến +8), đổi lại SL giảm 4–12.
 - Ở LocBench không có lợi.
 - Muốn dùng đúng cách cần fit lại M+pw trên swe_train với output của cấu hình A3 luna.
+
+## Chốt cấu hình gpt-4o-mini (2026-10-25)
+
+Người dùng chốt cấu hình: **A2 planner + A3 luna + calibrator luna**.
+- A1, A2 và verifier chạy gpt-4o-mini.
+- `JACC_A2_PLAN=1`.
+- `JACC_A3_MODEL=gpt-5.6-luna`, prompt frozen, `--a3-samples 2`.
+- `JACC_CALIBRATOR=src/modules/data/calibrator_swetrain.json`, p ≥ 0.045.
+
+Held-out 6: Lite 60.0 / 66.7 / 21.4 / 29.3, LocBench 36.0 / 50.3 / 22.1 / 27.3.
+
+**Lý do không dùng calibrator mini (M, M+pw):** chúng tăng PRE và F1 ở Lite nhưng làm SL/REC giảm (mục "Kết hợp offline" ở trên). Người dùng ưu tiên SL/REC.
+
+**Không giữ:** prompt C4, A3-x, map-reduce, gộp phiếu và luật cho verifier, verifier pointwise, K1/K2, embedding, các cách hiện mã V1–V3.
+
+**Bước tiếp:**
+1. Thí nghiệm cô lập hiệu ứng A3 luna (`.tmp/run_a3_isolation.sh`, đã thiết kế, chưa chạy).
+2. Chạy đầy đủ hai benchmark (Lite 300, LocBench 559), cùng tập id và cùng graph với lần chạy luna trong `final-results/`.
+   - Báo kết quả chính trên held-out 7 trừ 50 id h7s50, vì 50 id này đã dùng khi chọn cấu hình.
+   - Báo kèm số toàn benchmark để so với Bảng 2 của GraphLocator.
