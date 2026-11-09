@@ -24,11 +24,12 @@ Source repositories are cloned from GitHub once, materialized at each `base_comm
 5. [Build the code knowledge graph](#build-the-code-knowledge-graph)
 6. [Run one instance (demo)](#run-one-instance-demo)
 7. [Run a benchmark](#run-a-benchmark)
-8. [Track progress](#track-progress)
-9. [Optional services](#optional-services)
-10. [Evaluate](#evaluate)
-11. [Tests](#tests)
-12. [Repository layout](#repository-layout)
+8. [Thesis configuration](#thesis-configuration)
+9. [Track progress](#track-progress)
+10. [Optional services](#optional-services)
+11. [Evaluate](#evaluate)
+12. [Tests](#tests)
+13. [Repository layout](#repository-layout)
 
 ## Requirements
 
@@ -184,6 +185,61 @@ directory per instance, plus `<benchmark>_loc_results.json` and `<benchmark>_sum
 A full benchmark makes about eight model calls per instance; run a few ids first and check their logs and outputs
 before starting the whole set. The process exits with status 1 if any instance failed.
 
+## Thesis configuration
+
+The thesis evaluates one frozen configuration:
+
+- `--mode v6` with gpt-5.6-luna for every LLM stage and 2 A3 samples (the default);
+- the logistic calibrator fitted on 100 SWE-bench issues outside SWE-bench Lite and LocBench,
+  `src/modules/data/calibrator_swetrain.json`, selected with `JACC_CALIBRATOR`;
+- the answer: every function whose calibrated probability is at least the calibrator's threshold, 0.045.
+
+This answer is stored as `recall_answer` in each `A6_export.json`. The top-level lists of `A6_export.json`, which
+`<benchmark>_loc_results.json` collects, are not the answer reported in the thesis.
+
+The thesis scores answers with GraphLocator's own metric code (`eval_metric.py` in
+[GraphLocator](https://github.com/oceaneLIU/GraphLocator)), whose gold paths start with the repository name. First
+collect the thesis answers of a run, with that prefix (offline, free):
+
+```bash
+uv run python - swe_bench_lite .agent_runs/localization <<'EOF'
+import json, sys
+from pathlib import Path
+from src.run_localize import safe_name
+bench, ws = sys.argv[1], Path(sys.argv[2])
+answer = {}
+for line in open(f"evaluation/localization/{bench}.jsonl"):
+    inst = json.loads(line)
+    path = ws / safe_name(inst["instance_id"]) / "A6_export.json"
+    if path.exists():
+        repo = inst["repo"].split("/")[-1]
+        ans = json.loads(path.read_text())["recall_answer"]
+        answer[inst["instance_id"]] = {k: [f"{repo}/{x}" for x in v] for k, v in ans.items()}
+Path(f"{bench}_answer.json").write_text(json.dumps(answer, indent=2))
+print(len(answer), "answers written to", f"{bench}_answer.json")
+EOF
+```
+
+Then score them inside a clone of GraphLocator, in an environment with its `requirements.txt` installed. Its
+`__main__` block does not run as released, so the metric functions are called directly:
+
+```bash
+cd ../GraphLocator
+python - ../Jacc-v2/swe_bench_lite_answer.json swe_bench_lite <<'EOF'
+import json, sys
+from eval_metric import success_location, recall, precision, f1_score
+pred, bench = json.load(open(sys.argv[1])), sys.argv[2]
+gt = json.load(open(f"datasets/{bench}_gt_entities_3levels.json"))
+for level in ("files", "modules", "functions"):
+    key = f"found_{level}"
+    print(level, {name: round(f(pred, gt, key).item() * 100, 2)
+                  for name, f in (("SL", success_location), ("REC", recall), ("PRE", precision), ("F1", f1_score))})
+EOF
+```
+
+An instance without an answer counts as a miss, and an instance whose gold is empty at a level is skipped at that
+level. For the thesis runs this gives function-level F1 49.03 on SWE-bench Lite and 48.56 on LocBench.
+
 ## Track progress
 
 Each task writes timestamped milestones to a plain log file. Terminal logging is disabled by default (set `JACC_CONSOLE_LOGS=true` to enable it):
@@ -251,8 +307,8 @@ Then open `http://localhost:8000`. The image tag must match the `real-ladybug` v
 
 ## Evaluate
 
-Evaluation is offline and free. The repository has its own evaluator for a predictions file such as
-`<benchmark>_loc_results.json`:
+The thesis numbers come from GraphLocator's metric code, as described in [Thesis configuration](#thesis-configuration).
+The repository also has its own offline evaluator for a predictions file such as `<benchmark>_loc_results.json`:
 
 ```bash
 uv run python src/evaluate_localize.py \
@@ -261,7 +317,8 @@ uv run python src/evaluate_localize.py \
 ```
 
 It reports GraphLocator's three levels and metric names (`found_files`, `found_modules`, `found_functions`;
-`success_location`, `recall`, `precision`, `f1`) with paths written without the repository prefix.
+`success_location`, `recall`, `precision`, `f1`) with paths written without the repository prefix. Its numbers can
+differ slightly from GraphLocator's code, so use the latter to compare with the thesis.
 
 Copied benchmark inputs and gold files live in `evaluation/localization/`. The dataset loader validates the expected valid counts and excludes the documented invalid Loc-Bench instance.
 
