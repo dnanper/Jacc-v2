@@ -50,6 +50,16 @@ class ExportTest(unittest.TestCase):
         swetrain = {**many, "recall_p": 0.045}  # an A3V written under calibrator_swetrain carries its own threshold
         self.assertEqual(export_ranked(swetrain, query)["recall_answer"]["found_functions"], ["src/app/bp.py::Blueprint.__init__"])
 
+    def test_targets_only_keeps_a3_targets_over_the_threshold_and_at_least_one(self) -> None:
+        a3v = {"answer": [METHOD], "recall_p": 0.045,
+               "ranked": [{"node": FUNC, "p": 0.7}, {"node": METHOD, "p": 0.5}, {"node": "Function:src/app/a.py:x", "p": 0.2}],
+               "graph": [{"node": METHOD, "sources": ["root", "H2 target"]}, {"node": FUNC, "sources": ["A2 relevant", "call hop 1"]},
+                         {"node": "Function:src/app/a.py:x", "sources": ["alternate hypothesis"]}]}
+        self.assertEqual(export_ranked(a3v, query, targets_only=True)["recall_answer"]["found_functions"], ["src/app/bp.py::Blueprint.__init__"])
+        self.assertEqual(len(export_ranked(a3v, query, targets_only=False)["recall_answer"]["found_functions"]), 3)
+        none = {**a3v, "graph": []}  # no target over the threshold: the top node, as without the rule
+        self.assertEqual(export_ranked(none, query, targets_only=True)["recall_answer"]["found_functions"], ["src/app/util.py::helper"])
+
     def test_three_levels_with_class_from_the_graph(self) -> None:
         out = export(a4(METHOD, FUNC, CLASS), None, query)
         self.assertEqual(out["found_functions"], ["src/app/bp.py::Blueprint.__init__", "src/app/util.py::helper"])

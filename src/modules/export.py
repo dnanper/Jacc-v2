@@ -18,6 +18,7 @@ rewards recall and precision, so the cap is a reported setting, not a tuned one.
 
 from __future__ import annotations
 
+import os
 from typing import Any
 
 from src.modules.exploration import fallback, finalize, sites
@@ -53,16 +54,32 @@ def export_a3(a3: dict[str, Any], query: Query, a3s: dict[str, Any] | None = Non
     return {"artifact": "A6", "version": EXPORT_VERSION, "source": "A3R" if a3r is not None else "A3S" if a3s else "A3", "candidates": nodes, **result.to_dict()}
 
 
-def export_ranked(a3v: dict[str, Any], query: Query) -> dict[str, Any]:
+def a3_targets(a3v: dict[str, Any]) -> set[str]:
+    """Candidates tagged 'H<i> target' by region_sites: the root regions of the targets of the first MAX_HYPOTHESES (3)
+    hypotheses, i.e. each target plus the A2 seeds that share its region key (same class; same file for a module-level
+    function). Not only the targets themselves."""
+    return {g["node"] for g in a3v.get("graph") or [] if any(s.startswith("H") and s.endswith(" target") for s in g["sources"])}
+
+
+def export_ranked(a3v: dict[str, Any], query: Query, *, targets_only: bool | None = None) -> dict[str, Any]:
     """V6 answer (design v3): the expected-F1 prefix of the calibrated ranking. `ranked_functions` keeps the whole
     order, so rank-aware metrics (MAP@10, Acc@k) can be computed from the same artifact. `recall_answer` is the
-    recall-oriented operating point (p >= RECALL_P, amendment A10); the expected-F1 answer is unchanged."""
+    recall-oriented operating point (p >= RECALL_P, amendment A10); the expected-F1 answer is unchanged.
+
+    `targets_only` (amendment A22, gpt-4o-mini configuration; default from JACC_ANSWER_TARGETS=1): the recall answer
+    keeps only nodes in the region of a target of hypotheses H1-H3 (`a3_targets`). The gpt-4o-mini verifier labels
+    about five nodes per issue `edited`, and the calibrator, fit on the luna verifier, passes them; outside these
+    regions they are 1-3% gold."""
+    if targets_only is None:
+        targets_only = os.environ.get("JACC_ANSWER_TARGETS") == "1"
     result = localize_nodes(a3v["answer"], query)
     ranked = [_loc(r["node"]) for r in a3v["ranked"] if r["node"].startswith(_FUNCTION_KINDS)]
     t = a3v.get("recall_p", RECALL_P)  # the calibrator's own threshold when it has one (swetrain: 0.045)
-    recall = localize_nodes([r["node"] for r in a3v["ranked"] if r["p"] >= t] or [r["node"] for r in a3v["ranked"][:1]], query)
+    keep = a3_targets(a3v) if targets_only else None
+    recall = localize_nodes([r["node"] for r in a3v["ranked"] if r["p"] >= t and (keep is None or r["node"] in keep)]
+                            or [r["node"] for r in a3v["ranked"][:1]], query)
     return {"artifact": "A6", "version": EXPORT_VERSION, "source": "A3V", "candidates": a3v["answer"], **result.to_dict(),
-            "ranked_functions": ranked, "recall_answer": recall.to_dict()}
+            "ranked_functions": ranked, "recall_answer": recall.to_dict(), "targets_only": targets_only}
 
 
 def localize_nodes(nodes: list[str], query: Query | None = None) -> LocalizeResult:
